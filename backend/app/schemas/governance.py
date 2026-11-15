@@ -4,6 +4,25 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ApprovalActionRequest(BaseModel):
+    candidate_id: Optional[str] = None
+    analyst_id: str
+    notes: str
+
+
+class EvaluateCandidateRequest(BaseModel):
+    candidate_id: Optional[str] = None
+    slice_id: Optional[str] = None
+    volume_multiplier: Optional[float] = 1.0
+
+
+class GovernanceApproveRequest(BaseModel):
+    candidate_id: Optional[str] = None
+    analyst_id: str
+    notes: str
+
+
+class GovernanceRejectRequest(BaseModel):
+    candidate_id: Optional[str] = None
     analyst_id: str
     notes: str
 

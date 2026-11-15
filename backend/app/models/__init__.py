@@ -1,27 +1,33 @@
 from .models import (
     AnomalyAlert,
+    ApprovalLog,
     AuditEvent,
     AttributionResult,
     Baseline,
     BaselineRegistry,
+    CanaryResult,
     CanonicalWindow,
     CandidateBaseline,
     DecisionTrace,
     DetectionResult,
+    DriftBudget,
     DriftEvent,
     QuarantineWindow,
 )
 
 __all__ = [
     "AnomalyAlert",
+    "ApprovalLog",
     "AuditEvent",
     "AttributionResult",
     "Baseline",
     "BaselineRegistry",
+    "CanaryResult",
     "CandidateBaseline",
     "CanonicalWindow",
     "DecisionTrace",
     "DetectionResult",
+    "DriftBudget",
     "DriftEvent",
     "QuarantineWindow",
 ]

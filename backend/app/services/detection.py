@@ -43,6 +43,14 @@ class DetectionService:
         self._engines: Dict[str, DetectionEngine] = {}
         self._cusum = CusumDetector()
 
+    def reload_baseline(self, slice_id: str, bundle: Optional[Dict[str, Any]] = None) -> None:
+        """Invalidate or update in-memory baseline cache for a slice."""
+        self._loaded_baselines.pop(slice_id, None)
+        self._engines.pop(slice_id, None)
+        if bundle:
+            self._init_engine_for_bundle(slice_id, bundle)
+            self._loaded_baselines[slice_id] = bundle
+
     def get_baseline_bundle(self, slice_id: str, db: Optional[Session] = None) -> Optional[Dict[str, Any]]:
         """Retrieve baseline bundle for slice_id, from cache or disk."""
         if slice_id in self._loaded_baselines:

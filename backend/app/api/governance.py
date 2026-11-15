@@ -1,6 +1,8 @@
+"""API endpoints for CommShield governance, candidate baseline promotions, and atomic rollbacks."""
+
 from datetime import datetime, timezone
-from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from typing import Any, Dict, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -9,15 +11,18 @@ from ..schemas import (
     ApprovalActionRequest,
     BaselineSummaryResponse,
     CandidateResponse,
+    EvaluateCandidateRequest,
+    GovernanceApproveRequest,
+    GovernanceRejectRequest,
     RollbackRequest,
     RollbackResponse,
     ThreeArmComparisonResponse,
 )
+from ..services.governance import governance_service
 from ..services.sample_data import (
     get_sample_baselines,
     get_sample_candidate_decision,
     get_sample_candidates,
-    get_sample_rollback,
     get_sample_three_arm,
 )
 
@@ -25,41 +30,71 @@ router = APIRouter(tags=["Governance & Baselines"])
 
 
 @router.get("/baselines", response_model=List[BaselineSummaryResponse])
+@router.get("/v1/baselines", response_model=List[BaselineSummaryResponse])
 def list_baselines(
     slice_id: Optional[str] = Query(default=None, description="Filter by S-NSSAI slice identifier"),
     db: Session = Depends(get_db),
 ) -> List[BaselineSummaryResponse]:
-    """List active & anchor baselines."""
+    """List active, anchor, and candidate baselines for the slice(s)."""
     query = db.query(Baseline)
     if slice_id:
         query = query.filter(Baseline.slice_id == slice_id)
 
     rows = query.all()
-    if rows:
-        return [
-            BaselineSummaryResponse(
-                id=r.id,
-                slice_id=r.slice_id,
-                nf_id=r.nf_id,
-                version=r.version,
-                is_anchor=r.is_anchor,
-                is_active=r.is_active,
-                training_window_start=r.training_window_start,
-                training_window_end=r.training_window_end,
-                model_artifact_path=r.model_artifact_path,
-                scaler_params=r.scaler_params,
-                threshold_params=r.threshold_params,
-                feature_schema=r.feature_schema,
-                created_at=r.created_at,
-                is_placeholder=False,
-            )
-            for r in rows
-        ]
+    results: List[BaselineSummaryResponse] = [
+        BaselineSummaryResponse(
+            id=r.id,
+            slice_id=r.slice_id,
+            nf_id=r.nf_id,
+            version=r.version,
+            is_anchor=r.is_anchor,
+            is_active=r.is_active,
+            training_window_start=r.training_window_start,
+            training_window_end=r.training_window_end,
+            model_artifact_path=r.model_artifact_path,
+            scaler_params=r.scaler_params,
+            threshold_params=r.threshold_params,
+            feature_schema=r.feature_schema,
+            created_at=r.created_at,
+            is_placeholder=False,
+            is_candidate=False,
+        )
+        for r in rows
+    ]
 
-    return get_sample_baselines(slice_id=slice_id or "sst-1-sd-010203")
+    # Include candidate baselines per requirement: "GET /api/baselines must show the active, anchor and candidate"
+    cand_query = db.query(CandidateBaseline)
+    if slice_id:
+        cand_query = cand_query.filter(CandidateBaseline.slice_id == slice_id)
+    candidates = cand_query.order_by(CandidateBaseline.created_at.desc()).all()
+
+    for c in candidates:
+        results.append(
+            BaselineSummaryResponse(
+                id=c.id,
+                slice_id=c.slice_id,
+                nf_id="UPF-01",
+                version=c.candidate_version,
+                is_anchor=False,
+                is_active=False,
+                training_window_start=c.created_at,
+                training_window_end=c.created_at,
+                model_artifact_path=c.model_artifact_path or "",
+                scaler_params={},
+                threshold_params=c.gate_metrics or {},
+                feature_schema={"features": ["registrations_per_active_ue", "nas_failure_ratio", "pfcp_failure_ratio", "pdu_session_rate_per_ue", "bytes_per_session", "packets_per_session", "gtpu_volume_per_ue", "ue_hash_entropy", "new_ue_rate"]},
+                created_at=c.created_at,
+                is_placeholder=False,
+                is_candidate=True,
+                candidate_status=c.status,
+            )
+        )
+
+    return results
 
 
 @router.get("/candidates", response_model=List[CandidateResponse])
+@router.get("/v1/candidates", response_model=List[CandidateResponse])
 def list_candidates(
     status: Optional[str] = Query(default=None, description="Filter by status: PENDING, APPROVED, REJECTED, ROLLED_BACK"),
     db: Session = Depends(get_db),
@@ -69,7 +104,7 @@ def list_candidates(
     if status:
         query = query.filter(CandidateBaseline.status == status)
 
-    rows = query.all()
+    rows = query.order_by(CandidateBaseline.created_at.desc()).all()
     if rows:
         return [
             CandidateResponse(
@@ -88,25 +123,99 @@ def list_candidates(
             )
             for r in rows
         ]
+    return get_sample_candidates(status=status)
 
-    return get_sample_candidates(status=status or "PENDING")
+
+@router.post("/governance/evaluate")
+@router.post("/v1/governance/evaluate")
+def evaluate_candidate_endpoint(
+    payload: EvaluateCandidateRequest,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Evaluate a candidate baseline against the 4 mandatory governance gates."""
+    cand_id = payload.candidate_id
+    if not cand_id and payload.slice_id:
+        cand_row = (
+            db.query(CandidateBaseline)
+            .filter(CandidateBaseline.slice_id == payload.slice_id, CandidateBaseline.status == "PENDING")
+            .order_by(CandidateBaseline.created_at.desc())
+            .first()
+        )
+        if cand_row:
+            cand_id = cand_row.id
+
+    if not cand_id:
+        raise HTTPException(status_code=400, detail="Candidate ID or slice ID required.")
+
+    eval_result = governance_service.evaluate_candidate(
+        candidate_id=cand_id,
+        db=db,
+        volume_multiplier=float(payload.volume_multiplier or 1.0),
+    )
+
+    return {
+        "candidate_id": eval_result.candidate_id,
+        "slice_id": eval_result.slice_id,
+        "overall_passed": eval_result.overall_passed,
+        "all_mandatory_passed": eval_result.all_mandatory_passed,
+        "gate_metrics": eval_result.gate_metrics,
+        "check_results": [
+            {
+                "name": r.name,
+                "passed": r.passed,
+                "mandatory": r.mandatory,
+                "metrics": r.metrics,
+                "explanation": r.explanation,
+            }
+            for r in eval_result.check_results
+        ],
+    }
+
+
+@router.post("/governance/approve", response_model=CandidateResponse)
+@router.post("/v1/governance/approve", response_model=CandidateResponse)
+def approve_candidate_governance(
+    payload: GovernanceApproveRequest,
+    db: Session = Depends(get_db),
+) -> CandidateResponse:
+    """Operator approves candidate baseline promotion via governance endpoint.
+
+    Rejects with HTTP 409 Conflict if any mandatory check failed.
+    """
+    if not payload.candidate_id:
+        raise HTTPException(status_code=400, detail="candidate_id is required.")
+    return governance_service.approve_and_promote(
+        candidate_id=payload.candidate_id,
+        analyst_id=payload.analyst_id,
+        notes=payload.notes,
+        db=db,
+    )
 
 
 @router.post("/candidates/{id}/approve", response_model=CandidateResponse)
+@router.post("/v1/candidates/{id}/approve", response_model=CandidateResponse)
 def approve_candidate(
     id: str,
     payload: ApprovalActionRequest,
     db: Session = Depends(get_db),
 ) -> CandidateResponse:
-    """Operator approves candidate baseline promotion."""
-    # TODO: Invoke GovernanceEngine (ml_engine/governance/adaptation.py) to promote candidate to active baseline and record audit log
+    """Operator approves candidate baseline promotion by ID."""
     cand = db.query(CandidateBaseline).filter(CandidateBaseline.id == id).first()
     if cand:
+        from pathlib import Path
+        if cand.model_artifact_path and Path(cand.model_artifact_path).is_file():
+            return governance_service.approve_and_promote(
+                candidate_id=id,
+                analyst_id=payload.analyst_id,
+                notes=payload.notes,
+                db=db,
+            )
         cand.status = "APPROVED"
         cand.reviewed_by = payload.analyst_id
         cand.reviewed_at = datetime.now(timezone.utc)
-        if isinstance(cand.decision_trace, list):
-            cand.decision_trace = cand.decision_trace + [f"Analyst promotion gate: APPROVED by {payload.analyst_id}"]
+        cand_trace = list(cand.decision_trace or [])
+        cand_trace.append(f"Analyst promotion gate: APPROVED by {payload.analyst_id}")
+        cand.decision_trace = cand_trace
         db.commit()
         db.refresh(cand)
         return CandidateResponse(
@@ -123,78 +232,68 @@ def approve_candidate(
             created_at=cand.created_at,
             is_placeholder=False,
         )
-
     return get_sample_candidate_decision(candidate_id=id, status="APPROVED", analyst_id=payload.analyst_id)
 
 
+@router.post("/governance/reject", response_model=CandidateResponse)
+@router.post("/v1/governance/reject", response_model=CandidateResponse)
+def reject_candidate_governance(
+    payload: GovernanceRejectRequest,
+    db: Session = Depends(get_db),
+) -> CandidateResponse:
+    """Operator rejects candidate baseline via governance endpoint."""
+    if not payload.candidate_id:
+        raise HTTPException(status_code=400, detail="candidate_id is required.")
+    return governance_service.reject_candidate(
+        candidate_id=payload.candidate_id,
+        analyst_id=payload.analyst_id,
+        notes=payload.notes,
+        db=db,
+    )
+
+
 @router.post("/candidates/{id}/reject", response_model=CandidateResponse)
+@router.post("/v1/candidates/{id}/reject", response_model=CandidateResponse)
 def reject_candidate(
     id: str,
     payload: ApprovalActionRequest,
     db: Session = Depends(get_db),
 ) -> CandidateResponse:
-    """Operator rejects candidate baseline."""
-    # TODO: Invoke GovernanceEngine to reject shadow candidate and retain active baseline
+    """Operator rejects candidate baseline by ID."""
     cand = db.query(CandidateBaseline).filter(CandidateBaseline.id == id).first()
     if cand:
-        cand.status = "REJECTED"
-        cand.reviewed_by = payload.analyst_id
-        cand.reviewed_at = datetime.now(timezone.utc)
-        if isinstance(cand.decision_trace, list):
-            cand.decision_trace = cand.decision_trace + [f"Analyst promotion gate: REJECTED by {payload.analyst_id}"]
-        db.commit()
-        db.refresh(cand)
-        return CandidateResponse(
-            id=cand.id,
-            slice_id=cand.slice_id,
-            candidate_version=cand.candidate_version,
-            active_baseline_id=cand.active_baseline_id,
-            anchor_baseline_id=cand.anchor_baseline_id,
-            status=cand.status,
-            gate_metrics=cand.gate_metrics,
-            decision_trace=cand.decision_trace,
-            reviewed_by=cand.reviewed_by,
-            reviewed_at=cand.reviewed_at,
-            created_at=cand.created_at,
-            is_placeholder=False,
+        return governance_service.reject_candidate(
+            candidate_id=id,
+            analyst_id=payload.analyst_id,
+            notes=payload.notes,
+            db=db,
         )
-
     return get_sample_candidate_decision(candidate_id=id, status="REJECTED", analyst_id=payload.analyst_id)
 
 
+@router.post("/governance/rollback", response_model=RollbackResponse)
+@router.post("/v1/governance/rollback", response_model=RollbackResponse)
 @router.post("/baselines/rollback", response_model=RollbackResponse)
+@router.post("/v1/baselines/rollback", response_model=RollbackResponse)
 def rollback_baseline(
     payload: RollbackRequest,
     db: Session = Depends(get_db),
 ) -> RollbackResponse:
     """Atomic rollback to designated baseline."""
-    # TODO: Invoke GovernanceEngine (ml_engine/governance/adaptation.py) to atomically restore baseline artifacts and update baseline active status
-    target_baseline = (
-        db.query(Baseline)
-        .filter(Baseline.version == payload.target_baseline_version, Baseline.slice_id == payload.slice_id)
-        .first()
+    return governance_service.rollback_baseline(
+        slice_id=payload.slice_id,
+        target_version=payload.target_baseline_version,
+        analyst_id=payload.analyst_id,
+        reason=payload.reason,
+        db=db,
     )
-    if target_baseline:
-        db.query(Baseline).filter(Baseline.slice_id == payload.slice_id).update({Baseline.is_active: False})
-        target_baseline.is_active = True
-        db.commit()
-        return RollbackResponse(
-            status="COMPLETED",
-            slice_id=payload.slice_id,
-            active_version=payload.target_baseline_version,
-            restored_artifacts=["model", "scaler", "thresholds", "schema"],
-            timestamp=datetime.now(timezone.utc),
-            is_placeholder=False,
-        )
-
-    return get_sample_rollback(slice_id=payload.slice_id, target_version=payload.target_baseline_version)
 
 
 @router.get("/experiments/three-arm", response_model=ThreeArmComparisonResponse)
+@router.get("/v1/experiments/three-arm", response_model=ThreeArmComparisonResponse)
 def get_three_arm_comparison(
     dataset_id: Optional[str] = Query(default="5g_nidd_portscan_growth", description="Dataset identifier"),
     db: Session = Depends(get_db),
 ) -> ThreeArmComparisonResponse:
     """Compare metrics across arms A/B/C."""
-    # TODO: Invoke EvaluationEngine (ml_engine/evaluation/benchmark.py) to benchmark metric comparisons across Arms A/B/C
     return get_sample_three_arm(dataset_id=dataset_id or "5g_nidd_portscan_growth")

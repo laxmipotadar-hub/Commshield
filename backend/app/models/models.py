@@ -104,17 +104,62 @@ class CandidateBaseline(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     slice_id = Column(String(64), nullable=False, index=True)
     candidate_version = Column(String(32), nullable=False)
+    parent_version = Column(String(32), nullable=True)
     active_baseline_id = Column(String(36), ForeignKey("baselines.id"), nullable=False)
     anchor_baseline_id = Column(String(36), ForeignKey("baselines.id"), nullable=False)
     status = Column(String(32), nullable=False)
     gate_metrics = Column(JSON, nullable=False)
     decision_trace = Column(JSON, nullable=False)
+    training_window_ids = Column(JSON, nullable=True)
+    model_artifact_path = Column(String(255), nullable=True)
     reviewed_by = Column(String(64), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     active_baseline = relationship("Baseline", foreign_keys=[active_baseline_id])
     anchor_baseline = relationship("Baseline", foreign_keys=[anchor_baseline_id])
+
+
+class DriftBudget(Base):
+    __tablename__ = "drift_budgets"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    candidate_id = Column(String(36), nullable=False, index=True)
+    slice_id = Column(String(64), nullable=False, index=True)
+    d_rms_active = Column(Float, nullable=False)
+    d_rms_anchor = Column(Float, nullable=False)
+    d_max_anchor = Column(Float, nullable=False)
+    delta_canary = Column(Float, nullable=False)
+    metrics = Column(JSON, nullable=False)
+    passed = Column(Boolean, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+class CanaryResult(Base):
+    __tablename__ = "canary_results"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    candidate_id = Column(String(36), nullable=False, index=True)
+    slice_id = Column(String(64), nullable=False, index=True)
+    active_recall = Column(Float, nullable=False)
+    candidate_recall = Column(Float, nullable=False)
+    recall_delta = Column(Float, nullable=False)
+    category_recalls = Column(JSON, nullable=False)
+    passed = Column(Boolean, nullable=False)
+    details = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+class ApprovalLog(Base):
+    __tablename__ = "approval_logs"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    candidate_id = Column(String(36), nullable=False, index=True)
+    slice_id = Column(String(64), nullable=False, index=True)
+    action = Column(String(32), nullable=False)  # APPROVED or REJECTED
+    analyst_id = Column(String(64), nullable=False)
+    notes = Column(String(512), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 
 
 class QuarantineWindow(Base):

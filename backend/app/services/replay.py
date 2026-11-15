@@ -38,6 +38,8 @@ class ReplayService:
         self._windows: List[Dict[str, Any]] = []
         self._task: Optional[asyncio.Task] = None
         self._lock = asyncio.Lock()
+        self._legitimate_windows_by_slice: Dict[str, List[Dict[str, Any]]] = {}
+        self._candidate_created_by_slice: Dict[str, bool] = {}
 
     def _load_scenario(self, dataset_id: str) -> List[Dict[str, Any]]:
         """Load windows from scenario file in data/synthetic/."""
@@ -110,7 +112,42 @@ class ReplayService:
                 detection_service.analyze_window(w_eval, db=db)
                 # Run attribution automatically inside replay pipeline
                 from .attribution import attribution_service
-                attribution_service.analyze_window(w_eval, db=db, scenario=self.dataset_id)
+                attr_res = attribution_service.analyze_window(w_eval, db=db, scenario=self.dataset_id)
+
+                # Track legitimate growth adaptation windows for governance candidate creation
+                slice_id = w_eval.get("slice_id", "sst-1-sd-010203")
+                if attr_res and attr_res.verdict == "likely_benign":
+                    if slice_id not in self._legitimate_windows_by_slice:
+                        self._legitimate_windows_by_slice[slice_id] = []
+                    self._legitimate_windows_by_slice[slice_id].append(w_eval)
+
+                    # When likely_benign drift persists (>= 3 windows) and no candidate created yet during this run
+                    if (
+                        len(self._legitimate_windows_by_slice[slice_id]) >= 3
+                        and not self._candidate_created_by_slice.get(slice_id, False)
+                    ):
+                        from .governance import governance_service
+                        try:
+                            cand_bundle, cand_row = governance_service.create_candidate_for_slice(
+                                slice_id=slice_id,
+                                adaptation_windows=self._legitimate_windows_by_slice[slice_id],
+                                db=db,
+                            )
+                            # Run governance pipeline automatically; promotion left PENDING
+                            governance_service.evaluate_candidate(
+                                candidate_id=cand_row.id,
+                                db=db,
+                                volume_multiplier=attr_res.scaling_factor_k,
+                                adaptation_windows=self._legitimate_windows_by_slice[slice_id],
+                            )
+                            self._candidate_created_by_slice[slice_id] = True
+                            logger.info(
+                                "Automatically generated and evaluated shadow candidate %s during replay for slice %s.",
+                                cand_row.candidate_version,
+                                slice_id,
+                            )
+                        except Exception as cand_err:
+                            logger.warning("Error during automatic candidate creation: %s", cand_err)
             except Exception as pipe_err:
                 logger.warning("Error running detection/attribution during replay: %s", pipe_err)
         except Exception as e:
@@ -175,6 +212,8 @@ class ReplayService:
         self.current_window_index = 0
         self.status = "RUNNING"
         self.current_timestamp = datetime.now(timezone.utc)
+        self._legitimate_windows_by_slice.clear()
+        self._candidate_created_by_slice.clear()
 
         # Reset ADWIN trackers for fresh scenario run
         try:
