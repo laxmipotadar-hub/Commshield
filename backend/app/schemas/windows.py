@@ -55,6 +55,7 @@ class CanonicalTrafficWindow(BaseModel):
     raw_counters: Dict[str, Any]
     ratio_features: Dict[str, Any]
     composition_vector: Dict[str, Any]
+    is_placeholder: Optional[bool] = None
 
 
 class PaginatedWindowsResponse(BaseModel):
@@ -62,6 +63,7 @@ class PaginatedWindowsResponse(BaseModel):
     total: int
     limit: int
     offset: int
+    is_placeholder: Optional[bool] = None
 
 
 class AttributionSummary(BaseModel):
@@ -78,3 +80,4 @@ class ExplainabilityResponse(BaseModel):
     shap_values: Dict[str, float]
     hypothesis: str
     attribution_summary: AttributionSummary
+    is_placeholder: Optional[bool] = None

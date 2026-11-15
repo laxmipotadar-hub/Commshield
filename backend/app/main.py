@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .api import api_router
 from .database import Base, engine
 from . import models  # noqa: F401
 
@@ -27,6 +28,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Register API v1 routers
+app.include_router(api_router)
 
 
 @app.get("/api/health")
