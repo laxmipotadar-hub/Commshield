@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-11-15T10:59:08.246477+00:00",
+  "seed": 42,
+  "window_duration_sec": 60,
+  "scenarios": {
+    "stable_benign": {
+      "file": "stable_benign.json",
+      "slice_id": "sst-1-sd-010203",
+      "total_windows": 60,
+      "attack_windows": 0,
+      "has_growth": false
+    },
+    "legitimate_growth": {
+      "file": "legitimate_growth.json",
+      "slice_id": "sst-1-sd-010203",
+      "total_windows": 60,
+      "attack_windows": 0,
+      "has_growth": true
+    },
+    "slow_attack_ramp": {
+      "file": "slow_attack_ramp.json",
+      "slice_id": "sst-1-sd-010203",
+      "total_windows": 60,
+      "attack_windows": 42,
+      "has_growth": false
+    },
+    "attack_in_growth": {
+      "file": "attack_in_growth.json",
+      "slice_id": "sst-1-sd-010203",
+      "total_windows": 60,
+      "attack_windows": 36,
+      "has_growth": true
+    },
+    "mimicry_attack": {
+      "file": "mimicry_attack.json",
+      "slice_id": "sst-1-sd-010203",
+      "total_windows": 60,
+      "attack_windows": 30,
+      "has_growth": false
+    }
+  },
+  "training_periods": {
+    "eMBB": {
+      "file": "training_embb.json",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "total_windows": 60,
+      "attack_windows": 0
+    },
+    "URLLC": {
+      "file": "training_urllc.json",
+      "slice_id": "sst-2-sd-020304",
+      "nf_id": "UPF-02",
+      "total_windows": 60,
+      "attack_windows": 0
+    },
+    "mMTC": {
+      "file": "training_mmtc.json",
+      "slice_id": "sst-3-sd-030405",
+      "nf_id": "UPF-03",
+      "total_windows": 60,
+      "attack_windows": 0
+    }
+  }
+}

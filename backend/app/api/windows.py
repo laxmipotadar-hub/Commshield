@@ -31,7 +31,7 @@ def list_windows(
 
     total = query.count()
     if total > 0:
-        rows = query.offset(offset).limit(limit).all()
+        rows = query.order_by(CanonicalWindow.window_start.desc()).offset(offset).limit(limit).all()
         items = [
             CanonicalTrafficWindow(
                 window_id=r.id,

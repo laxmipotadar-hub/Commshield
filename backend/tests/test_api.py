@@ -53,11 +53,13 @@ async def test_replay_start(client: AsyncClient):
     assert "total_windows" in data
     assert "speed_multiplier" in data
     assert "current_timestamp" in data
-    assert data["is_placeholder"] is True
+    assert "is_placeholder" in data
 
 
 @pytest.mark.anyio
 async def test_replay_pause(client: AsyncClient):
+    # Ensure replay is running first
+    await client.post("/api/v1/replay/start", json={"dataset_id": "stable_benign", "speed_multiplier": 1.0})
     response = await client.post("/api/v1/replay/pause")
     assert response.status_code == 200
     data = response.json()
@@ -67,11 +69,14 @@ async def test_replay_pause(client: AsyncClient):
     assert "total_windows" in data
     assert "speed_multiplier" in data
     assert "current_timestamp" in data
-    assert data["is_placeholder"] is True
+    assert "is_placeholder" in data
 
 
 @pytest.mark.anyio
 async def test_replay_resume(client: AsyncClient):
+    # Start and pause first
+    await client.post("/api/v1/replay/start", json={"dataset_id": "stable_benign", "speed_multiplier": 1.0})
+    await client.post("/api/v1/replay/pause")
     response = await client.post("/api/v1/replay/resume")
     assert response.status_code == 200
     data = response.json()
@@ -81,7 +86,7 @@ async def test_replay_resume(client: AsyncClient):
     assert "total_windows" in data
     assert "speed_multiplier" in data
     assert "current_timestamp" in data
-    assert data["is_placeholder"] is True
+    assert "is_placeholder" in data
 
 
 @pytest.mark.anyio
@@ -95,7 +100,7 @@ async def test_replay_stop(client: AsyncClient):
     assert "total_windows" in data
     assert "speed_multiplier" in data
     assert "current_timestamp" in data
-    assert data["is_placeholder"] is True
+    assert "is_placeholder" in data
 
 
 @pytest.mark.anyio
@@ -109,7 +114,7 @@ async def test_replay_status(client: AsyncClient):
     assert "total_windows" in data
     assert "speed_multiplier" in data
     assert "current_timestamp" in data
-    assert data["is_placeholder"] is True
+    assert "is_placeholder" in data
 
 
 @pytest.mark.anyio
@@ -132,7 +137,7 @@ async def test_get_windows(client: AsyncClient):
     assert "total" in data
     assert "limit" in data
     assert "offset" in data
-    assert data["is_placeholder"] is True
+    assert "is_placeholder" in data
     assert len(data["items"]) > 0
     item = data["items"][0]
     assert "window_id" in item

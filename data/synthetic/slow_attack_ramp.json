@@ -1,0 +1,2645 @@
+{
+  "scenario": "slow_attack_ramp",
+  "windows": [
+    {
+      "window_id": "acfa1afb-88bb-4ee4-b86d-985904d14dbe",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:00:00+00:00",
+      "window_end": "2026-11-15T08:01:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1891,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105087,
+        "nas_messages_total": 540,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194059904,
+        "total_bytes_downlink": 1099672983,
+        "total_packets": 964143,
+        "gtpu_teid_count": 1894
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0317,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.5722,
+        "bytes_per_session": 12311.06,
+        "packets_per_session": 9.17,
+        "gtpu_volume_per_ue": 684152.77,
+        "ue_hash_entropy": 7.415,
+        "new_ue_rate": 0.0375
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "5025a8ab-646d-49e1-b387-4c13303ed2da",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:01:00+00:00",
+      "window_end": "2026-11-15T08:02:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1942,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105270,
+        "nas_messages_total": 542,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195534701,
+        "total_bytes_downlink": 1108030155,
+        "total_packets": 962372,
+        "gtpu_teid_count": 1958
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0309,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.207,
+        "bytes_per_session": 12383.06,
+        "packets_per_session": 9.14,
+        "gtpu_volume_per_ue": 671248.64,
+        "ue_hash_entropy": 7.419,
+        "new_ue_rate": 0.0371
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "14bf9aab-3ce3-4a62-b35a-3a7ef1fa8001",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:02:00+00:00",
+      "window_end": "2026-11-15T08:03:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1885,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 104827,
+        "nas_messages_total": 539,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193497343,
+        "total_bytes_downlink": 1096485153,
+        "total_packets": 957654,
+        "gtpu_teid_count": 1877
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0318,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6111,
+        "bytes_per_session": 12305.82,
+        "packets_per_session": 9.14,
+        "gtpu_volume_per_ue": 684340.85,
+        "ue_hash_entropy": 7.424,
+        "new_ue_rate": 0.0355
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "48e222c9-0fe7-43d6-80ee-824f926cb4c1",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:03:00+00:00",
+      "window_end": "2026-11-15T08:04:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1893,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 104904,
+        "nas_messages_total": 539,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194113552,
+        "total_bytes_downlink": 1099976986,
+        "total_packets": 965570,
+        "gtpu_teid_count": 1878
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0317,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.4168,
+        "bytes_per_session": 12335.95,
+        "packets_per_session": 9.2,
+        "gtpu_volume_per_ue": 683618.88,
+        "ue_hash_entropy": 7.419,
+        "new_ue_rate": 0.0338
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "d5a2468f-5a99-415d-9a6e-5880f4fcf9c0",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:04:00+00:00",
+      "window_end": "2026-11-15T08:05:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1861,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 104887,
+        "nas_messages_total": 540,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 192363089,
+        "total_bytes_downlink": 1090057702,
+        "total_packets": 948225,
+        "gtpu_teid_count": 1861
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0322,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.3606,
+        "bytes_per_session": 12226.69,
+        "packets_per_session": 9.04,
+        "gtpu_volume_per_ue": 689103.06,
+        "ue_hash_entropy": 7.429,
+        "new_ue_rate": 0.0387
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "3759b725-33b8-44de-8d32-24a92b2226c7",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:05:00+00:00",
+      "window_end": "2026-11-15T08:06:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1891,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105830,
+        "nas_messages_total": 540,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194771133,
+        "total_bytes_downlink": 1103703258,
+        "total_packets": 958902,
+        "gtpu_teid_count": 1864
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0317,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.9651,
+        "bytes_per_session": 12269.44,
+        "packets_per_session": 9.06,
+        "gtpu_volume_per_ue": 686660.18,
+        "ue_hash_entropy": 7.412,
+        "new_ue_rate": 0.0397
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "502239f7-305a-4903-9264-8fcd3491ef78",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:06:00+00:00",
+      "window_end": "2026-11-15T08:07:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1908,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105339,
+        "nas_messages_total": 544,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194929200,
+        "total_bytes_downlink": 1104599001,
+        "total_packets": 967402,
+        "gtpu_teid_count": 1896
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0314,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.2091,
+        "bytes_per_session": 12336.63,
+        "packets_per_session": 9.18,
+        "gtpu_volume_per_ue": 681094.44,
+        "ue_hash_entropy": 7.414,
+        "new_ue_rate": 0.0388
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "216239ff-532f-40a2-8533-020aefab6e0d",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:07:00+00:00",
+      "window_end": "2026-11-15T08:08:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1861,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 104476,
+        "nas_messages_total": 538,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 192935700,
+        "total_bytes_downlink": 1093302516,
+        "total_packets": 956209,
+        "gtpu_teid_count": 1835
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0322,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.1397,
+        "bytes_per_session": 12311.33,
+        "packets_per_session": 9.15,
+        "gtpu_volume_per_ue": 691154.33,
+        "ue_hash_entropy": 7.415,
+        "new_ue_rate": 0.036
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "8e15d646-7b97-4593-9e78-e200986d05bd",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:08:00+00:00",
+      "window_end": "2026-11-15T08:09:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1900,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105642,
+        "nas_messages_total": 541,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194375593,
+        "total_bytes_downlink": 1101461893,
+        "total_packets": 965897,
+        "gtpu_teid_count": 1918
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0316,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6011,
+        "bytes_per_session": 12266.31,
+        "packets_per_session": 9.14,
+        "gtpu_volume_per_ue": 682019.73,
+        "ue_hash_entropy": 7.422,
+        "new_ue_rate": 0.0416
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "6305a931-5690-4043-87d5-c829fbed0d82",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:09:00+00:00",
+      "window_end": "2026-11-15T08:10:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1897,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105621,
+        "nas_messages_total": 539,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193503017,
+        "total_bytes_downlink": 1096517296,
+        "total_packets": 952847,
+        "gtpu_teid_count": 1873
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0316,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6779,
+        "bytes_per_session": 12213.67,
+        "packets_per_session": 9.02,
+        "gtpu_volume_per_ue": 680031.79,
+        "ue_hash_entropy": 7.419,
+        "new_ue_rate": 0.0364
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "d2ecac00-1e6f-4a47-ba54-22873337fc6f",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:10:00+00:00",
+      "window_end": "2026-11-15T08:11:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1883,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105306,
+        "nas_messages_total": 541,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193748024,
+        "total_bytes_downlink": 1097905666,
+        "total_packets": 969833,
+        "gtpu_teid_count": 1874
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0319,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.9246,
+        "bytes_per_session": 12265.72,
+        "packets_per_session": 9.21,
+        "gtpu_volume_per_ue": 685955.23,
+        "ue_hash_entropy": 7.407,
+        "new_ue_rate": 0.0377
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "baf6ea2c-2492-467c-b9f3-bccf73c6e387",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:11:00+00:00",
+      "window_end": "2026-11-15T08:12:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1901,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 104764,
+        "nas_messages_total": 537,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 192967093,
+        "total_bytes_downlink": 1093480367,
+        "total_packets": 949564,
+        "gtpu_teid_count": 1897
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0316,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.1099,
+        "bytes_per_session": 12279.48,
+        "packets_per_session": 9.06,
+        "gtpu_volume_per_ue": 676721.44,
+        "ue_hash_entropy": 7.42,
+        "new_ue_rate": 0.0405
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "a3adae29-753c-41da-87e5-a0ea462b115f",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:12:00+00:00",
+      "window_end": "2026-11-15T08:13:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1898,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105439,
+        "nas_messages_total": 543,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193895019,
+        "total_bytes_downlink": 1098738623,
+        "total_packets": 948427,
+        "gtpu_teid_count": 1876
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0316,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.5527,
+        "bytes_per_session": 12259.54,
+        "packets_per_session": 9.0,
+        "gtpu_volume_per_ue": 681050.39,
+        "ue_hash_entropy": 7.424,
+        "new_ue_rate": 0.0369
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "c2329188-d18e-4961-808b-f3510e33127c",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:13:00+00:00",
+      "window_end": "2026-11-15T08:14:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1869,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105114,
+        "nas_messages_total": 540,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193718283,
+        "total_bytes_downlink": 1097737141,
+        "total_packets": 959105,
+        "gtpu_teid_count": 1855
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0321,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.2408,
+        "bytes_per_session": 12286.24,
+        "packets_per_session": 9.12,
+        "gtpu_volume_per_ue": 690987.39,
+        "ue_hash_entropy": 7.409,
+        "new_ue_rate": 0.0375
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "42c165c1-e8bd-4e30-91f1-ee5149817483",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:14:00+00:00",
+      "window_end": "2026-11-15T08:15:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1879,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106009,
+        "nas_messages_total": 541,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194977040,
+        "total_bytes_downlink": 1104870072,
+        "total_packets": 962706,
+        "gtpu_teid_count": 1886
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0319,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.4178,
+        "bytes_per_session": 12261.67,
+        "packets_per_session": 9.08,
+        "gtpu_volume_per_ue": 691776.0,
+        "ue_hash_entropy": 7.415,
+        "new_ue_rate": 0.0362
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "bf1b551f-2fbe-4144-a39e-9b34e364b845",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:15:00+00:00",
+      "window_end": "2026-11-15T08:16:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1953,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106275,
+        "nas_messages_total": 541,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195287931,
+        "total_bytes_downlink": 1106631785,
+        "total_packets": 967859,
+        "gtpu_teid_count": 1946
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0307,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.4163,
+        "bytes_per_session": 12250.48,
+        "packets_per_session": 9.11,
+        "gtpu_volume_per_ue": 666625.56,
+        "ue_hash_entropy": 7.431,
+        "new_ue_rate": 0.0353
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "103030e9-a847-4ce0-bd3e-273bc632dfb4",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:16:00+00:00",
+      "window_end": "2026-11-15T08:17:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1937,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105655,
+        "nas_messages_total": 543,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194919401,
+        "total_bytes_downlink": 1104543484,
+        "total_packets": 966317,
+        "gtpu_teid_count": 1895
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.031,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.5457,
+        "bytes_per_session": 12299.11,
+        "packets_per_session": 9.15,
+        "gtpu_volume_per_ue": 670863.65,
+        "ue_hash_entropy": 7.42,
+        "new_ue_rate": 0.0372
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "ec1d7b2a-beea-47df-af47-9972c8dd8086",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:17:00+00:00",
+      "window_end": "2026-11-15T08:18:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1903,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105087,
+        "nas_messages_total": 537,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193396400,
+        "total_bytes_downlink": 1095913117,
+        "total_packets": 966302,
+        "gtpu_teid_count": 1883
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.2218,
+        "bytes_per_session": 12268.97,
+        "packets_per_session": 9.2,
+        "gtpu_volume_per_ue": 677514.2,
+        "ue_hash_entropy": 7.41,
+        "new_ue_rate": 0.0357
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": false,
+        "attack_type": null,
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "7342a84b-7e97-4d30-8cad-4ca8da01d357",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:18:00+00:00",
+      "window_end": "2026-11-15T08:19:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1903,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105214,
+        "nas_messages_total": 541,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194749098,
+        "total_bytes_downlink": 1103578412,
+        "total_packets": 970859,
+        "gtpu_teid_count": 1884
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.2885,
+        "bytes_per_session": 12339.87,
+        "packets_per_session": 9.23,
+        "gtpu_volume_per_ue": 682253.03,
+        "ue_hash_entropy": 7.4,
+        "new_ue_rate": 0.0373
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "4536115b-c98e-46e8-9072-3a76cb101778",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:19:00+00:00",
+      "window_end": "2026-11-15T08:20:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1896,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106268,
+        "nas_messages_total": 543,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196881585,
+        "total_bytes_downlink": 1115662489,
+        "total_packets": 980434,
+        "gtpu_teid_count": 1903
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0316,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.0485,
+        "bytes_per_session": 12351.26,
+        "packets_per_session": 9.23,
+        "gtpu_volume_per_ue": 692270.08,
+        "ue_hash_entropy": 7.336,
+        "new_ue_rate": 0.0401
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "af25c6ad-8099-4464-a6e0-1a4b6c1c1d12",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:20:00+00:00",
+      "window_end": "2026-11-15T08:21:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1944,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106383,
+        "nas_messages_total": 545,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195662746,
+        "total_bytes_downlink": 1108755756,
+        "total_packets": 960563,
+        "gtpu_teid_count": 1945
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0309,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.7238,
+        "bytes_per_session": 12261.53,
+        "packets_per_session": 9.03,
+        "gtpu_volume_per_ue": 670997.17,
+        "ue_hash_entropy": 7.287,
+        "new_ue_rate": 0.0355
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "efb68a1e-a04e-44dc-94ac-6019cbb2451b",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:21:00+00:00",
+      "window_end": "2026-11-15T08:22:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1872,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105398,
+        "nas_messages_total": 541,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195557081,
+        "total_bytes_downlink": 1108156983,
+        "total_packets": 959543,
+        "gtpu_teid_count": 1881
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0321,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.3024,
+        "bytes_per_session": 12369.44,
+        "packets_per_session": 9.1,
+        "gtpu_volume_per_ue": 696428.45,
+        "ue_hash_entropy": 7.222,
+        "new_ue_rate": 0.0374
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "b521725b-ca3b-49f9-9320-e3bf519522f5",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:22:00+00:00",
+      "window_end": "2026-11-15T08:23:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1938,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106203,
+        "nas_messages_total": 543,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195186106,
+        "total_bytes_downlink": 1106054785,
+        "total_packets": 970869,
+        "gtpu_teid_count": 1903
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.031,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.8003,
+        "bytes_per_session": 12252.39,
+        "packets_per_session": 9.14,
+        "gtpu_volume_per_ue": 671434.93,
+        "ue_hash_entropy": 7.161,
+        "new_ue_rate": 0.0382
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "40888581-9747-498b-891b-58cd412c11fe",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:23:00+00:00",
+      "window_end": "2026-11-15T08:24:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1955,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105748,
+        "nas_messages_total": 539,
+        "nas_failures": 0,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195221639,
+        "total_bytes_downlink": 1106256135,
+        "total_packets": 969223,
+        "gtpu_teid_count": 1913
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0307,
+        "nas_failure_ratio": 0.0,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.091,
+        "bytes_per_session": 12307.35,
+        "packets_per_session": 9.17,
+        "gtpu_volume_per_ue": 665717.53,
+        "ue_hash_entropy": 7.104,
+        "new_ue_rate": 0.0368
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "6622c2a6-6e31-4e0f-84f5-ab6d9fcde381",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:24:00+00:00",
+      "window_end": "2026-11-15T08:25:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1982,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106733,
+        "nas_messages_total": 544,
+        "nas_failures": 5,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197268228,
+        "total_bytes_downlink": 1117853509,
+        "total_packets": 971512,
+        "gtpu_teid_count": 1939
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0303,
+        "nas_failure_ratio": 0.0092,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 53.8512,
+        "bytes_per_session": 12321.6,
+        "packets_per_session": 9.1,
+        "gtpu_volume_per_ue": 663532.66,
+        "ue_hash_entropy": 7.035,
+        "new_ue_rate": 0.0378
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9993,
+        "failure_ratio": 0.0,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "a6200ea2-5bb3-493b-935e-4c44ec9f268f",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:25:00+00:00",
+      "window_end": "2026-11-15T08:26:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1939,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105502,
+        "nas_messages_total": 542,
+        "nas_failures": 58,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195870988,
+        "total_bytes_downlink": 1109935758,
+        "total_packets": 979338,
+        "gtpu_teid_count": 1927
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0309,
+        "nas_failure_ratio": 0.107,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.4105,
+        "bytes_per_session": 12377.08,
+        "packets_per_session": 9.28,
+        "gtpu_volume_per_ue": 673443.4,
+        "ue_hash_entropy": 6.972,
+        "new_ue_rate": 0.0397
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0005,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "72aab588-63c8-4757-b144-de490bba0ca1",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:26:00+00:00",
+      "window_end": "2026-11-15T08:27:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1915,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105891,
+        "nas_messages_total": 540,
+        "nas_failures": 57,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195290203,
+        "total_bytes_downlink": 1106644672,
+        "total_packets": 957806,
+        "gtpu_teid_count": 1891
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0313,
+        "nas_failure_ratio": 0.1056,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.2956,
+        "bytes_per_session": 12295.05,
+        "packets_per_session": 9.05,
+        "gtpu_volume_per_ue": 679861.55,
+        "ue_hash_entropy": 6.914,
+        "new_ue_rate": 0.0381
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0005,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "6f8024dc-b8e0-4732-bf4d-962a7ba8f066",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:27:00+00:00",
+      "window_end": "2026-11-15T08:28:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1904,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106385,
+        "nas_messages_total": 541,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195779198,
+        "total_bytes_downlink": 1109415669,
+        "total_packets": 968289,
+        "gtpu_teid_count": 1863
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.1109,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.8745,
+        "bytes_per_session": 12268.6,
+        "packets_per_session": 9.1,
+        "gtpu_volume_per_ue": 685501.51,
+        "ue_hash_entropy": 6.872,
+        "new_ue_rate": 0.0378
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "76925fac-6b47-4b5d-9f07-5c8e73709d7c",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:28:00+00:00",
+      "window_end": "2026-11-15T08:29:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1895,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105863,
+        "nas_messages_total": 541,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194797375,
+        "total_bytes_downlink": 1103851976,
+        "total_packets": 966821,
+        "gtpu_teid_count": 1893
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0317,
+        "nas_failure_ratio": 0.1109,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.8644,
+        "bytes_per_session": 12267.26,
+        "packets_per_session": 9.13,
+        "gtpu_volume_per_ue": 685303.09,
+        "ue_hash_entropy": 6.8,
+        "new_ue_rate": 0.038
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "2dc149ea-aa81-4786-8a6e-e1655f661457",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:29:00+00:00",
+      "window_end": "2026-11-15T08:30:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1960,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105842,
+        "nas_messages_total": 545,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196462717,
+        "total_bytes_downlink": 1113288929,
+        "total_packets": 971829,
+        "gtpu_teid_count": 1975
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0306,
+        "nas_failure_ratio": 0.1101,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.001,
+        "bytes_per_session": 12374.59,
+        "packets_per_session": 9.18,
+        "gtpu_volume_per_ue": 668240.64,
+        "ue_hash_entropy": 6.73,
+        "new_ue_rate": 0.0352
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "af929049-aa47-4c71-9857-0b3b36b28363",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:30:00+00:00",
+      "window_end": "2026-11-15T08:31:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1922,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106801,
+        "nas_messages_total": 545,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197559127,
+        "total_bytes_downlink": 1119501898,
+        "total_packets": 972273,
+        "gtpu_teid_count": 1902
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0312,
+        "nas_failure_ratio": 0.1101,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.5676,
+        "bytes_per_session": 12331.92,
+        "packets_per_session": 9.1,
+        "gtpu_volume_per_ue": 685255.48,
+        "ue_hash_entropy": 6.67,
+        "new_ue_rate": 0.038
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "6a761e87-ff0c-473b-9bf5-9b8a75725d44",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:31:00+00:00",
+      "window_end": "2026-11-15T08:32:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1896,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105761,
+        "nas_messages_total": 542,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194933538,
+        "total_bytes_downlink": 1104623593,
+        "total_packets": 960324,
+        "gtpu_teid_count": 1898
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0316,
+        "nas_failure_ratio": 0.1107,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.7811,
+        "bytes_per_session": 12287.68,
+        "packets_per_session": 9.08,
+        "gtpu_volume_per_ue": 685420.43,
+        "ue_hash_entropy": 6.605,
+        "new_ue_rate": 0.0348
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "9c68cb0e-6ae1-4d38-b64e-6d564cd1f2b7",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:32:00+00:00",
+      "window_end": "2026-11-15T08:33:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1886,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106472,
+        "nas_messages_total": 547,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195758221,
+        "total_bytes_downlink": 1109296771,
+        "total_packets": 970049,
+        "gtpu_teid_count": 1897
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0318,
+        "nas_failure_ratio": 0.1097,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.4539,
+        "bytes_per_session": 12257.26,
+        "packets_per_session": 9.11,
+        "gtpu_volume_per_ue": 691969.77,
+        "ue_hash_entropy": 6.553,
+        "new_ue_rate": 0.0424
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "19579880-07fa-4997-b288-004cbd67e6f3",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:33:00+00:00",
+      "window_end": "2026-11-15T08:34:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1892,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105323,
+        "nas_messages_total": 543,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 193958020,
+        "total_bytes_downlink": 1099095615,
+        "total_packets": 955530,
+        "gtpu_teid_count": 1891
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0317,
+        "nas_failure_ratio": 0.1105,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6675,
+        "bytes_per_session": 12277.03,
+        "packets_per_session": 9.07,
+        "gtpu_volume_per_ue": 683432.15,
+        "ue_hash_entropy": 6.487,
+        "new_ue_rate": 0.0386
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "32b58087-5714-4e28-b39d-80ad07cef5c7",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:34:00+00:00",
+      "window_end": "2026-11-15T08:35:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1914,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105772,
+        "nas_messages_total": 542,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 194062164,
+        "total_bytes_downlink": 1099685772,
+        "total_packets": 965258,
+        "gtpu_teid_count": 1865
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0313,
+        "nas_failure_ratio": 0.1107,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.2623,
+        "bytes_per_session": 12231.48,
+        "packets_per_session": 9.13,
+        "gtpu_volume_per_ue": 675939.36,
+        "ue_hash_entropy": 6.421,
+        "new_ue_rate": 0.0397
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "d13fc60d-fa47-4195-b431-6649be4a9c46",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:35:00+00:00",
+      "window_end": "2026-11-15T08:36:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1907,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106258,
+        "nas_messages_total": 544,
+        "nas_failures": 60,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195146617,
+        "total_bytes_downlink": 1105831021,
+        "total_packets": 981256,
+        "gtpu_teid_count": 1905
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.1103,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.72,
+        "bytes_per_session": 12243.57,
+        "packets_per_session": 9.23,
+        "gtpu_volume_per_ue": 682211.66,
+        "ue_hash_entropy": 6.361,
+        "new_ue_rate": 0.0367
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "01a8bf64-e644-4a0d-a46d-7c0fd0c88f08",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:36:00+00:00",
+      "window_end": "2026-11-15T08:37:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1892,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106560,
+        "nas_messages_total": 542,
+        "nas_failures": 63,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195492148,
+        "total_bytes_downlink": 1107789027,
+        "total_packets": 965807,
+        "gtpu_teid_count": 1896
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0317,
+        "nas_failure_ratio": 0.1162,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.3214,
+        "bytes_per_session": 12230.49,
+        "packets_per_session": 9.06,
+        "gtpu_volume_per_ue": 688837.83,
+        "ue_hash_entropy": 6.314,
+        "new_ue_rate": 0.0381
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9988,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "4d89eb57-386a-4db4-aa84-ed41c5237169",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:37:00+00:00",
+      "window_end": "2026-11-15T08:38:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1960,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106663,
+        "nas_messages_total": 545,
+        "nas_failures": 65,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196051239,
+        "total_bytes_downlink": 1110957209,
+        "total_packets": 963842,
+        "gtpu_teid_count": 1970
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0306,
+        "nas_failure_ratio": 0.1193,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.4199,
+        "bytes_per_session": 12253.63,
+        "packets_per_session": 9.04,
+        "gtpu_volume_per_ue": 666841.04,
+        "ue_hash_entropy": 6.251,
+        "new_ue_rate": 0.0393
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9987,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "e9661cd0-081b-490f-809d-e86e3e90ac23",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:38:00+00:00",
+      "window_end": "2026-11-15T08:39:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1951,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106629,
+        "nas_messages_total": 546,
+        "nas_failures": 67,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196860229,
+        "total_bytes_downlink": 1115541440,
+        "total_packets": 975977,
+        "gtpu_teid_count": 1944
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0308,
+        "nas_failure_ratio": 0.1227,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.6535,
+        "bytes_per_session": 12308.11,
+        "packets_per_session": 9.15,
+        "gtpu_volume_per_ue": 672681.53,
+        "ue_hash_entropy": 6.193,
+        "new_ue_rate": 0.0359
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9987,
+        "failure_ratio": 0.0006,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "6fcf9ea7-dc31-4987-8100-0186d9fdb181",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:39:00+00:00",
+      "window_end": "2026-11-15T08:40:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1915,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106250,
+        "nas_messages_total": 542,
+        "nas_failures": 118,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195026664,
+        "total_bytes_downlink": 1105151278,
+        "total_packets": 966151,
+        "gtpu_teid_count": 1872
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0313,
+        "nas_failure_ratio": 0.2177,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.483,
+        "bytes_per_session": 12236.97,
+        "packets_per_session": 9.09,
+        "gtpu_volume_per_ue": 678944.1,
+        "ue_hash_entropy": 6.131,
+        "new_ue_rate": 0.0376
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "fe6c3a25-83e1-49e1-baf7-15d471a06a9f",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:40:00+00:00",
+      "window_end": "2026-11-15T08:41:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1887,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106418,
+        "nas_messages_total": 542,
+        "nas_failures": 119,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195613481,
+        "total_bytes_downlink": 1108476594,
+        "total_packets": 978426,
+        "gtpu_teid_count": 1899
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0318,
+        "nas_failure_ratio": 0.2196,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.3953,
+        "bytes_per_session": 12254.41,
+        "packets_per_session": 9.19,
+        "gtpu_volume_per_ue": 691091.72,
+        "ue_hash_entropy": 6.07,
+        "new_ue_rate": 0.0382
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "2c7bd5d8-9480-4794-8953-25e57a540f82",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:41:00+00:00",
+      "window_end": "2026-11-15T08:42:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1924,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106758,
+        "nas_messages_total": 544,
+        "nas_failures": 119,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197465357,
+        "total_bytes_downlink": 1118970543,
+        "total_packets": 968622,
+        "gtpu_teid_count": 1914
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0312,
+        "nas_failure_ratio": 0.2188,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.4875,
+        "bytes_per_session": 12331.03,
+        "packets_per_session": 9.07,
+        "gtpu_volume_per_ue": 684218.24,
+        "ue_hash_entropy": 6.011,
+        "new_ue_rate": 0.039
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "bc4c17c3-525d-4961-9787-af516dcd4e01",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:42:00+00:00",
+      "window_end": "2026-11-15T08:43:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1938,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 105990,
+        "nas_messages_total": 540,
+        "nas_failures": 120,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196178183,
+        "total_bytes_downlink": 1111676582,
+        "total_packets": 970665,
+        "gtpu_teid_count": 1942
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.031,
+        "nas_failure_ratio": 0.2222,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.6904,
+        "bytes_per_session": 12339.42,
+        "packets_per_session": 9.16,
+        "gtpu_volume_per_ue": 674847.66,
+        "ue_hash_entropy": 5.956,
+        "new_ue_rate": 0.0356
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "5303f2f2-0cc0-4931-89aa-b9c334f66027",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:43:00+00:00",
+      "window_end": "2026-11-15T08:44:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1911,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106698,
+        "nas_messages_total": 543,
+        "nas_failures": 120,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197532300,
+        "total_bytes_downlink": 1119349896,
+        "total_packets": 981425,
+        "gtpu_teid_count": 1893
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0314,
+        "nas_failure_ratio": 0.221,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.8336,
+        "bytes_per_session": 12342.15,
+        "packets_per_session": 9.2,
+        "gtpu_volume_per_ue": 689106.33,
+        "ue_hash_entropy": 5.904,
+        "new_ue_rate": 0.0366
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "de473950-de19-4259-ba3b-1e3b3e24c924",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:44:00+00:00",
+      "window_end": "2026-11-15T08:45:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1906,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106512,
+        "nas_messages_total": 541,
+        "nas_failures": 120,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196498932,
+        "total_bytes_downlink": 1113494138,
+        "total_packets": 971966,
+        "gtpu_teid_count": 1894
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.2218,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.8825,
+        "bytes_per_session": 12299.02,
+        "packets_per_session": 9.13,
+        "gtpu_volume_per_ue": 687299.62,
+        "ue_hash_entropy": 5.825,
+        "new_ue_rate": 0.0367
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "1d80b139-6608-42a3-9488-053db85be6c1",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:45:00+00:00",
+      "window_end": "2026-11-15T08:46:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1930,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106933,
+        "nas_messages_total": 543,
+        "nas_failures": 120,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195058673,
+        "total_bytes_downlink": 1105332696,
+        "total_packets": 972788,
+        "gtpu_teid_count": 1902
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0311,
+        "nas_failure_ratio": 0.221,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.4057,
+        "bytes_per_session": 12160.81,
+        "packets_per_session": 9.1,
+        "gtpu_volume_per_ue": 673777.91,
+        "ue_hash_entropy": 5.777,
+        "new_ue_rate": 0.0378
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "d0424cc6-755a-490f-8905-366d53b95943",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:46:00+00:00",
+      "window_end": "2026-11-15T08:47:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1938,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106161,
+        "nas_messages_total": 544,
+        "nas_failures": 120,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195607197,
+        "total_bytes_downlink": 1108440965,
+        "total_packets": 974418,
+        "gtpu_teid_count": 1911
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.031,
+        "nas_failure_ratio": 0.2206,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.7786,
+        "bytes_per_session": 12283.68,
+        "packets_per_session": 9.18,
+        "gtpu_volume_per_ue": 672883.47,
+        "ue_hash_entropy": 5.703,
+        "new_ue_rate": 0.0361
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "99ca18f6-7a02-48c6-bc7f-e1c861b09604",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:47:00+00:00",
+      "window_end": "2026-11-15T08:48:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1942,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 108210,
+        "nas_messages_total": 554,
+        "nas_failures": 120,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 198165577,
+        "total_bytes_downlink": 1122938466,
+        "total_packets": 990455,
+        "gtpu_teid_count": 1951
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0309,
+        "nas_failure_ratio": 0.2166,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.7209,
+        "bytes_per_session": 12208.71,
+        "packets_per_session": 9.15,
+        "gtpu_volume_per_ue": 680280.15,
+        "ue_hash_entropy": 5.647,
+        "new_ue_rate": 0.0386
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0011,
+        "other_signalling_ratio": 0.0001
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "090b5eeb-0a98-4f30-a069-cd14f8ce5b45",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:48:00+00:00",
+      "window_end": "2026-11-15T08:49:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1921,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106857,
+        "nas_messages_total": 546,
+        "nas_failures": 126,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196074850,
+        "total_bytes_downlink": 1111090966,
+        "total_packets": 969876,
+        "gtpu_teid_count": 1923
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0312,
+        "nas_failure_ratio": 0.2308,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6257,
+        "bytes_per_session": 12232.85,
+        "packets_per_session": 9.08,
+        "gtpu_volume_per_ue": 680461.12,
+        "ue_hash_entropy": 5.586,
+        "new_ue_rate": 0.0396
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0012,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "4adef559-bc88-4924-ab21-b39010083a1c",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:49:00+00:00",
+      "window_end": "2026-11-15T08:50:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1904,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106029,
+        "nas_messages_total": 545,
+        "nas_failures": 126,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 195018130,
+        "total_bytes_downlink": 1105102921,
+        "total_packets": 970598,
+        "gtpu_teid_count": 1880
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.2312,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6875,
+        "bytes_per_session": 12261.94,
+        "packets_per_session": 9.15,
+        "gtpu_volume_per_ue": 682836.69,
+        "ue_hash_entropy": 5.523,
+        "new_ue_rate": 0.0404
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0012,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "76c682a8-7017-461c-a909-c67e0d6681a1",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:50:00+00:00",
+      "window_end": "2026-11-15T08:51:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1912,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107425,
+        "nas_messages_total": 545,
+        "nas_failures": 125,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 198839230,
+        "total_bytes_downlink": 1126755812,
+        "total_packets": 991837,
+        "gtpu_teid_count": 1898
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0314,
+        "nas_failure_ratio": 0.2294,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.1846,
+        "bytes_per_session": 12339.73,
+        "packets_per_session": 9.23,
+        "gtpu_volume_per_ue": 693302.85,
+        "ue_hash_entropy": 5.464,
+        "new_ue_rate": 0.0392
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0012,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "c5c9c355-f263-4dda-833e-c583e77409ec",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:51:00+00:00",
+      "window_end": "2026-11-15T08:52:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1975,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106568,
+        "nas_messages_total": 544,
+        "nas_failures": 126,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196369529,
+        "total_bytes_downlink": 1112760831,
+        "total_packets": 968483,
+        "gtpu_teid_count": 1924
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0304,
+        "nas_failure_ratio": 0.2316,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 53.9585,
+        "bytes_per_session": 12284.46,
+        "packets_per_session": 9.09,
+        "gtpu_volume_per_ue": 662850.82,
+        "ue_hash_entropy": 5.414,
+        "new_ue_rate": 0.038
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9982,
+        "failure_ratio": 0.0012,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "919cb521-565a-42cf-b198-8f048bd7a584",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:52:00+00:00",
+      "window_end": "2026-11-15T08:53:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1920,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107784,
+        "nas_messages_total": 548,
+        "nas_failures": 180,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197485540,
+        "total_bytes_downlink": 1119084919,
+        "total_packets": 973080,
+        "gtpu_teid_count": 1916
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0312,
+        "nas_failure_ratio": 0.3285,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.1375,
+        "bytes_per_session": 12214.9,
+        "packets_per_session": 9.03,
+        "gtpu_volume_per_ue": 685713.78,
+        "ue_hash_entropy": 5.347,
+        "new_ue_rate": 0.0375
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "e4520e45-c08b-4eab-98d1-f82dd634475b",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:53:00+00:00",
+      "window_end": "2026-11-15T08:54:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1914,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107088,
+        "nas_messages_total": 545,
+        "nas_failures": 179,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196701609,
+        "total_bytes_downlink": 1114642642,
+        "total_packets": 1000403,
+        "gtpu_teid_count": 1918
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0313,
+        "nas_failure_ratio": 0.3284,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.9498,
+        "bytes_per_session": 12245.48,
+        "packets_per_session": 9.34,
+        "gtpu_volume_per_ue": 685132.84,
+        "ue_hash_entropy": 5.286,
+        "new_ue_rate": 0.0387
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "5d9411e7-7f5c-4ef4-adb7-d05b9fce4fcd",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:54:00+00:00",
+      "window_end": "2026-11-15T08:55:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1903,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107059,
+        "nas_messages_total": 546,
+        "nas_failures": 179,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197531711,
+        "total_bytes_downlink": 1119346551,
+        "total_packets": 974637,
+        "gtpu_teid_count": 1910
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.3278,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.258,
+        "bytes_per_session": 12300.49,
+        "packets_per_session": 9.1,
+        "gtpu_volume_per_ue": 692001.19,
+        "ue_hash_entropy": 5.203,
+        "new_ue_rate": 0.0394
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "08255c58-2a9b-42dc-80c8-109480b00995",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:55:00+00:00",
+      "window_end": "2026-11-15T08:56:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1919,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106717,
+        "nas_messages_total": 549,
+        "nas_failures": 178,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 197584879,
+        "total_bytes_downlink": 1119647840,
+        "total_packets": 974264,
+        "gtpu_teid_count": 1920
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0313,
+        "nas_failure_ratio": 0.3242,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.6107,
+        "bytes_per_session": 12343.23,
+        "packets_per_session": 9.13,
+        "gtpu_volume_per_ue": 686416.22,
+        "ue_hash_entropy": 5.158,
+        "new_ue_rate": 0.038
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "7344ea71-e5ee-47c6-8095-9be60e329e69",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:56:00+00:00",
+      "window_end": "2026-11-15T08:57:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1933,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 106270,
+        "nas_messages_total": 541,
+        "nas_failures": 178,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196857842,
+        "total_bytes_downlink": 1115527988,
+        "total_packets": 986520,
+        "gtpu_teid_count": 1944
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.031,
+        "nas_failure_ratio": 0.329,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 54.9767,
+        "bytes_per_session": 12349.54,
+        "packets_per_session": 9.28,
+        "gtpu_volume_per_ue": 678937.32,
+        "ue_hash_entropy": 5.098,
+        "new_ue_rate": 0.0352
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "b19301a7-dae6-40b6-b59a-52be7262ca36",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:57:00+00:00",
+      "window_end": "2026-11-15T08:58:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1911,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107213,
+        "nas_messages_total": 546,
+        "nas_failures": 180,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 198164083,
+        "total_bytes_downlink": 1122929985,
+        "total_packets": 987429,
+        "gtpu_teid_count": 1906
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0314,
+        "nas_failure_ratio": 0.3297,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.1031,
+        "bytes_per_session": 12322.14,
+        "packets_per_session": 9.21,
+        "gtpu_volume_per_ue": 691310.34,
+        "ue_hash_entropy": 5.031,
+        "new_ue_rate": 0.0408
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "e381d52e-51c9-4368-a8f0-7daba5d7a7b5",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:58:00+00:00",
+      "window_end": "2026-11-15T08:59:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1937,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107968,
+        "nas_messages_total": 552,
+        "nas_failures": 180,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 199090636,
+        "total_bytes_downlink": 1128180421,
+        "total_packets": 985436,
+        "gtpu_teid_count": 1950
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.031,
+        "nas_failure_ratio": 0.3261,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 55.7398,
+        "bytes_per_session": 12293.19,
+        "packets_per_session": 9.13,
+        "gtpu_volume_per_ue": 685219.96,
+        "ue_hash_entropy": 4.977,
+        "new_ue_rate": 0.0356
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    },
+    {
+      "window_id": "1481e56b-d463-44a9-8e7d-43d4da609f2e",
+      "slice_id": "sst-1-sd-010203",
+      "nf_id": "UPF-01",
+      "window_start": "2026-11-15T08:59:00+00:00",
+      "window_end": "2026-11-15T09:00:00+00:00",
+      "duration_sec": 60,
+      "raw_counters": {
+        "active_ue_count": 1905,
+        "registration_attempts": 60,
+        "registration_failures": 0,
+        "pdu_sessions_established": 107101,
+        "nas_messages_total": 549,
+        "nas_failures": 180,
+        "pfcp_association_messages": 60,
+        "pfcp_failures": 0,
+        "total_bytes_uplink": 196033875,
+        "total_bytes_downlink": 1110858801,
+        "total_packets": 964400,
+        "gtpu_teid_count": 1916
+      },
+      "ratio_features": {
+        "registrations_per_active_ue": 0.0315,
+        "nas_failure_ratio": 0.3279,
+        "pfcp_failure_ratio": 0.0,
+        "pdu_session_rate_per_ue": 56.221,
+        "bytes_per_session": 12202.43,
+        "packets_per_session": 9.0,
+        "gtpu_volume_per_ue": 686032.9,
+        "ue_hash_entropy": 4.92,
+        "new_ue_rate": 0.0399
+      },
+      "composition_vector": {
+        "registration_ratio": 0.0006,
+        "session_setup_ratio": 0.9977,
+        "failure_ratio": 0.0017,
+        "other_signalling_ratio": 0.0
+      },
+      "ground_truth": {
+        "is_attack": true,
+        "attack_type": "slow_attack_ramp",
+        "is_growth": false
+      }
+    }
+  ]
+}

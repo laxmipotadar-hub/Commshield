@@ -3,7 +3,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import api_router
+from .api.replay import router as replay_router
+from .api.windows import list_windows
 from .database import Base, engine
+from .schemas import PaginatedWindowsResponse
 from . import models  # noqa: F401
 
 
@@ -32,6 +35,10 @@ app.add_middleware(
 
 # Register API v1 routers
 app.include_router(api_router)
+
+# Also expose unversioned /api/replay and /api/traffic/windows per specification
+app.include_router(replay_router, prefix="/api")
+app.get("/api/traffic/windows", response_model=PaginatedWindowsResponse, tags=["Windows & Detection"])(list_windows)
 
 
 @app.get("/api/health")

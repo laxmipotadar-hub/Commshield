@@ -11,51 +11,46 @@ from ..schemas import (
     ReplayStatusResponse,
     WindowReplayEvent,
 )
-from ..services.sample_data import (
-    get_sample_replay_status,
-    get_sample_window_event,
-)
+from ..services.replay import replay_service
+from ..services.sample_data import get_sample_window_event
 
 router = APIRouter(prefix="/replay", tags=["Replay"])
 
 
 @router.post("/start", response_model=ReplayStatusResponse)
-def start_replay(payload: ReplayStartRequest) -> ReplayStatusResponse:
-    """Start replay stream across 3 arms."""
-    # TODO: Call Three-Arm ReplayEngine (ml_engine/evaluation/replay.py) to initialize multi-arm stream playback
-    return get_sample_replay_status(
-        status="RUNNING",
+async def start_replay(payload: ReplayStartRequest) -> ReplayStatusResponse:
+    """Start replay stream across 3 arms in a background task."""
+    status = await replay_service.start(
         dataset_id=payload.dataset_id,
         speed_multiplier=payload.speed_multiplier,
+        active_arms=payload.active_arms,
+        window_scale_sec=payload.window_scale_sec,
     )
+    return status
 
 
 @router.post("/pause", response_model=ReplayStatusResponse)
 def pause_replay() -> ReplayStatusResponse:
     """Pause active replay."""
-    # TODO: Call ReplayEngine to pause active replay worker
-    return get_sample_replay_status(status="PAUSED")
+    return replay_service.pause()
 
 
 @router.post("/resume", response_model=ReplayStatusResponse)
 def resume_replay() -> ReplayStatusResponse:
     """Resume paused replay."""
-    # TODO: Call ReplayEngine to resume paused replay worker
-    return get_sample_replay_status(status="RUNNING")
+    return replay_service.resume()
 
 
 @router.post("/stop", response_model=ReplayStatusResponse)
 def stop_replay() -> ReplayStatusResponse:
     """Terminate active replay."""
-    # TODO: Call ReplayEngine to terminate active replay session
-    return get_sample_replay_status(status="STOPPED")
+    return replay_service.stop()
 
 
 @router.get("/status", response_model=ReplayStatusResponse)
 def get_replay_status() -> ReplayStatusResponse:
     """Current tick and replay state."""
-    # TODO: Query ReplayEngine status to fetch current window tick and playback progress
-    return get_sample_replay_status()
+    return replay_service.get_status()
 
 
 @router.get("/stream")
@@ -64,8 +59,6 @@ def stream_replay(
     db: Session = Depends(get_db),
 ):
     """Server-Sent Events stream of replay windows."""
-    # TODO: Connect to ReplayEngine event generator to yield live window replay SSE stream across arms
-
     def event_generator():
         db_windows = db.query(CanonicalWindow).limit(10).all()
         if db_windows:
