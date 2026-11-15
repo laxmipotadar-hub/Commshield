@@ -20,9 +20,9 @@ import {
   User,
 } from 'lucide-react';
 import { StatusBadge } from './components';
-import { OverviewView } from './views/OverviewView';
-import { MonitoringView } from './views/MonitoringView';
-import { DetectionView } from './views/DetectionView';
+import { OverviewPage } from './pages/OverviewPage';
+import { MonitoringPage } from './pages/MonitoringPage';
+import { DetectionPage } from './pages/DetectionPage';
 import { AttributionView } from './views/AttributionView';
 import { GovernanceView } from './views/GovernanceView';
 import { InvestigationView } from './views/InvestigationView';
@@ -190,9 +190,9 @@ export const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-6 bg-bg">
           <div className="max-w-7xl mx-auto">
             <Routes>
-              <Route path="/" element={<OverviewView />} />
-              <Route path="/monitoring" element={<MonitoringView />} />
-              <Route path="/detection" element={<DetectionView />} />
+              <Route path="/" element={<OverviewPage />} />
+              <Route path="/monitoring" element={<MonitoringPage />} />
+              <Route path="/detection" element={<DetectionPage />} />
               <Route path="/attribution" element={<AttributionView />} />
               <Route path="/governance" element={<GovernanceView />} />
               <Route path="/investigation" element={<InvestigationView />} />
