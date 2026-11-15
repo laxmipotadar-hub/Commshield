@@ -52,7 +52,7 @@ export interface ReplayStartRequest {
 }
 
 export interface ReplayStatusResponse {
-  status: 'RUNNING' | 'PAUSED' | 'STOPPED' | string;
+  status: 'RUNNING' | 'PAUSED' | 'STOPPED' | 'COMPLETED' | string;
   dataset_id: string;
   current_window_index: number;
   total_windows: number;
@@ -79,6 +79,77 @@ export interface PaginatedWindowsResponse {
   total: number;
   limit: number;
   offset: number;
+  is_placeholder?: boolean;
+}
+
+export interface IsolationForestScore {
+  raw_score_negated: number;
+  benign_percentile: number;
+  threshold_percentile: number;
+  is_flagged: boolean;
+}
+
+export interface AutoencoderScore {
+  reconstruction_mse?: number | null;
+  benign_percentile?: number | null;
+  threshold_percentile?: number | null;
+  is_flagged?: boolean | null;
+}
+
+export interface FusionScore {
+  primary_rule: string;
+  fused_percentile: number;
+  secondary_mean_percentile: number;
+  agreement_state: string;
+  is_anomalous: boolean;
+}
+
+export interface CusumScore {
+  accumulated_statistic?: number | null;
+  alarm_threshold?: number | null;
+  is_alarm?: boolean | null;
+}
+
+export interface DetectorOutput {
+  window_id: string;
+  slice_id: string;
+  nf_id: string;
+  evaluated_at: string;
+  baseline_version: string;
+  isolation_forest: IsolationForestScore;
+  autoencoder?: AutoencoderScore | null;
+  fusion: FusionScore;
+  cusum?: CusumScore | null;
+  is_placeholder?: boolean;
+}
+
+export interface AlertItem {
+  id: string;
+  window_id: string;
+  slice_id: string;
+  nf_id: string;
+  detector_output: DetectorOutput;
+  is_anomalous: boolean;
+  fused_score?: number | null;
+  created_at: string;
+  is_placeholder?: boolean;
+}
+
+export interface DashboardOverviewResponse {
+  total_traffic_bytes: number;
+  active_slices_count: number;
+  anomaly_alerts_count: number;
+  drift_status: string;
+  quarantined_windows_count: number;
+  active_baseline_version: string;
+  pending_updates_count: number;
+  recent_alerts: Array<Record<string, unknown>>;
+  traffic_over_time: Array<{
+    timestamp: string;
+    total_bytes: number;
+    packets: number;
+    slice_id?: string;
+  }>;
   is_placeholder?: boolean;
 }
 
@@ -178,27 +249,27 @@ export const api = {
 
   // Replay
   startReplay: (payload: ReplayStartRequest) =>
-    request<ReplayStatusResponse>('/api/v1/replay/start', {
+    request<ReplayStatusResponse>('/api/replay/start', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
   pauseReplay: () =>
-    request<ReplayStatusResponse>('/api/v1/replay/pause', {
+    request<ReplayStatusResponse>('/api/replay/pause', {
       method: 'POST',
     }),
 
   resumeReplay: () =>
-    request<ReplayStatusResponse>('/api/v1/replay/resume', {
+    request<ReplayStatusResponse>('/api/replay/resume', {
       method: 'POST',
     }),
 
   stopReplay: () =>
-    request<ReplayStatusResponse>('/api/v1/replay/stop', {
+    request<ReplayStatusResponse>('/api/replay/stop', {
       method: 'POST',
     }),
 
-  getReplayStatus: () => request<ReplayStatusResponse>('/api/v1/replay/status'),
+  getReplayStatus: () => request<ReplayStatusResponse>('/api/replay/status'),
 
   getReplayStreamUrl: (speed = 1.0) => `${API_BASE_URL}/api/v1/replay/stream?speed=${speed}`,
 
@@ -209,16 +280,35 @@ export const api = {
     if (params?.limit !== undefined) query.set('limit', String(params.limit));
     if (params?.offset !== undefined) query.set('offset', String(params.offset));
     const qs = query.toString();
-    return request<PaginatedWindowsResponse>(`/api/v1/windows${qs ? `?${qs}` : ''}`);
+    return request<PaginatedWindowsResponse>(`/api/traffic/windows${qs ? `?${qs}` : ''}`);
   },
 
   getExplainability: (windowId: string) =>
     request<ExplainabilityResponse>(`/api/v1/windows/${windowId}/explain`),
 
+  // Detection & Alerts
+  analyzeWindow: (payload: {
+    window_id?: string;
+    window?: unknown;
+    slice_id?: string;
+    ratio_features?: Record<string, number>;
+  }) =>
+    request<DetectorOutput>('/api/detection/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getAlerts: (sliceId?: string, limit = 50) => {
+    const qs = sliceId ? `?slice_id=${encodeURIComponent(sliceId)}&limit=${limit}` : `?limit=${limit}`;
+    return request<AlertItem[]>(`/api/alerts${qs}`);
+  },
+
+  getDashboardOverview: () => request<DashboardOverviewResponse>('/api/dashboard/overview'),
+
   // Governance & Baselines
   getBaselines: (sliceId?: string) => {
     const qs = sliceId ? `?slice_id=${encodeURIComponent(sliceId)}` : '';
-    return request<BaselineSummaryResponse[]>(`/api/v1/baselines${qs}`);
+    return request<BaselineSummaryResponse[]>(`/api/baselines${qs}`);
   },
 
   getCandidates: (status?: string) => {

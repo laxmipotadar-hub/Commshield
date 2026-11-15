@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
-  Database,
   GitBranch,
   Layers,
   Radio,
@@ -22,6 +21,7 @@ import {
   ChartCard,
   Column,
   DataTable,
+  EmptyState,
   ErrorState,
   LoadingState,
   SampleDataBadge,
@@ -29,77 +29,88 @@ import {
   StatusBadge,
 } from '../components';
 import {
+  AlertItem,
   api,
   BaselineSummaryResponse,
   CandidateResponse,
   CanonicalTrafficWindow,
   ExplainabilityResponse,
 } from '../services/api';
+import { useReplay } from '../context/ReplayContext';
 
 export const OverviewPage: React.FC = () => {
+  const { pollTick } = useReplay();
+
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
   const [baselines, setBaselines] = useState<BaselineSummaryResponse[]>([]);
   const [candidates, setCandidates] = useState<CandidateResponse[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [explainMap, setExplainMap] = useState<Record<string, ExplainabilityResponse>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [windowsPlaceholder, setWindowsPlaceholder] = useState(false);
-  const [baselinesPlaceholder, setBaselinesPlaceholder] = useState(false);
-  const [candidatesPlaceholder, setCandidatesPlaceholder] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     setError(null);
     try {
-      const [winRes, baseRes, candRes] = await Promise.all([
+      const [winRes, baseRes, candRes, alertRes] = await Promise.all([
         api.getWindows({ limit: 20 }),
         api.getBaselines(),
         api.getCandidates('PENDING'),
+        api.getAlerts().catch(() => [] as AlertItem[]),
       ]);
 
-      setWindows(winRes.items || []);
-      setWindowsPlaceholder(Boolean(winRes.is_placeholder));
+      const items = winRes.items || [];
+      setWindows(items);
+      setWindowsPlaceholder(winRes.is_placeholder === true);
 
       setBaselines(baseRes || []);
-      setBaselinesPlaceholder(Boolean(baseRes?.[0]?.is_placeholder));
-
       setCandidates(candRes || []);
-      setCandidatesPlaceholder(Boolean(candRes?.[0]?.is_placeholder));
+      setAlerts(alertRes || []);
 
-      // Fetch explainability for the top window to get drift and anomaly signals
-      if (winRes.items && winRes.items.length > 0) {
+      // Fetch explainability for recent windows
+      if (items.length > 0) {
         try {
-          const exp = await api.getExplainability(winRes.items[0].window_id);
-          setExplainMap({ [winRes.items[0].window_id]: exp });
-        } catch (e) {
-          console.warn('Explainability call failed:', e);
+          const exp = await api.getExplainability(items[0].window_id);
+          setExplainMap({ [items[0].window_id]: exp });
+        } catch {
+          // Non-blocking explainability fetch
         }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch overview data';
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 
+  // Initial load
   useEffect(() => {
-    fetchData();
+    fetchData(true);
   }, []);
+
+  // Poll when replay ticks
+  useEffect(() => {
+    if (pollTick > 0) {
+      fetchData(false);
+    }
+  }, [pollTick]);
 
   if (loading) {
     return <LoadingState message="Loading telemetry overview and pipeline state..." size="lg" />;
   }
 
   if (error) {
-    return <ErrorState title="Failed to Load Overview" message={error} onRetry={fetchData} />;
+    return <ErrorState title="Failed to Load Overview" message={error} onRetry={() => fetchData(true)} />;
   }
 
   // Derived Metrics from live API responses
   const totalBytes = windows.reduce((acc, w) => {
-    const ul = w.raw_counters.total_bytes_uplink || 0;
-    const dl = w.raw_counters.total_bytes_downlink || 0;
+    const ul = w.raw_counters?.total_bytes_uplink || 0;
+    const dl = w.raw_counters?.total_bytes_downlink || 0;
     return acc + ul + dl;
   }, 0);
 
@@ -107,8 +118,8 @@ export const OverviewPage: React.FC = () => {
   const totalTrafficGB = (totalBytes / (1024 * 1024 * 1024)).toFixed(2);
   const trafficDisplay = totalBytes > 1024 * 1024 * 1024 ? `${totalTrafficGB} GB` : `${totalTrafficMB} MB`;
 
-  const uniqueSlices = Array.from(new Set(windows.map((w) => w.slice_id)));
-  const activeSlicesCount = uniqueSlices.length || (baselines.length > 0 ? baselines.length : 1);
+  const uniqueSlices = Array.from(new Set(windows.map((w) => w.slice_id).filter(Boolean)));
+  const activeSlicesCount = uniqueSlices.length || (baselines.length > 0 ? baselines.length : 3);
 
   const activeBaseline = baselines.find((b) => b.is_active) || baselines[0];
   const activeBaselineVersion = activeBaseline?.version || 'v1.0.0-anchor';
@@ -116,11 +127,10 @@ export const OverviewPage: React.FC = () => {
   const pendingUpdatesCount = candidates.filter((c) => c.status === 'PENDING').length;
 
   const firstWindowExplain = windows[0] ? explainMap[windows[0].window_id] : undefined;
-  const isAnomalous = firstWindowExplain ? firstWindowExplain.is_anomalous : false;
+  const isAnomalous = alerts.length > 0 || (firstWindowExplain?.is_anomalous ?? false);
   const driftVerdict = firstWindowExplain?.attribution_summary?.verdict || 'likely_benign';
   const driftReason = firstWindowExplain?.attribution_summary?.abstain_reason;
 
-  // Quarantined count derived from uncertain / abstained windows (GAP note: no dedicated /api/v1/quarantine endpoint)
   const quarantinedCount = windows.filter(
     (w) => explainMap[w.window_id]?.attribution_summary?.verdict === 'uncertain'
   ).length;
@@ -131,12 +141,12 @@ export const OverviewPage: React.FC = () => {
     .map((w) => {
       const date = new Date(w.window_start);
       const timeStr = isNaN(date.getTime())
-        ? w.window_start.slice(11, 16)
+        ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
         : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       return {
         time: timeStr,
-        uplink: Number(((w.raw_counters.total_bytes_uplink || 0) / (1024 * 1024)).toFixed(2)),
-        downlink: Number(((w.raw_counters.total_bytes_downlink || 0) / (1024 * 1024)).toFixed(2)),
+        uplink: Number(((w.raw_counters?.total_bytes_uplink || 0) / (1024 * 1024)).toFixed(2)),
+        downlink: Number(((w.raw_counters?.total_bytes_downlink || 0) / (1024 * 1024)).toFixed(2)),
       };
     });
 
@@ -183,8 +193,8 @@ export const OverviewPage: React.FC = () => {
       key: 'alert_state',
       header: 'Detection / Status',
       render: (w) => {
-        const exp = explainMap[w.window_id];
-        if (exp?.is_anomalous) {
+        const isAlerted = alerts.some((a) => a.window_id === w.window_id) || explainMap[w.window_id]?.is_anomalous;
+        if (isAlerted) {
           return <StatusBadge label="Anomaly Flagged" variant="attack" size="sm" dot />;
         }
         return <StatusBadge label="Nominal Benign" variant="safe" size="sm" dot />;
@@ -199,22 +209,21 @@ export const OverviewPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text">Overview</h1>
           <p className="text-sm text-muted mt-0.5">
-            5G Core autonomous telemetry defense, multi-slice detection, and baseline stability.
+            5G Core zero-trust telemetry stream, anomaly alerts, and active baseline status.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {windowsPlaceholder && <SampleDataBadge isPlaceholder={true} />}
-          <StatusBadge label="Zero-Trust Pipeline" variant="safe" size="md" dot />
+          <SampleDataBadge isPlaceholder={windowsPlaceholder} />
         </div>
       </div>
 
-      {/* 7 Required Stat Cards */}
+      {/* 1. Stat Cards Grid (7 key indicators per design) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Total Traffic */}
         <StatCard
-          title="Total Traffic"
+          title="Total Traffic Volume"
           value={trafficDisplay}
-          subtitle={`Cumulative uplink & downlink over ${windows.length} windows`}
+          subtitle={`${windows.length} windows captured`}
           icon={<TrendingUp className="w-4 h-4 text-blue" />}
           badge={windowsPlaceholder ? 'Sample data' : undefined}
           badgeVariant="neutral"
@@ -224,7 +233,7 @@ export const OverviewPage: React.FC = () => {
         <StatCard
           title="Active Slices"
           value={activeSlicesCount}
-          subtitle={uniqueSlices.join(', ') || 'eMBB, uRLLC, MIoT'}
+          subtitle={uniqueSlices.join(', ') || 'eMBB, URLLC, mMTC'}
           icon={<Radio className="w-4 h-4 text-teal" />}
           badge={windowsPlaceholder ? 'Sample data' : undefined}
           badgeVariant="neutral"
@@ -233,11 +242,11 @@ export const OverviewPage: React.FC = () => {
         {/* 3. Anomaly Alerts */}
         <StatCard
           title="Anomaly Alerts"
-          value={isAnomalous ? '1 Flagged' : '0 Flagged'}
-          subtitle={isAnomalous ? 'Score percentile exceeds 0.980 threshold' : 'All windows operating within bounds'}
-          badge={isAnomalous ? 'Warning' : 'Normal'}
-          badgeVariant={isAnomalous ? 'attack' : 'safe'}
-          icon={<AlertTriangle className={`w-4 h-4 ${isAnomalous ? 'text-attack' : 'text-safe'}`} />}
+          value={alerts.length > 0 ? `${alerts.length} Flagged` : (isAnomalous ? '1 Flagged' : '0 Flagged')}
+          subtitle={alerts.length > 0 ? 'Exceeding calibrated baseline threshold' : 'All windows operating within bounds'}
+          badge={isAnomalous || alerts.length > 0 ? 'Warning' : 'Normal'}
+          badgeVariant={isAnomalous || alerts.length > 0 ? 'attack' : 'safe'}
+          icon={<AlertTriangle className={`w-4 h-4 ${isAnomalous || alerts.length > 0 ? 'text-attack' : 'text-safe'}`} />}
         />
 
         {/* 4. Drift Status */}
@@ -264,95 +273,105 @@ export const OverviewPage: React.FC = () => {
         <StatCard
           title="Active Baseline"
           value={activeBaselineVersion}
-          subtitle={activeBaseline?.is_anchor ? 'Immutable trusted anchor' : 'Serving production baseline'}
-          badge={baselinesPlaceholder ? 'Sample data' : activeBaseline?.is_anchor ? 'Anchor' : 'Active'}
-          badgeVariant={baselinesPlaceholder ? 'neutral' : 'approved'}
-          icon={<ShieldCheck className="w-4 h-4 text-approved" />}
+          subtitle={activeBaseline?.is_anchor ? 'Trusted immutable anchor' : 'Candidate adaptation baseline'}
+          badge="Active"
+          badgeVariant="approved"
+          icon={<ShieldCheck className="w-4 h-4 text-teal" />}
         />
 
         {/* 7. Pending Updates */}
         <StatCard
           title="Pending Updates"
           value={pendingUpdatesCount}
-          subtitle="Shadow candidates awaiting analyst signoff"
-          badge={candidatesPlaceholder ? 'Sample data' : pendingUpdatesCount > 0 ? 'Pending' : 'Zero'}
-          badgeVariant={candidatesPlaceholder ? 'neutral' : pendingUpdatesCount > 0 ? 'blue' : 'neutral'}
-          icon={<Database className="w-4 h-4 text-blue" />}
+          subtitle="Shadow candidates awaiting operator review"
+          badge={pendingUpdatesCount > 0 ? 'Action Needed' : 'Up to Date'}
+          badgeVariant={pendingUpdatesCount > 0 ? 'suspicious' : 'neutral'}
+          icon={<Layers className="w-4 h-4 text-slate" />}
         />
       </div>
 
-      {/* Traffic Over Time Chart */}
+      {/* 2. Traffic Volume Over Time Chart */}
       <ChartCard
-        title="Traffic Volume Over Time"
-        subtitle="Uplink and Downlink throughput (MB) across canonical evaluation windows"
-        action={
-          <div className="flex items-center gap-4">
-            <SampleDataBadge isPlaceholder={windowsPlaceholder} />
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-3 h-1 bg-blue rounded-full" />
-                Uplink
-              </span>
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-3 h-1 bg-teal rounded-full" />
-                Downlink
-              </span>
-            </div>
-          </div>
-        }
+        title="Live Traffic Volume Over Time"
+        subtitle="Uplink and Downlink megabytes aggregated across 60s windows"
+        action={windowsPlaceholder ? <SampleDataBadge isPlaceholder={windowsPlaceholder} /> : undefined}
       >
-        <div className="w-full h-[280px]">
-          {chartData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-sm text-muted">
-              No window traffic data available
-            </div>
-          ) : (
+        {chartData.length === 0 ? (
+          <EmptyState
+            title="No Traffic Windows"
+            description="No traffic data has been recorded yet. Start replay to produce windows."
+          />
+        ) : (
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorUL" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3478F6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#3478F6" stopOpacity={0.0} />
+                  <linearGradient id="uplinkGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3478F6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3478F6" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorDL" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#14B8A6" stopOpacity={0.0} />
+                  <linearGradient id="downlinkGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#14B8A6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                <XAxis dataKey="time" stroke="#64748B" fontSize={12} tickLine={false} />
-                <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit=" MB" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" />
+                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" unit=" MB" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#FFFFFF',
-                    borderColor: '#E2E8F0',
-                    borderRadius: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #E2E8F0',
+                    fontSize: '12px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
                 />
-                <Area type="monotone" dataKey="uplink" stroke="#3478F6" strokeWidth={2} fill="url(#colorUL)" name="Uplink (MB)" />
-                <Area type="monotone" dataKey="downlink" stroke="#14B8A6" strokeWidth={2} fill="url(#colorDL)" name="Downlink (MB)" />
+                <Area
+                  type="monotone"
+                  dataKey="uplink"
+                  name="Uplink MB"
+                  stroke="#3478F6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#uplinkGrad)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="downlink"
+                  name="Downlink MB"
+                  stroke="#14B8A6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#downlinkGrad)"
+                />
               </AreaChart>
             </ResponsiveContainer>
-          )}
-        </div>
+          </div>
+        )}
       </ChartCard>
 
-      {/* Recent Alerts / Telemetry Windows Table */}
-      <div className="space-y-3">
+      {/* 3. Recent Alerts / Telemetry Windows Table */}
+      <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-text">Recent Telemetry Alerts & Windows</h2>
-            <p className="text-xs text-muted">Canonical traffic windows and detection evaluations</p>
+            <h2 className="text-base font-semibold text-text">Recent Telemetry Windows</h2>
+            <p className="text-xs text-muted">
+              Latest canonical windows streamed through the zero-trust evaluation pipeline.
+            </p>
           </div>
           <SampleDataBadge isPlaceholder={windowsPlaceholder} />
         </div>
+
         <DataTable
           columns={alertColumns}
           data={windows}
           keyExtractor={(w) => w.window_id}
-          emptyMessage="No traffic alerts or windows recorded"
+          emptyMessage="No telemetry windows found. Start a replay to ingest data."
         />
       </div>
     </div>
   );
 };
+
+export default OverviewPage;

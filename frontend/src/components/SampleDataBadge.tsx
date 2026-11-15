@@ -1,15 +1,15 @@
 import React from 'react';
 
 interface SampleDataBadgeProps {
-  isPlaceholder?: boolean;
+  isPlaceholder?: boolean | null;
   className?: string;
 }
 
 export const SampleDataBadge: React.FC<SampleDataBadgeProps> = ({
-  isPlaceholder = false,
+  isPlaceholder,
   className = '',
 }) => {
-  if (!isPlaceholder) return null;
+  if (!isPlaceholder || isPlaceholder !== true) return null;
 
   return (
     <span

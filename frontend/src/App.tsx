@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Routes,
   Route,
@@ -27,6 +27,7 @@ import { AttributionView } from './views/AttributionView';
 import { GovernanceView } from './views/GovernanceView';
 import { InvestigationView } from './views/InvestigationView';
 import { ExperimentsView } from './views/ExperimentsView';
+import { ReplayProvider, SCENARIOS, ScenarioId, useReplay } from './context/ReplayContext';
 
 interface NavItem {
   name: string;
@@ -44,10 +45,24 @@ const navItems: NavItem[] = [
   { name: 'Experiment Comparison', to: '/experiments', icon: <Sliders className="w-4 h-4" /> },
 ];
 
-export const App: React.FC = () => {
-  const [selectedSlice, setSelectedSlice] = useState('sst-1-sd-010203');
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [replaySpeed, setReplaySpeed] = useState('2.0x');
+const AppLayout: React.FC = () => {
+  const {
+    selectedScenario,
+    setSelectedScenario,
+    speed,
+    setSpeed,
+    status,
+    currentIndex,
+    totalWindows,
+    activeBaselineVersion,
+    selectedSlice,
+    setSelectedSlice,
+    handleStart,
+    handlePause,
+    handleResume,
+  } = useReplay();
+
+  const isRunning = status === 'RUNNING';
 
   return (
     <div className="h-screen flex overflow-hidden bg-bg">
@@ -123,53 +138,90 @@ export const App: React.FC = () => {
       {/* 2. Main Area with Top Bar */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between flex-shrink-0 z-20 shadow-sm">
-          {/* Left: Slice Selector */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wider">
-              Slice:
-            </span>
-            <select
-              value={selectedSlice}
-              onChange={(e) => setSelectedSlice(e.target.value)}
-              className="bg-bg border border-border text-xs font-medium text-text rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue transition-colors cursor-pointer"
-            >
-              <option value="sst-1-sd-010203">sst-1-sd-010203 (eMBB-01 Broad Band)</option>
-              <option value="sst-2-sd-020304">sst-2-sd-020304 (uRLLC-02 Ultra Low Latency)</option>
-              <option value="sst-3-sd-030405">sst-3-sd-030405 (MIoT-03 Massive IoT)</option>
-            </select>
+        <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between flex-shrink-0 z-20 shadow-sm gap-4">
+          {/* Left: Slice & Scenario Selectors */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+                Slice:
+              </span>
+              <select
+                value={selectedSlice}
+                onChange={(e) => setSelectedSlice(e.target.value)}
+                className="bg-bg border border-border text-xs font-medium text-text rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue transition-colors cursor-pointer"
+              >
+                <option value="sst-1-sd-010203">sst-1-sd-010203 (eMBB)</option>
+                <option value="sst-2-sd-010203">sst-2-sd-010203 (URLLC)</option>
+                <option value="sst-3-sd-010203">sst-3-sd-010203 (mMTC)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+                Scenario:
+              </span>
+              <select
+                value={selectedScenario}
+                onChange={(e) => setSelectedScenario(e.target.value as ScenarioId)}
+                className="bg-bg border border-border text-xs font-medium text-text rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue transition-colors cursor-pointer"
+              >
+                {SCENARIOS.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Right: Replay Controls & Active Baseline Badge */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap justify-end">
             {/* Replay Controls */}
             <div className="flex items-center gap-2 bg-bg px-2.5 py-1 rounded-lg border border-border">
               <button
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={() => {
+                  if (status === 'RUNNING') {
+                    handlePause();
+                  } else if (status === 'PAUSED') {
+                    handleResume();
+                  } else {
+                    handleStart();
+                  }
+                }}
                 className={`p-1 rounded-md transition-colors ${
-                  isPlaying
+                  isRunning
                     ? 'text-suspicious hover:bg-suspicious/10'
                     : 'text-safe hover:bg-safe/10'
                 }`}
-                title={isPlaying ? 'Pause Replay' : 'Resume Replay'}
+                title={isRunning ? 'Pause Replay' : 'Start / Resume Replay'}
               >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </button>
-              <span className="text-[11px] font-semibold text-text uppercase">
-                {isPlaying ? 'Playing' : 'Paused'}
+              <span className="text-[11px] font-semibold text-text uppercase min-w-[50px]">
+                {isRunning
+                  ? totalWindows > 0
+                    ? `Playing (${currentIndex}/${totalWindows})`
+                    : 'Playing'
+                  : status === 'PAUSED'
+                  ? 'Paused'
+                  : status === 'COMPLETED'
+                  ? 'Completed'
+                  : 'Stopped'}
               </span>
 
               <div className="h-3.5 w-px bg-border mx-1" />
 
               <select
-                value={replaySpeed}
-                onChange={(e) => setReplaySpeed(e.target.value)}
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
                 className="bg-transparent text-xs font-semibold text-slate focus:outline-none cursor-pointer"
+                title="Replay Speed Multiplier"
               >
-                <option value="1.0x">1x</option>
-                <option value="2.0x">2x</option>
-                <option value="5.0x">5x</option>
-                <option value="10.0x">10x</option>
+                <option value={0.5}>0.5x</option>
+                <option value={1.0}>1.0x</option>
+                <option value={2.0}>2.0x</option>
+                <option value={5.0}>5.0x</option>
+                <option value={10.0}>10.0x</option>
               </select>
             </div>
 
@@ -177,7 +229,7 @@ export const App: React.FC = () => {
             <div className="flex items-center gap-1.5 pl-2 border-l border-border">
               <span className="text-xs text-muted font-medium">Active:</span>
               <StatusBadge
-                label="v1.0.0-anchor"
+                label={activeBaselineVersion}
                 variant="approved"
                 size="md"
                 dot
@@ -203,6 +255,14 @@ export const App: React.FC = () => {
         </main>
       </div>
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <ReplayProvider>
+      <AppLayout />
+    </ReplayProvider>
   );
 };
 

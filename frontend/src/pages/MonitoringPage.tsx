@@ -1,13 +1,22 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  AreaChart,
+  AlertCircle,
+  Database,
+  Layers,
+  Radio,
+} from 'lucide-react';
+import {
   Area,
-  BarChart,
+  AreaChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart,
   CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,27 +26,29 @@ import {
   ChartCard,
   Column,
   DataTable,
+  EmptyState,
   ErrorState,
   LoadingState,
   SampleDataBadge,
   StatCard,
-  StatusBadge,
 } from '../components';
 import { api, CanonicalTrafficWindow } from '../services/api';
-import { Radio, Layers, HardDrive } from 'lucide-react';
+import { useReplay } from '../context/ReplayContext';
 
-const SLICE_COLORS = ['#3478F6', '#14B8A6', '#8B5CF6', '#F59E0B', '#142B4A'];
+const PIE_COLORS = ['#3478F6', '#14B8A6', '#8B5CF6', '#F59E0B', '#294C70'];
 
 export const MonitoringPage: React.FC = () => {
-  const [sliceFilter, setSliceFilter] = useState<string>('ALL');
-  const [timeRangeLimit, setTimeRangeLimit] = useState<number>(20);
+  const { pollTick } = useReplay();
+
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
+  const [sliceFilter, setSliceFilter] = useState<string>('ALL');
+  const [timeRangeLimit, setTimeRangeLimit] = useState<number>(50);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaceholder, setIsPlaceholder] = useState(false);
 
-  const fetchMonitoringData = async () => {
-    setLoading(true);
+  const fetchMonitoringData = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     setError(null);
     try {
       const res = await api.getWindows({
@@ -45,18 +56,24 @@ export const MonitoringPage: React.FC = () => {
         limit: timeRangeLimit,
       });
       setWindows(res.items || []);
-      setIsPlaceholder(Boolean(res.is_placeholder));
+      setIsPlaceholder(res.is_placeholder === true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch network monitoring data';
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMonitoringData();
+    fetchMonitoringData(true);
   }, [sliceFilter, timeRangeLimit]);
+
+  useEffect(() => {
+    if (pollTick > 0) {
+      fetchMonitoringData(false);
+    }
+  }, [pollTick]);
 
   // Derived: Traffic volume over time
   const trafficTimeData = useMemo(() => {
@@ -65,12 +82,12 @@ export const MonitoringPage: React.FC = () => {
       .map((w) => {
         const d = new Date(w.window_start);
         const timeStr = isNaN(d.getTime())
-          ? w.window_start.slice(11, 16)
+          ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
           : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         return {
           time: timeStr,
-          uplink_mb: Number(((w.raw_counters.total_bytes_uplink || 0) / 1048576).toFixed(2)),
-          downlink_mb: Number(((w.raw_counters.total_bytes_downlink || 0) / 1048576).toFixed(2)),
+          uplink_mb: Number(((w.raw_counters?.total_bytes_uplink || 0) / 1048576).toFixed(2)),
+          downlink_mb: Number(((w.raw_counters?.total_bytes_downlink || 0) / 1048576).toFixed(2)),
         };
       });
   }, [windows]);
@@ -79,8 +96,9 @@ export const MonitoringPage: React.FC = () => {
   const sliceDistributionData = useMemo(() => {
     const map: Record<string, number> = {};
     windows.forEach((w) => {
-      const bytes = (w.raw_counters.total_bytes_uplink || 0) + (w.raw_counters.total_bytes_downlink || 0);
-      map[w.slice_id] = (map[w.slice_id] || 0) + bytes;
+      const sId = w.slice_id || 'unknown';
+      const bytes = (w.raw_counters?.total_bytes_uplink || 0) + (w.raw_counters?.total_bytes_downlink || 0);
+      map[sId] = (map[sId] || 0) + bytes;
     });
     return Object.entries(map).map(([name, bytes]) => ({
       name,
@@ -92,11 +110,12 @@ export const MonitoringPage: React.FC = () => {
   const nfActivityData = useMemo(() => {
     const map: Record<string, { packets: number; bytes: number; ues: number }> = {};
     windows.forEach((w) => {
-      const current = map[w.nf_id] || { packets: 0, bytes: 0, ues: 0 };
-      current.packets += w.raw_counters.total_packets || 0;
-      current.bytes += (w.raw_counters.total_bytes_uplink || 0) + (w.raw_counters.total_bytes_downlink || 0);
-      current.ues = Math.max(current.ues, w.raw_counters.active_ue_count || 0);
-      map[w.nf_id] = current;
+      const nf = w.nf_id || 'UPF-01';
+      const current = map[nf] || { packets: 0, bytes: 0, ues: 0 };
+      current.packets += w.raw_counters?.total_packets || 0;
+      current.bytes += (w.raw_counters?.total_bytes_uplink || 0) + (w.raw_counters?.total_bytes_downlink || 0);
+      current.ues = Math.max(current.ues, w.raw_counters?.active_ue_count || 0);
+      map[nf] = current;
     });
     return Object.entries(map).map(([nf, d]) => ({
       nf_id: nf,
@@ -113,13 +132,13 @@ export const MonitoringPage: React.FC = () => {
       .map((w) => {
         const d = new Date(w.window_start);
         const timeStr = isNaN(d.getTime())
-          ? w.window_start.slice(11, 16)
+          ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
           : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         return {
           time: timeStr,
-          nas_failure_pct: Number(((w.ratio_features.nas_failure_ratio || 0) * 100).toFixed(3)),
-          pfcp_failure_pct: Number(((w.ratio_features.pfcp_failure_ratio || 0) * 100).toFixed(3)),
-          reg_rate: Number((w.ratio_features.registrations_per_active_ue || 0).toFixed(4)),
+          nas_failure_pct: Number(((w.ratio_features?.nas_failure_ratio || 0) * 100).toFixed(3)),
+          pfcp_failure_pct: Number(((w.ratio_features?.pfcp_failure_ratio || 0) * 100).toFixed(3)),
+          reg_rate: Number((w.ratio_features?.registrations_per_active_ue || 0).toFixed(4)),
         };
       });
   }, [windows]);
@@ -131,7 +150,7 @@ export const MonitoringPage: React.FC = () => {
       .map((w) => {
         const d = new Date(w.window_start);
         const timeStr = isNaN(d.getTime())
-          ? w.window_start.slice(11, 16)
+          ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
           : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const c = w.composition_vector || {};
         return {
@@ -145,12 +164,12 @@ export const MonitoringPage: React.FC = () => {
   }, [windows]);
 
   // Aggregate stats
-  const totalUEs = windows.reduce((max, w) => Math.max(max, w.raw_counters.active_ue_count || 0), 0);
+  const totalUEs = windows.reduce((max, w) => Math.max(max, w.raw_counters?.active_ue_count || 0), 0);
   const avgNasFailure = windows.length > 0
-    ? (windows.reduce((sum, w) => sum + (w.ratio_features.nas_failure_ratio || 0), 0) / windows.length * 100).toFixed(3)
+    ? (windows.reduce((sum, w) => sum + (w.ratio_features?.nas_failure_ratio || 0), 0) / windows.length * 100).toFixed(3)
     : '0.000';
   const totalVolumeMB = (
-    windows.reduce((sum, w) => sum + (w.raw_counters.total_bytes_uplink || 0) + (w.raw_counters.total_bytes_downlink || 0), 0) / 1048576
+    windows.reduce((sum, w) => sum + (w.raw_counters?.total_bytes_uplink || 0) + (w.raw_counters?.total_bytes_downlink || 0), 0) / 1048576
   ).toFixed(1);
 
   const nfColumns: Column<{ nf_id: string; packets: number; volume_mb: number; active_ues: number }>[] = [
@@ -186,7 +205,7 @@ export const MonitoringPage: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState title="Telemetry Error" message={error} onRetry={fetchMonitoringData} />;
+    return <ErrorState title="Telemetry Error" message={error} onRetry={() => fetchMonitoringData(true)} />;
   }
 
   return (
@@ -212,9 +231,9 @@ export const MonitoringPage: React.FC = () => {
               className="bg-bg border border-border text-xs font-medium text-text rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue cursor-pointer"
             >
               <option value="ALL">All Network Slices</option>
-              <option value="sst-1-sd-010203">sst-1-sd-010203 (eMBB-01)</option>
-              <option value="sst-2-sd-020304">sst-2-sd-020304 (uRLLC-02)</option>
-              <option value="sst-3-sd-030405">sst-3-sd-030405 (MIoT-03)</option>
+              <option value="sst-1-sd-010203">sst-1-sd-010203 (eMBB)</option>
+              <option value="sst-2-sd-010203">sst-2-sd-010203 (URLLC)</option>
+              <option value="sst-3-sd-010203">sst-3-sd-010203 (mMTC)</option>
             </select>
           </div>
 
@@ -225,205 +244,252 @@ export const MonitoringPage: React.FC = () => {
               onChange={(e) => setTimeRangeLimit(Number(e.target.value))}
               className="bg-bg border border-border text-xs font-medium text-text rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue cursor-pointer"
             >
-              <option value={10}>Last 10 Windows (10m)</option>
-              <option value={20}>Last 20 Windows (20m)</option>
-              <option value={50}>Last 50 Windows (50m)</option>
+              <option value={10}>Last 10 Windows (~10m)</option>
+              <option value={25}>Last 25 Windows (~25m)</option>
+              <option value={50}>Last 50 Windows (~50m)</option>
+              <option value={100}>Last 100 Windows (~100m)</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* KPI Stats */}
+      {/* Aggregate Overview Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
-          title="Monitored Window Traffic"
+          title="Monitored Volume"
           value={`${totalVolumeMB} MB`}
-          subtitle={`Aggregated volume over ${windows.length} windows`}
-          icon={<HardDrive className="w-4 h-4 text-blue" />}
+          subtitle={`Across ${windows.length} aggregated windows`}
+          icon={<Database className="w-4 h-4 text-blue" />}
         />
         <StatCard
-          title="Max Concurrent UEs"
+          title="Peak Concurrent UEs"
           value={totalUEs.toLocaleString()}
-          subtitle="Peak active subscribers in slice"
+          subtitle="Observed during telemetry window"
           icon={<Radio className="w-4 h-4 text-teal" />}
         />
         <StatCard
-          title="Mean NAS Failure Rate"
+          title="Avg NAS Rejection Ratio"
           value={`${avgNasFailure}%`}
-          subtitle="Control plane rejection ratio"
-          badge={Number(avgNasFailure) > 1.0 ? 'Elevated' : 'Nominal'}
-          badgeVariant={Number(avgNasFailure) > 1.0 ? 'suspicious' : 'safe'}
-          icon={<Radio className="w-4 h-4 text-slate" />}
+          subtitle="Signalling establishment failure rate"
+          icon={<AlertCircle className={`w-4 h-4 ${Number(avgNasFailure) > 0.05 ? 'text-attack' : 'text-safe'}`} />}
+          badge={Number(avgNasFailure) > 0.05 ? 'Elevated' : 'Nominal'}
+          badgeVariant={Number(avgNasFailure) > 0.05 ? 'attack' : 'safe'}
         />
       </div>
 
-      {/* Row 1: Traffic Volume Over Time & Slice Distribution */}
+      {/* Charts Grid: Volume Over Time & Slice Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 1. Traffic volume over time */}
-        <ChartCard
-          title="Traffic Volume Over Time"
-          subtitle="Uplink and Downlink throughput (MB) per window"
-          className="lg:col-span-2"
-          action={
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-3 h-1 bg-blue rounded-full" /> Uplink
-              </span>
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-3 h-1 bg-teal rounded-full" /> Downlink
-              </span>
-            </div>
-          }
-        >
-          <div className="w-full h-[260px]">
+        {/* Left 2 Cols: Traffic Volume Time Series */}
+        <div className="lg:col-span-2">
+          <ChartCard
+            title="Traffic Volume Over Time"
+            subtitle="Separated Uplink and Downlink throughput (Megabytes)"
+          >
             {trafficTimeData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-sm text-muted">No data available</div>
+              <EmptyState title="No Traffic Data" description="Start replay to generate throughput telemetry." />
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trafficTimeData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="time" stroke="#64748B" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit=" MB" />
-                  <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '0.75rem' }} />
-                  <Area type="monotone" dataKey="uplink_mb" stroke="#3478F6" fill="#3478F6" fillOpacity={0.2} name="Uplink (MB)" />
-                  <Area type="monotone" dataKey="downlink_mb" stroke="#14B8A6" fill="#14B8A6" fillOpacity={0.2} name="Downlink (MB)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trafficTimeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="monUplink" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3478F6" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#3478F6" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="monDownlink" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#14B8A6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" unit=" MB" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '8px',
+                        border: '1px solid #E2E8F0',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                    <Area
+                      type="monotone"
+                      dataKey="uplink_mb"
+                      name="Uplink MB"
+                      stroke="#3478F6"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#monUplink)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="downlink_mb"
+                      name="Downlink MB"
+                      stroke="#14B8A6"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#monDownlink)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             )}
-          </div>
-        </ChartCard>
+          </ChartCard>
+        </div>
 
-        {/* 2. Distribution across slices */}
-        <ChartCard
-          title="Distribution Across Slices"
-          subtitle="Traffic share by S-NSSAI identifier"
-        >
-          <div className="w-full h-[260px] flex flex-col items-center justify-center">
+        {/* Right 1 Col: Slice Volume Distribution Donut */}
+        <div className="lg:col-span-1">
+          <ChartCard
+            title="Distribution Across Slices"
+            subtitle="Relative bandwidth consumption by slice ID"
+          >
             {sliceDistributionData.length === 0 ? (
-              <div className="text-sm text-muted">No slice data</div>
+              <EmptyState title="No Slice Data" description="No slice data currently available." />
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sliceDistributionData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={75}
-                    innerRadius={45}
-                    paddingAngle={3}
-                  >
-                    {sliceDistributionData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={SLICE_COLORS[index % SLICE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val: number) => [`${val} MB`, 'Volume']}
-                    contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '0.75rem' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {sliceDistributionData.map((item, idx) => (
-                <div key={item.name} className="flex items-center gap-1.5 text-xs text-text">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SLICE_COLORS[idx % SLICE_COLORS.length] }} />
-                  <span className="truncate max-w-[100px]">{item.name}</span>
+              <div className="h-64 w-full flex flex-col items-center justify-center">
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={sliceDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {sliceDistributionData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(val: number) => [`${val} MB`, 'Traffic']}
+                      contentStyle={{
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '8px',
+                        border: '1px solid #E2E8F0',
+                        fontSize: '12px',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="w-full flex flex-wrap justify-center gap-2 mt-2">
+                  {sliceDistributionData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-1.5 text-[11px] text-muted">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                      />
+                      <span className="truncate max-w-[100px]">{entry.name}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </ChartCard>
+              </div>
+            )}
+          </ChartCard>
+        </div>
       </div>
 
-      {/* Row 2: Failure Rates & Normalised Traffic Composition */}
+      {/* Charts Grid: Failure Rates & Normalised Traffic Composition */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 4. Registration and session failure rates */}
+        {/* Failure Rates Trend */}
         <ChartCard
-          title="Signalling Failure Rates"
-          subtitle="NAS and PFCP failure percentages in control plane"
-          action={
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-2.5 h-2.5 rounded bg-attack" /> NAS Failures (%)
-              </span>
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-2.5 h-2.5 rounded bg-suspicious" /> PFCP Failures (%)
-              </span>
-            </div>
-          }
+          title="Signalling & Session Failure Rates"
+          subtitle="NAS and PFCP failure ratios indicating signalling stress or attack"
         >
-          <div className="w-full h-[240px]">
-            {failureRatesData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-sm text-muted">No failure data</div>
-            ) : (
+          {failureRatesData.length === 0 ? (
+            <EmptyState title="No Failure Data" description="No failure rate metrics available." />
+          ) : (
+            <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={failureRatesData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="time" stroke="#64748B" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit="%" />
-                  <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '0.75rem' }} />
-                  <Bar dataKey="nas_failure_pct" fill="#DC2626" name="NAS Failure (%)" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="pfcp_failure_pct" fill="#F59E0B" name="PFCP Failure (%)" radius={[3, 3, 0, 0]} />
-                </BarChart>
+                <LineChart data={failureRatesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" unit="%" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '8px',
+                      border: '1px solid #E2E8F0',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="nas_failure_pct"
+                    name="NAS Failure %"
+                    stroke="#DC2626"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="pfcp_failure_pct"
+                    name="PFCP Failure %"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
               </ResponsiveContainer>
-            )}
-          </div>
+            </div>
+          )}
         </ChartCard>
 
-        {/* 5. Normalised Traffic Composition */}
+        {/* Normalised Traffic Composition (Stacked Bar Chart for JSD Analysis) */}
         <ChartCard
           title="Normalised Traffic Composition"
-          subtitle="Relative distribution of control signalling vs user sessions (used for JSD test)"
-          action={
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-2.5 h-2.5 rounded bg-blue" /> Session Setup
-              </span>
-              <span className="flex items-center gap-1.5 text-text">
-                <span className="w-2.5 h-2.5 rounded bg-teal" /> Registration
-              </span>
-            </div>
-          }
+          subtitle="Relative distribution of signalling events (Key input to JSD Attribution)"
         >
-          <div className="w-full h-[240px]">
-            {compositionData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-sm text-muted">No composition data</div>
-            ) : (
+          {compositionData.length === 0 ? (
+            <EmptyState title="No Composition Data" description="No composition vectors available." />
+          ) : (
+            <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={compositionData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="time" stroke="#64748B" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit="%" domain={[0, 100]} />
-                  <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '0.75rem' }} />
-                  <Area type="monotone" dataKey="session_setup" stackId="1" stroke="#3478F6" fill="#3478F6" name="Session Setup (%)" />
-                  <Area type="monotone" dataKey="registration" stackId="1" stroke="#14B8A6" fill="#14B8A6" name="Registration (%)" />
-                  <Area type="monotone" dataKey="failure" stackId="1" stroke="#DC2626" fill="#DC2626" name="Failures (%)" />
-                  <Area type="monotone" dataKey="other" stackId="1" stroke="#64748B" fill="#64748B" name="Other Signalling (%)" />
-                </AreaChart>
+                <BarChart data={compositionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" unit="%" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '8px',
+                      border: '1px solid #E2E8F0',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                  <Bar dataKey="session_setup" name="Session Setup %" stackId="a" fill="#3478F6" />
+                  <Bar dataKey="registration" name="Registration %" stackId="a" fill="#14B8A6" />
+                  <Bar dataKey="other" name="Other Signalling %" stackId="a" fill="#294C70" />
+                  <Bar dataKey="failure" name="Failure %" stackId="a" fill="#DC2626" />
+                </BarChart>
               </ResponsiveContainer>
-            )}
-          </div>
+            </div>
+          )}
         </ChartCard>
       </div>
 
-      {/* 3. Network Function Activity Table */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-text">Network Function Activity</h2>
-            <p className="text-xs text-muted">Aggregate load across 5G Core NFs (AMF, UPF, SMF)</p>
-          </div>
-          <StatusBadge label="All Functions Online" variant="safe" size="sm" dot />
+      {/* Network Function Activity Table */}
+      <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-text">Network Function Core Breakdown</h2>
+          <p className="text-xs text-muted">
+            Telemetry load aggregated per Core Network Function (AMF, SMF, UPF).
+          </p>
         </div>
+
         <DataTable
           columns={nfColumns}
           data={nfActivityData}
           keyExtractor={(item) => item.nf_id}
-          emptyMessage="No network function activity logged"
+          emptyMessage="No Network Function telemetry available."
         />
       </div>
     </div>
   );
 };
+
+export default MonitoringPage;
