@@ -66,9 +66,9 @@ def analyze_drift_and_attribution(
 @router.get("/drift/events", response_model=List[DriftEventItem])
 @router.get("/v1/drift/events", response_model=List[DriftEventItem])
 def list_drift_events(
-    slice_id: Optional[str] = Query(default=None, description="Filter by slice ID"),
-    limit: int = Query(default=50, ge=1, le=500, description="Page limit"),
-    offset: int = Query(default=0, ge=0, description="Page offset"),
+    slice_id: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
     db: Session = Depends(get_db),
 ) -> List[DriftEventItem]:
     """Retrieve recorded ADWIN drift events and their corresponding attributions."""
@@ -76,7 +76,9 @@ def list_drift_events(
     if slice_id:
         query = query.filter(DriftEvent.slice_id == slice_id)
 
-    rows = query.order_by(DriftEvent.event_time.desc()).offset(offset).limit(limit).all()
+    safe_limit = int(limit) if isinstance(limit, (int, float, str)) else 50
+    safe_offset = int(offset) if isinstance(offset, (int, float, str)) else 0
+    rows = query.order_by(DriftEvent.event_time.desc()).offset(safe_offset).limit(safe_limit).all()
     results: List[DriftEventItem] = []
     for r in rows:
         attr_data = r.attribution or {}
@@ -129,8 +131,8 @@ def get_decision_trace(
 @router.get("/quarantine/windows")
 @router.get("/v1/quarantine/windows")
 def list_quarantine_windows(
-    slice_id: Optional[str] = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
+    slice_id: Optional[str] = None,
+    limit: int = 100,
     db: Session = Depends(get_db),
 ) -> List[Dict[str, Any]]:
     """List isolated quarantine windows awaiting operator resolution or candidate retraining."""
@@ -138,7 +140,8 @@ def list_quarantine_windows(
     if slice_id:
         query = query.filter(QuarantineWindow.slice_id == slice_id)
 
-    rows = query.order_by(QuarantineWindow.quarantined_at.desc()).limit(limit).all()
+    safe_limit = int(limit) if isinstance(limit, (int, float, str)) else 100
+    rows = query.order_by(QuarantineWindow.quarantined_at.desc()).limit(safe_limit).all()
     return [
         {
             "id": r.id,

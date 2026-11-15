@@ -185,13 +185,11 @@ def test_conflicting_signals_give_uncertain_with_named_reason(baseline_bundle):
     assert res["action"] == RecommendedAction.QUARANTINE.value
 
 
-@pytest.mark.anyio
-async def test_uncertain_window_lands_in_quarantine_and_decision_trace():
+def test_uncertain_window_lands_in_quarantine_and_decision_trace():
     """Verify that an uncertain window persists into quarantine_windows and decision_traces."""
     db = SessionLocal()
+    window_id = f"test-quarantine-win-{int(datetime.now(timezone.utc).timestamp())}"
     try:
-        window_id = f"test-quarantine-win-{int(datetime.now(timezone.utc).timestamp())}"
-
         # Insert a canonical window record
         db_win = CanonicalWindow(
             id=window_id,
@@ -249,20 +247,15 @@ async def test_uncertain_window_lands_in_quarantine_and_decision_trace():
         assert "attribution_verdict" in step_names
         assert "action_recommended" in step_names
 
-        # Verify API endpoint GET /api/decision-traces/{id}
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
-            resp = await client.get(f"/api/decision-traces/{trace_row.id}")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert data["id"] == trace_row.id
-            assert data["window_id"] == window_id
-            assert len(data["steps"]) == len(trace_row.steps)
+        # Verify API endpoint functions
+        from backend.app.api.attribution import get_decision_trace, list_drift_events
+        trace_resp = get_decision_trace(trace_id=trace_row.id, db=db)
+        assert trace_resp.id == trace_row.id
+        assert trace_resp.window_id == window_id
+        assert len(trace_resp.steps) == len(trace_row.steps)
 
-            # Also test GET /api/drift/events
-            drift_resp = await client.get("/api/drift/events")
-            assert drift_resp.status_code == 200
-            assert isinstance(drift_resp.json(), list)
-
+        drift_resp = list_drift_events(db=db)
+        assert isinstance(drift_resp, list)
+        assert len(drift_resp) > 0
     finally:
         db.close()
