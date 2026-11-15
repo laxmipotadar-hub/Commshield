@@ -1,7 +1,9 @@
 from .models import (
+    AnomalyAlert,
     AuditEvent,
     AttributionResult,
     Baseline,
+    BaselineRegistry,
     CanonicalWindow,
     CandidateBaseline,
     DetectionResult,
@@ -9,9 +11,11 @@ from .models import (
 )
 
 __all__ = [
+    "AnomalyAlert",
     "AuditEvent",
     "AttributionResult",
     "Baseline",
+    "BaselineRegistry",
     "CandidateBaseline",
     "CanonicalWindow",
     "DetectionResult",

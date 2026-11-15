@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 from ..database import SessionLocal
 from ..models import CanonicalWindow
 from ..schemas import ReplayStatusResponse
+from .detection import detection_service
 
 logger = logging.getLogger("commshield.replay")
 
@@ -101,6 +102,14 @@ class ReplayService:
             )
             db.add(row)
             db.commit()
+
+            # Run detection automatically as replay produces window
+            try:
+                w_eval = dict(w)
+                w_eval["window_id"] = window_id
+                detection_service.analyze_window(w_eval, db=db)
+            except Exception as det_err:
+                logger.warning("Error running detection during replay: %s", det_err)
         except Exception as e:
             db.rollback()
             logger.warning("Error storing window in database: %s", e)

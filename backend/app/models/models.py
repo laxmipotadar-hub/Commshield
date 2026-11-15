@@ -138,3 +138,36 @@ class AuditEvent(Base):
     actor = Column(String(64), nullable=False)
     details = Column(JSON, nullable=False)
     timestamp = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+class BaselineRegistry(Base):
+    __tablename__ = "baseline_registry"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    slice_id = Column(String(64), nullable=False, index=True)
+    nf_id = Column(String(64), nullable=False, default="UPF-01")
+    version = Column(String(32), nullable=False)
+    is_anchor = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=False)
+    training_window_count = Column(Integer, nullable=False, default=0)
+    training_window_start = Column(DateTime(timezone=True), nullable=True)
+    training_window_end = Column(DateTime(timezone=True), nullable=True)
+    model_artifact_path = Column(String(255), nullable=False)
+    scaler_params = Column(JSON, nullable=False)
+    threshold_params = Column(JSON, nullable=False)
+    feature_schema = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+class AnomalyAlert(Base):
+    __tablename__ = "anomaly_alerts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    window_id = Column(String(36), nullable=False, index=True)
+    slice_id = Column(String(64), nullable=False, index=True)
+    nf_id = Column(String(64), nullable=False, default="UPF-01")
+    detector_output = Column(JSON, nullable=False)
+    is_anomalous = Column(Boolean, nullable=False, default=True)
+    fused_score = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
