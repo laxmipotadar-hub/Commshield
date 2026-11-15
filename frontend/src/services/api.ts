@@ -195,6 +195,8 @@ export interface AlertItem {
   fused_score?: number | null;
   created_at: string;
   is_placeholder?: boolean;
+  is_candidate?: boolean;
+  candidate_status?: string;
 }
 
 export interface DashboardOverviewResponse {
@@ -245,6 +247,8 @@ export interface BaselineSummaryResponse {
   feature_schema: Record<string, unknown>;
   created_at: string;
   is_placeholder?: boolean;
+  is_candidate?: boolean;
+  candidate_status?: string;
 }
 
 export interface CandidateResponse {
@@ -260,6 +264,8 @@ export interface CandidateResponse {
   reviewed_at?: string | null;
   created_at: string;
   is_placeholder?: boolean;
+  is_candidate?: boolean;
+  candidate_status?: string;
 }
 
 export interface ApprovalActionRequest {
@@ -377,6 +383,25 @@ export const api = {
     const qs = status ? `?status=${encodeURIComponent(status)}` : '';
     return request<CandidateResponse[]>(`/api/v1/candidates${qs}`);
   },
+
+  evaluateCandidate: (payload: { candidate_id?: string; slice_id?: string; volume_multiplier?: number }) =>
+    request<{
+      candidate_id: string;
+      slice_id: string;
+      overall_passed: boolean;
+      all_mandatory_passed: boolean;
+      gate_metrics: Record<string, unknown>;
+      check_results: Array<{
+        name: string;
+        passed: boolean;
+        mandatory: boolean;
+        metrics: Record<string, unknown>;
+        explanation: string;
+      }>;
+    }>('/api/governance/evaluate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   approveCandidate: (id: string, payload: ApprovalActionRequest) =>
     request<CandidateResponse>(`/api/v1/candidates/${id}/approve`, {
