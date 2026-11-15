@@ -108,6 +108,7 @@ export interface CusumScore {
   accumulated_statistic?: number | null;
   alarm_threshold?: number | null;
   is_alarm?: boolean | null;
+  status?: 'idle' | 'accumulating' | 'triggered' | string;
 }
 
 export interface DetectorOutput {

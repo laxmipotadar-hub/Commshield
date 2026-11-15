@@ -1,4 +1,4 @@
-"""Detection service executing real-time anomaly evaluation on 5G telemetry windows."""
+"""Detection service executing real-time multi-model anomaly evaluation on 5G telemetry windows."""
 
 from datetime import datetime, timezone
 import json
@@ -20,6 +20,13 @@ from ..schemas import (
     FusionScore,
     IsolationForestScore,
 )
+from ml_engine.detection import (
+    AutoencoderDetector,
+    CusumDetector,
+    DetectionEngine,
+    IsolationForestDetector,
+    fuse_scores,
+)
 from ml_engine.preprocessing.windowing import FEATURE_NAMES
 
 logger = logging.getLogger("commshield.detection")
@@ -29,10 +36,12 @@ PROCESSED_BASELINES_DIR = PROJECT_ROOT / "data" / "processed" / "baselines"
 
 
 class DetectionService:
-    """Detection service orchestrating baseline retrieval, feature extraction, and scoring."""
+    """Detection service orchestrating baseline retrieval, feature extraction, and multi-model scoring."""
 
     def __init__(self):
         self._loaded_baselines: Dict[str, Dict[str, Any]] = {}
+        self._engines: Dict[str, DetectionEngine] = {}
+        self._cusum = CusumDetector()
 
     def get_baseline_bundle(self, slice_id: str, db: Optional[Session] = None) -> Optional[Dict[str, Any]]:
         """Retrieve baseline bundle for slice_id, from cache or disk."""
@@ -45,7 +54,7 @@ class DetectionService:
             owns_db = True
 
         try:
-            # Query active baseline from Baseline table (referenced by detection_results.baseline_id FK)
+            # Query active baseline from Baseline table
             base_row = (
                 db.query(Baseline)
                 .filter(Baseline.slice_id == slice_id, Baseline.is_active == True)
@@ -62,7 +71,6 @@ class DetectionService:
             elif base_row and base_row.model_artifact_path:
                 artifact_path = Path(base_row.model_artifact_path)
             else:
-                # Fallback to standard path
                 candidates = list(PROCESSED_BASELINES_DIR.glob(f"{slice_id}_*.joblib"))
                 if candidates:
                     artifact_path = candidates[0]
@@ -70,6 +78,7 @@ class DetectionService:
             if artifact_path and artifact_path.is_file():
                 bundle = joblib.load(artifact_path)
                 bundle["baseline_id"] = base_row.id if base_row else (reg_row.id if reg_row else str(uuid.uuid4()))
+                self._init_engine_for_bundle(slice_id, bundle)
                 self._loaded_baselines[slice_id] = bundle
                 return bundle
 
@@ -77,13 +86,13 @@ class DetectionService:
             from ml_engine.baseline.trainer import train_all_baselines
             train_all_baselines(db=db)
 
-            # Retry loading
             candidates = list(PROCESSED_BASELINES_DIR.glob(f"{slice_id}_*.joblib"))
             if candidates and candidates[0].is_file():
                 bundle = joblib.load(candidates[0])
                 base_ref = db.query(Baseline).filter(Baseline.slice_id == slice_id).first()
                 reg_ref = db.query(BaselineRegistry).filter(BaselineRegistry.slice_id == slice_id).first()
                 bundle["baseline_id"] = base_ref.id if base_ref else (reg_ref.id if reg_ref else str(uuid.uuid4()))
+                self._init_engine_for_bundle(slice_id, bundle)
                 self._loaded_baselines[slice_id] = bundle
                 return bundle
 
@@ -95,12 +104,38 @@ class DetectionService:
             if owns_db:
                 db.close()
 
+    def _init_engine_for_bundle(self, slice_id: str, bundle: Dict[str, Any]) -> DetectionEngine:
+        """Initialize and cache DetectionEngine instance for a baseline bundle."""
+        engine = DetectionEngine(cusum_detector=self._cusum)
+
+        # Register detectors from bundle
+        if "detectors" in bundle:
+            for name, det in bundle["detectors"].items():
+                engine.register_detector(name, det)
+        else:
+            if "isolation_forest" in bundle:
+                engine.register_detector("isolation_forest", bundle["isolation_forest"])
+            elif "detector" in bundle:
+                engine.register_detector("isolation_forest", bundle["detector"])
+
+            if "autoencoder" in bundle:
+                engine.register_detector("autoencoder", bundle["autoencoder"])
+
+        self._engines[slice_id] = engine
+        return engine
+
+    def get_engine(self, slice_id: str, bundle: Dict[str, Any]) -> DetectionEngine:
+        """Get or create DetectionEngine for slice."""
+        if slice_id in self._engines:
+            return self._engines[slice_id]
+        return self._init_engine_for_bundle(slice_id, bundle)
+
     def analyze_window(
         self,
         window: Dict[str, Any],
         db: Optional[Session] = None,
     ) -> DetectorOutput:
-        """Run anomaly detection on a single window dictionary and persist results."""
+        """Run multi-model anomaly detection on a single window dictionary and persist results."""
         slice_id = window.get("slice_id", "sst-1-sd-010203")
         nf_id = window.get("nf_id", "UPF-01")
         window_id = window.get("window_id") or str(uuid.uuid4())
@@ -114,7 +149,7 @@ class DetectionService:
         try:
             bundle = self.get_baseline_bundle(slice_id, db=db)
             if not bundle:
-                # Fallback placeholder if no baseline can be trained or loaded
+                # Fallback placeholder if no baseline available
                 return DetectorOutput(
                     window_id=window_id,
                     slice_id=slice_id,
@@ -127,34 +162,56 @@ class DetectionService:
                         threshold_percentile=95.0,
                         is_flagged=False,
                     ),
-                    autoencoder=None,
+                    autoencoder=AutoencoderScore(
+                        reconstruction_mse=0.01,
+                        benign_percentile=50.0,
+                        threshold_percentile=95.0,
+                        is_flagged=False,
+                    ),
                     fusion=FusionScore(
                         primary_rule="MAX_PERCENTILE",
                         fused_percentile=50.0,
                         secondary_mean_percentile=50.0,
-                        agreement_state="NONE",
+                        agreement_state="neither",
                         is_anomalous=False,
                     ),
-                    cusum=None,
+                    cusum=CusumScore(
+                        accumulated_statistic=0.0,
+                        alarm_threshold=4.5,
+                        is_alarm=False,
+                        status="idle",
+                    ),
                     is_placeholder=True,
                 )
 
-            detector = bundle["detector"]
             scaler = bundle["scaler"]
             threshold_params = bundle.get("threshold_params", {})
             threshold_pct = float(threshold_params.get("threshold_percentile", 95.0))
+
+            engine = self.get_engine(slice_id, bundle)
 
             # Transform ratio features
             scaled_vector = scaler.transform_vector(ratios)
             x_row = np.array([[scaled_vector[f] for f in FEATURE_NAMES]], dtype=np.float32)
 
-            # Evaluate sample
-            raw_score, percentile, is_flagged = detector.evaluate_sample(x_row)
+            # Multi-model evaluation via DetectionEngine
+            eval_result = engine.evaluate_vector(
+                x=x_row,
+                slice_id=slice_id,
+                threshold_percentile=threshold_pct,
+            )
 
-            # Fused score equals Isolation Forest score for now
-            fused_score = percentile
-            is_anomalous = is_flagged
-            agreement_state = "IF_ONLY" if is_flagged else "NONE"
+            if_data = eval_result["isolation_forest"]
+            ae_data = eval_result["autoencoder"]
+            fusion_data = eval_result["fusion"]
+            cusum_data = eval_result["cusum"]
+
+            fused_score = fusion_data["fused_percentile"]
+            is_anomalous = fusion_data["is_anomalous"]
+            cusum_is_alarm = cusum_data["is_alarm"]
+
+            # Alert fires when fused score crosses threshold OR CUSUM triggers
+            should_alert = bool(is_anomalous or cusum_is_alarm)
 
             output = DetectorOutput(
                 window_id=window_id,
@@ -163,25 +220,35 @@ class DetectionService:
                 evaluated_at=datetime.now(timezone.utc),
                 baseline_version=bundle.get("version", "v1.0.0-anchor"),
                 isolation_forest=IsolationForestScore(
-                    raw_score_negated=round(raw_score, 4),
-                    benign_percentile=round(percentile, 4),
-                    threshold_percentile=round(threshold_pct, 4),
-                    is_flagged=is_flagged,
+                    raw_score_negated=if_data["raw_score_negated"],
+                    benign_percentile=if_data["benign_percentile"],
+                    threshold_percentile=if_data["threshold_percentile"],
+                    is_flagged=if_data["is_flagged"],
                 ),
-                autoencoder=None,
+                autoencoder=AutoencoderScore(
+                    reconstruction_mse=ae_data["reconstruction_mse"],
+                    benign_percentile=ae_data["benign_percentile"],
+                    threshold_percentile=ae_data["threshold_percentile"],
+                    is_flagged=ae_data["is_flagged"],
+                ),
                 fusion=FusionScore(
-                    primary_rule="MAX_PERCENTILE",
-                    fused_percentile=round(fused_score, 4),
-                    secondary_mean_percentile=round(fused_score, 4),
-                    agreement_state=agreement_state,
+                    primary_rule=fusion_data["primary_rule"],
+                    fused_percentile=fused_score,
+                    secondary_mean_percentile=fusion_data["secondary_mean_percentile"],
+                    agreement_state=fusion_data["agreement_state"],
                     is_anomalous=is_anomalous,
                 ),
-                cusum=None,
+                cusum=CusumScore(
+                    accumulated_statistic=cusum_data["accumulated_statistic"],
+                    alarm_threshold=cusum_data["alarm_threshold"],
+                    is_alarm=cusum_is_alarm,
+                    status=cusum_data["status"],
+                ),
                 is_placeholder=False,
             )
 
-            # 1. Write to anomaly_alerts if anomalous per contract
-            if is_anomalous:
+            # 1. Write to anomaly_alerts if should_alert
+            if should_alert:
                 alert_row = AnomalyAlert(
                     id=str(uuid.uuid4()),
                     window_id=window_id,
@@ -206,14 +273,14 @@ class DetectionService:
                         window_id=window_id,
                         slice_id=slice_id,
                         baseline_id=b_row.id,
-                        if_score=round(raw_score, 4),
-                        if_percentile=round(percentile, 4),
-                        ae_recon_error=0.0,
-                        ae_percentile=0.0,
+                        if_score=round(if_data["raw_score_negated"], 4),
+                        if_percentile=round(if_data["benign_percentile"], 4),
+                        ae_recon_error=round(ae_data["reconstruction_mse"], 4),
+                        ae_percentile=round(ae_data["benign_percentile"], 4),
                         fused_percentile=round(fused_score, 4),
-                        cusum_score=0.0,
-                        agreement_state=agreement_state,
-                        is_anomalous=is_anomalous,
+                        cusum_score=round(cusum_data["accumulated_statistic"], 4),
+                        agreement_state=fusion_data["agreement_state"],
+                        is_anomalous=should_alert,
                         created_at=datetime.now(timezone.utc),
                     )
                     db.add(det_row)

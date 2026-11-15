@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import SessionLocal, engine, Base
 from backend.app.models import Baseline, BaselineRegistry
+from ml_engine.detection.autoencoder import AutoencoderDetector
 from ml_engine.detection.isolation_forest import IsolationForestDetector
 from ml_engine.preprocessing.windowing import FEATURE_NAMES, RobustScaler
 
@@ -102,15 +103,23 @@ def train_slice_baseline(
     X = np.array(X_list, dtype=np.float32)
 
     # 3. Fit Isolation Forest detector
-    detector = IsolationForestDetector(
+    if_detector = IsolationForestDetector(
         n_estimators=100,
         contamination=contamination,
         random_state=random_state,
         threshold_percentile=threshold_percentile,
     )
-    detector.fit(X)
+    if_detector.fit(X)
 
-    # 4. Serialize model and scaler artifacts with joblib
+    # 4. Fit Dense Autoencoder detector on training period only with validation split
+    ae_detector = AutoencoderDetector(
+        input_dim=len(FEATURE_NAMES),
+        threshold_percentile=threshold_percentile,
+        random_state=random_state,
+    )
+    ae_detector.fit(X)
+
+    # 5. Serialize model and scaler artifacts with joblib
     artifact_filename = f"{slice_id}_{version}.joblib"
     artifact_path = target_dir / artifact_filename
 
@@ -118,7 +127,13 @@ def train_slice_baseline(
         "slice_id": slice_id,
         "nf_id": nf_id,
         "version": version,
-        "detector": detector,
+        "detector": if_detector,
+        "isolation_forest": if_detector,
+        "autoencoder": ae_detector,
+        "detectors": {
+            "isolation_forest": if_detector,
+            "autoencoder": ae_detector,
+        },
         "scaler": scaler,
         "scaler_params": scaler.to_dict(),
         "threshold_params": {

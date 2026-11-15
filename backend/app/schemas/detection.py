@@ -15,10 +15,10 @@ class IsolationForestScore(BaseModel):
 class AutoencoderScore(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="allow")
 
-    reconstruction_mse: Optional[float] = None
-    benign_percentile: Optional[float] = None
-    threshold_percentile: Optional[float] = None
-    is_flagged: Optional[bool] = None
+    reconstruction_mse: float
+    benign_percentile: float
+    threshold_percentile: float
+    is_flagged: bool
 
 
 class FusionScore(BaseModel):
@@ -34,9 +34,10 @@ class FusionScore(BaseModel):
 class CusumScore(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="allow")
 
-    accumulated_statistic: Optional[float] = None
-    alarm_threshold: Optional[float] = None
-    is_alarm: Optional[bool] = None
+    accumulated_statistic: float
+    alarm_threshold: float
+    is_alarm: bool
+    status: Optional[str] = "idle"
 
 
 class DetectorOutput(BaseModel):
@@ -48,9 +49,9 @@ class DetectorOutput(BaseModel):
     evaluated_at: datetime
     baseline_version: str
     isolation_forest: IsolationForestScore
-    autoencoder: Optional[AutoencoderScore] = None
+    autoencoder: AutoencoderScore
     fusion: FusionScore
-    cusum: Optional[CusumScore] = None
+    cusum: CusumScore
     is_placeholder: Optional[bool] = False
 
 

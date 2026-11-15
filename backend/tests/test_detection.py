@@ -129,12 +129,19 @@ async def test_endpoint_detection_analyze(client: AsyncClient):
     assert "benign_percentile" in res_data["isolation_forest"]
     assert 0.0 <= res_data["isolation_forest"]["benign_percentile"] <= 100.0
 
-    # autoencoder and cusum must be null per prompt
-    assert res_data["autoencoder"] is None
-    assert res_data["cusum"] is None
+    # autoencoder and cusum must NOT be null per prompt and CONTRACTS.md
+    assert res_data["autoencoder"] is not None
+    assert "reconstruction_mse" in res_data["autoencoder"]
+    assert "benign_percentile" in res_data["autoencoder"]
+    assert 0.0 <= res_data["autoencoder"]["benign_percentile"] <= 100.0
 
-    # fused percentile equals IF percentile
-    assert res_data["fusion"]["fused_percentile"] == res_data["isolation_forest"]["benign_percentile"]
+    assert res_data["cusum"] is not None
+    assert "accumulated_statistic" in res_data["cusum"]
+    assert "alarm_threshold" in res_data["cusum"]
+    assert "is_alarm" in res_data["cusum"]
+
+    # fused percentile equals max of IF and AE percentiles
+    assert res_data["fusion"]["fused_percentile"] >= res_data["isolation_forest"]["benign_percentile"]
     assert res_data["is_placeholder"] is False
 
 

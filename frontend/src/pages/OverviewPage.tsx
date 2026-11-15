@@ -150,7 +150,85 @@ export const OverviewPage: React.FC = () => {
       };
     });
 
-  // Alerts Table Columns
+  // Alerts Table Columns (from real AlertItem with full detector output)
+  const alertItemColumns: Column<AlertItem>[] = [
+    {
+      key: 'created_at',
+      header: 'Alert Time',
+      render: (a) => {
+        const d = new Date(a.created_at);
+        return (
+          <span className="font-mono text-xs text-text">
+            {isNaN(d.getTime()) ? a.created_at : d.toLocaleString([], { dateStyle: 'short', timeStyle: 'medium' })}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'window_id',
+      header: 'Window ID',
+      render: (a) => <span className="font-mono text-xs text-muted">{a.window_id.slice(0, 12)}...</span>,
+    },
+    {
+      key: 'slice_id',
+      header: 'Slice S-NSSAI',
+      render: (a) => <span className="font-semibold text-xs text-slate">{a.slice_id}</span>,
+    },
+    {
+      key: 'fused_score',
+      header: 'Fused Percentile',
+      render: (a) => {
+        const val = a.detector_output?.fusion?.fused_percentile ?? a.fused_score;
+        return (
+          <span className="font-mono text-xs font-bold text-attack">
+            {val !== undefined && val !== null ? `${val.toFixed(1)}%` : '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'if_ae_scores',
+      header: 'IF / AE Percentiles',
+      render: (a) => {
+        const ifVal = a.detector_output?.isolation_forest?.benign_percentile;
+        const aeVal = a.detector_output?.autoencoder?.benign_percentile;
+        return (
+          <span className="font-mono text-xs text-muted">
+            IF: {ifVal != null ? `${ifVal.toFixed(1)}%` : '—'} | AE: {aeVal != null ? `${aeVal.toFixed(1)}%` : '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'agreement',
+      header: 'Agreement State',
+      render: (a) => {
+        const state = a.detector_output?.fusion?.agreement_state || 'both_fired';
+        const isBoth = state === 'both_fired' || state === 'BOTH_FIRE';
+        return (
+          <StatusBadge
+            label={state}
+            variant={isBoth ? 'attack' : 'suspicious'}
+            size="sm"
+          />
+        );
+      },
+    },
+    {
+      key: 'trigger_source',
+      header: 'Alarm Trigger',
+      render: (a) => {
+        const cusumAlarm = a.detector_output?.cusum?.is_alarm;
+        return (
+          <span className="text-xs font-medium text-slate">
+            {cusumAlarm ? 'CUSUM Shift' : 'Fused Threshold (95%)'}
+          </span>
+        );
+      },
+    },
+  ];
+
+  // Windows Table Columns
   const alertColumns: Column<CanonicalTrafficWindow>[] = [
     {
       key: 'timestamp',
@@ -351,7 +429,32 @@ export const OverviewPage: React.FC = () => {
         )}
       </ChartCard>
 
-      {/* 3. Recent Alerts / Telemetry Windows Table */}
+      {/* 3. Recent Anomaly Alerts Table (with full multi-model detector output) */}
+      <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-text">Recent Anomaly Alerts</h2>
+            <p className="text-xs text-muted">
+              Live alerts triggered when fused percentiles or CUSUM tracking cross calibrated security thresholds.
+            </p>
+          </div>
+          <StatusBadge
+            label={`${alerts.length} Active Alerts`}
+            variant={alerts.length > 0 ? 'attack' : 'safe'}
+            size="sm"
+            dot
+          />
+        </div>
+
+        <DataTable
+          columns={alertItemColumns}
+          data={alerts}
+          keyExtractor={(a) => a.id}
+          emptyMessage="No anomaly alerts triggered. Stream is operating within normal baseline bounds."
+        />
+      </div>
+
+      {/* 4. Recent Telemetry Windows Table */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>

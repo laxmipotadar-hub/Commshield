@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   Cpu,
   Eye,
@@ -32,26 +33,31 @@ import {
   api,
   CanonicalTrafficWindow,
   DetectorOutput,
-  ExplainabilityResponse,
 } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
+
+interface WindowDetectionRecord {
+  window: CanonicalTrafficWindow;
+  output?: DetectorOutput;
+}
 
 export const DetectionPage: React.FC = () => {
   const { pollTick } = useReplay();
 
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
   const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
-  const [explainData, setExplainData] = useState<ExplainabilityResponse | null>(null);
   const [detectorData, setDetectorData] = useState<DetectorOutput | null>(null);
+  const [detectionMap, setDetectionMap] = useState<Record<string, DetectorOutput>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaceholder, setIsPlaceholder] = useState(false);
 
+  // Fetch telemetry windows
   const fetchWindows = async (isInitial = false) => {
     if (isInitial) setLoading(true);
     setError(null);
     try {
-      const res = await api.getWindows({ limit: 25 });
+      const res = await api.getWindows({ limit: 30 });
       const items = res.items || [];
       setWindows(items);
       setIsPlaceholder(res.is_placeholder === true);
@@ -76,69 +82,124 @@ export const DetectionPage: React.FC = () => {
     }
   }, [pollTick]);
 
-  // Fetch real detection and explainability for selected window
+  // Evaluate selected window and pre-fetch recent windows detection results
   useEffect(() => {
     if (!selectedWindowId) return;
 
-    Promise.all([
-      api.analyzeWindow({ window_id: selectedWindowId }).catch(() => null),
-      api.getExplainability(selectedWindowId).catch(() => null),
-    ]).then(([detRes, expRes]) => {
-      if (detRes) setDetectorData(detRes);
-      if (expRes) setExplainData(expRes);
-    });
+    api.analyzeWindow({ window_id: selectedWindowId })
+      .then((detRes) => {
+        if (detRes) {
+          setDetectorData(detRes);
+          setDetectionMap((prev) => ({ ...prev, [selectedWindowId]: detRes }));
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to analyze window:', err);
+      });
   }, [selectedWindowId]);
 
-  // Derived: CUSUM trend from windows
-  const cusumChartData = useMemo(() => {
-    let accumulated = 0;
+  // Batch analyze recent windows for history trend if not cached
+  useEffect(() => {
+    if (windows.length === 0) return;
+
+    const uncached = windows.slice(0, 15).filter((w) => !detectionMap[w.window_id]);
+    if (uncached.length === 0) return;
+
+    Promise.all(
+      uncached.map((w) =>
+        api
+          .analyzeWindow({ window_id: w.window_id })
+          .then((res) => ({ id: w.window_id, res }))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      const updates: Record<string, DetectorOutput> = {};
+      results.forEach((r) => {
+        if (r && r.res) updates[r.id] = r.res;
+      });
+      if (Object.keys(updates).length > 0) {
+        setDetectionMap((prev) => ({ ...prev, ...updates }));
+      }
+    });
+  }, [windows, detectionMap]);
+
+  // Combined records sorted chronologically
+  const sortedRecords: WindowDetectionRecord[] = useMemo(() => {
     return [...windows]
       .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
-      .map((w) => {
-        const d = new Date(w.window_start);
-        const timeStr = isNaN(d.getTime())
-          ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
-          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      .map((w) => ({
+        window: w,
+        output: detectionMap[w.window_id],
+      }));
+  }, [windows, detectionMap]);
 
-        // Score based on ratio deviations from baseline
-        const nasDev = (w.ratio_features?.nas_failure_ratio || 0) * 10;
-        const pduDev = Math.abs(1.0 - (w.ratio_features?.pdu_session_rate_per_ue || 1.0));
-        const step = Math.max(0, (nasDev + pduDev) * 2 - 0.1);
-        accumulated = Math.min(10, Math.max(0, Number((accumulated + step).toFixed(2))));
+  // Trend data for sparklines and charts
+  const historyData = useMemo(() => {
+    return sortedRecords.map(({ window: w, output: out }) => {
+      const d = new Date(w.window_start);
+      const timeStr = isNaN(d.getTime())
+        ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
+        : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        const isCurrent = w.window_id === selectedWindowId;
-        const fusedVal = isCurrent && detectorData
-          ? detectorData.fusion.fused_percentile
-          : (explainData?.window_id === w.window_id ? explainData.fused_percentile : 0.85);
+      const ifPct = out?.isolation_forest?.benign_percentile ?? 50.0;
+      const aePct = out?.autoencoder?.benign_percentile ?? 50.0;
+      const fusedPct = out?.fusion?.fused_percentile ?? Math.max(ifPct, aePct);
+      const cusumStat = out?.cusum?.accumulated_statistic ?? 0.0;
+      const isAlarm = out?.cusum?.is_alarm ?? false;
+      const agreement = out?.fusion?.agreement_state ?? 'neither';
 
-        return {
-          time: timeStr,
-          cusum_score: accumulated,
-          alarm_threshold: 4.5,
-          fused_score: fusedVal,
-        };
-      });
-  }, [windows, selectedWindowId, detectorData, explainData]);
+      return {
+        time: timeStr,
+        window_id: w.window_id,
+        if_percentile: Number(ifPct.toFixed(1)),
+        ae_percentile: Number(aePct.toFixed(1)),
+        fused_percentile: Number(fusedPct.toFixed(1)),
+        cusum_score: Number(cusumStat.toFixed(2)),
+        alarm_threshold: 4.5,
+        is_alarm: isAlarm,
+        agreement: agreement,
+      };
+    });
+  }, [sortedRecords]);
 
-  // Agreement State derived from real detector or explainability
-  const agreementState = useMemo(() => {
-    if (detectorData?.fusion?.agreement_state) {
-      return detectorData.fusion.agreement_state;
+  // Selected window metrics
+  const activeOutput = detectorData;
+  const ifPct = activeOutput?.isolation_forest?.benign_percentile ?? 50.0;
+  const ifRaw = activeOutput?.isolation_forest?.raw_score_negated ?? 0.5;
+  const ifFlagged = activeOutput?.isolation_forest?.is_flagged ?? false;
+
+  const aePct = activeOutput?.autoencoder?.benign_percentile ?? 50.0;
+  const aeMse = activeOutput?.autoencoder?.reconstruction_mse ?? 0.01;
+  const aeFlagged = activeOutput?.autoencoder?.is_flagged ?? false;
+
+  const fusedPct = activeOutput?.fusion?.fused_percentile ?? Math.max(ifPct, aePct);
+  const secondaryMean = activeOutput?.fusion?.secondary_mean_percentile ?? (ifPct + aePct) / 2.0;
+  const isAnomalous = activeOutput?.fusion?.is_anomalous ?? false;
+
+  const agreementState = activeOutput?.fusion?.agreement_state || 'neither';
+  const cusumStat = activeOutput?.cusum?.accumulated_statistic ?? 0.0;
+  const cusumStatus = activeOutput?.cusum?.status || (cusumStat >= 4.5 ? 'triggered' : cusumStat > 0 ? 'accumulating' : 'idle');
+  const cusumIsAlarm = activeOutput?.cusum?.is_alarm ?? false;
+
+  // Normalize agreement state display
+  const isBothFired = agreementState === 'both_fired' || agreementState === 'BOTH_FIRE';
+  const isIfOnly = agreementState === 'only_isolation_forest' || agreementState === 'IF_ONLY';
+  const isAeOnly = agreementState === 'only_autoencoder' || agreementState === 'AE_ONLY';
+  const isNeither = agreementState === 'neither' || agreementState === 'NONE';
+
+  // Agreement State badge variant
+  const getAgreementBadge = (state: string) => {
+    if (state === 'both_fired' || state === 'BOTH_FIRE') {
+      return { label: 'both_fired', variant: 'attack' as const };
     }
-    if (!explainData) return 'NONE';
-    if (explainData.is_anomalous) return 'BOTH_FIRE';
-    if (explainData.fused_percentile > 0.95) return 'IF_ONLY';
-    return 'NONE';
-  }, [detectorData, explainData]);
-
-  // Derive score metrics from detectorData, explainData or defaults
-  const ifPercentile = detectorData?.isolation_forest?.benign_percentile !== undefined
-    ? detectorData.isolation_forest.benign_percentile
-    : (explainData?.fused_percentile !== undefined ? explainData.fused_percentile : 0.985);
-
-  const ifRawScore = detectorData?.isolation_forest?.raw_score_negated ?? 0.684;
-  const isAnomalous = detectorData?.fusion?.is_anomalous ?? (explainData?.is_anomalous ?? false);
-  const fusedVal = detectorData?.fusion?.fused_percentile ?? (explainData?.fused_percentile ?? ifPercentile);
+    if (state === 'only_isolation_forest' || state === 'IF_ONLY') {
+      return { label: 'only_isolation_forest', variant: 'suspicious' as const };
+    }
+    if (state === 'only_autoencoder' || state === 'AE_ONLY') {
+      return { label: 'only_autoencoder', variant: 'suspicious' as const };
+    }
+    return { label: 'neither', variant: 'safe' as const };
+  };
 
   // Table Columns
   const columns: Column<CanonicalTrafficWindow>[] = [
@@ -174,18 +235,77 @@ export const DetectionPage: React.FC = () => {
       },
     },
     {
-      key: 'ue_entropy',
-      header: 'UE Entropy',
-      render: (w) => <span className="text-xs font-mono">{w.ratio_features?.ue_hash_entropy?.toFixed(3) ?? '—'}</span>,
+      key: 'if_score',
+      header: 'IF Score',
+      render: (w) => {
+        const out = detectionMap[w.window_id];
+        const val = out?.isolation_forest?.benign_percentile;
+        return (
+          <span className={`text-xs font-mono ${val !== undefined && val >= 95 ? 'text-attack font-bold' : 'text-text'}`}>
+            {val !== undefined ? `${val.toFixed(1)}%` : '—'}
+          </span>
+        );
+      },
     },
     {
-      key: 'nas_fail',
-      header: 'NAS Fail Ratio',
-      render: (w) => (
-        <span className={`text-xs font-mono ${Number(w.ratio_features?.nas_failure_ratio || 0) > 0.01 ? 'text-attack font-bold' : 'text-muted'}`}>
-          {((w.ratio_features?.nas_failure_ratio || 0) * 100).toFixed(2)}%
-        </span>
-      ),
+      key: 'ae_score',
+      header: 'AE Reconstruction',
+      render: (w) => {
+        const out = detectionMap[w.window_id];
+        const mse = out?.autoencoder?.reconstruction_mse;
+        const pct = out?.autoencoder?.benign_percentile;
+        return (
+          <div className="flex flex-col">
+            <span className={`text-xs font-mono ${pct != null && pct >= 95 ? 'text-attack font-bold' : 'text-text'}`}>
+              {pct != null ? `${pct.toFixed(1)}%` : '—'}
+            </span>
+            {mse != null && (
+              <span className="text-[10px] font-mono text-muted">
+                MSE: {mse.toFixed(4)}
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'fused_score',
+      header: 'Fused Percentile',
+      render: (w) => {
+        const out = detectionMap[w.window_id];
+        const val = out?.fusion?.fused_percentile;
+        return (
+          <span className={`text-xs font-mono font-bold ${val !== undefined && val >= 95 ? 'text-attack' : 'text-slate'}`}>
+            {val !== undefined ? `${val.toFixed(1)}%` : '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'agreement',
+      header: 'Agreement',
+      render: (w) => {
+        const out = detectionMap[w.window_id];
+        const state = out?.fusion?.agreement_state || 'neither';
+        const badge = getAgreementBadge(state);
+        return <StatusBadge label={badge.label} variant={badge.variant} size="sm" />;
+      },
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (w) => {
+        const out = detectionMap[w.window_id];
+        const isAnom = out?.fusion?.is_anomalous || out?.cusum?.is_alarm;
+        return (
+          <StatusBadge
+            label={isAnom ? 'Anomaly Alarm' : 'Nominal Safe'}
+            variant={isAnom ? 'attack' : 'safe'}
+            size="sm"
+            dot
+          />
+        );
+      },
     },
     {
       key: 'action',
@@ -234,54 +354,71 @@ export const DetectionPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Detector Score Panels (3 Columns: IF, AE, Fusion) */}
+      {/* Detector Score Panels (3 Columns: IF, AE, Fusion) with Real Values and Trend Lines */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 1. Isolation Forest Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-blue/10 text-blue">
-                <Cpu className="w-5 h-5" />
+        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue/10 text-blue">
+                  <Cpu className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-text">Isolation Forest</h3>
+                  <span className="text-[10px] text-muted uppercase font-medium">Unsupervised Tree Ensemble</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text">Isolation Forest</h3>
-                <span className="text-[10px] text-muted uppercase font-medium">Unsupervised Tree Ensemble</span>
-              </div>
-            </div>
-            <StatusBadge
-              label={ifPercentile >= 95.0 || ifPercentile >= 0.95 ? 'Flagged' : 'Normal'}
-              variant={ifPercentile >= 95.0 || ifPercentile >= 0.95 ? 'attack' : 'safe'}
-              size="sm"
-              dot
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs text-muted">Calibrated Benign Percentile</span>
-              <span className="text-lg font-bold font-mono text-text">
-                {ifPercentile > 1.0 ? `${ifPercentile.toFixed(1)}th` : `${(ifPercentile * 100).toFixed(1)}%`}
-              </span>
-            </div>
-            <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  ifPercentile >= 95.0 || ifPercentile >= 0.95 ? 'bg-attack' : 'bg-blue'
-                }`}
-                style={{ width: `${Math.min(100, ifPercentile > 1.0 ? ifPercentile : ifPercentile * 100)}%` }}
+              <StatusBadge
+                label={ifFlagged ? 'Flagged' : 'Normal'}
+                variant={ifFlagged ? 'attack' : 'safe'}
+                size="sm"
+                dot
               />
             </div>
-            <div className="flex justify-between text-[10px] text-muted">
-              <span>0% (Nominal)</span>
-              <span>Threshold: 95.0%</span>
-              <span>100% (Anomalous)</span>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-muted">Benign Percentile</span>
+                <span className="text-xl font-bold font-mono text-text">
+                  {ifPct.toFixed(1)}%
+                </span>
+              </div>
+              <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${ifFlagged ? 'bg-attack' : 'bg-blue'}`}
+                  style={{ width: `${Math.min(100, ifPct)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted">
+                <span>0% Nominal</span>
+                <span>Threshold: 95.0%</span>
+                <span>100% Anomalous</span>
+              </div>
+            </div>
+
+            {/* Sparkline / Trend Line */}
+            <div className="h-16 w-full pt-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={historyData}>
+                  <Line
+                    type="monotone"
+                    dataKey="if_percentile"
+                    stroke="#3478F6"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <ReferenceLine y={95} stroke="#DC2626" strokeDasharray="2 2" strokeOpacity={0.6} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-border/60 text-xs space-y-1.5 text-muted">
+          <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted">
             <div className="flex justify-between">
               <span>Raw Score (Negated):</span>
-              <span className="font-mono text-slate font-medium">{ifRawScore.toFixed(4)}</span>
+              <span className="font-mono text-slate font-medium">{ifRaw.toFixed(4)}</span>
             </div>
             <div className="flex justify-between">
               <span>Calibration Reference:</span>
@@ -291,105 +428,142 @@ export const DetectionPage: React.FC = () => {
         </div>
 
         {/* 2. Autoencoder Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-teal/10 text-teal">
-                <Layers className="w-5 h-5" />
+        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-teal/10 text-teal">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-text">Dense Autoencoder</h3>
+                  <span className="text-[10px] text-muted uppercase font-medium">Reconstruction MSE</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text">Dense Autoencoder</h3>
-                <span className="text-[10px] text-muted uppercase font-medium">Reconstruction MSE</span>
-              </div>
-            </div>
-            <StatusBadge
-              label={detectorData?.autoencoder ? 'Active' : 'Pending M2'}
-              variant={detectorData?.autoencoder ? 'safe' : 'neutral'}
-              size="sm"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs text-muted">Reconstruction MSE</span>
-              <span className="text-lg font-bold font-mono text-text">
-                {detectorData?.autoencoder?.reconstruction_mse !== null && detectorData?.autoencoder?.reconstruction_mse !== undefined
-                  ? detectorData.autoencoder.reconstruction_mse.toFixed(4)
-                  : 'Pending M2'}
-              </span>
-            </div>
-            <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
-              <div
-                className="h-full rounded-full bg-teal transition-all duration-300"
-                style={{ width: '0%' }}
+              <StatusBadge
+                label={aeFlagged ? 'Flagged' : 'Normal'}
+                variant={aeFlagged ? 'attack' : 'safe'}
+                size="sm"
+                dot
               />
             </div>
-            <div className="flex justify-between text-[10px] text-muted">
-              <span>Scheduled for Milestone M2</span>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-muted">Benign Percentile</span>
+                <span className="text-xl font-bold font-mono text-text">
+                  {aePct.toFixed(1)}%
+                </span>
+              </div>
+              <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${aeFlagged ? 'bg-attack' : 'bg-teal'}`}
+                  style={{ width: `${Math.min(100, aePct)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted">
+                <span>0% Nominal</span>
+                <span>Threshold: 95.0%</span>
+                <span>100% Anomalous</span>
+              </div>
+            </div>
+
+            {/* Sparkline / Trend Line */}
+            <div className="h-16 w-full pt-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={historyData}>
+                  <Line
+                    type="monotone"
+                    dataKey="ae_percentile"
+                    stroke="#14B8A6"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <ReferenceLine y={95} stroke="#DC2626" strokeDasharray="2 2" strokeOpacity={0.6} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-border/60 text-xs space-y-1.5 text-muted">
+          <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted">
             <div className="flex justify-between">
-              <span>Status:</span>
-              <span className="font-medium text-slate">Null (Unfitted)</span>
+              <span>Reconstruction MSE:</span>
+              <span className="font-mono text-slate font-medium">{aeMse.toFixed(4)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Fusion Fallback:</span>
-              <span className="font-medium text-teal">IF Percentile Sourced</span>
+              <span>Architecture:</span>
+              <span className="font-medium text-slate">Dense PyTorch (9-6-3-6-9)</span>
             </div>
           </div>
         </div>
 
         {/* 3. Fused Score Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-attack/10 text-attack">
-                <Zap className="w-5 h-5" />
+        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-attack/10 text-attack">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-text">Fused Score</h3>
+                  <span className="text-[10px] text-muted uppercase font-medium">Max-Percentile Consensus</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text">Fused Score</h3>
-                <span className="text-[10px] text-muted uppercase font-medium">Max-Percentile Consensus</span>
-              </div>
-            </div>
-            <StatusBadge
-              label={isAnomalous ? 'Anomaly Alarm' : 'Nominal Stream'}
-              variant={isAnomalous ? 'attack' : 'safe'}
-              size="sm"
-              dot
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs text-muted">Fused Percentile</span>
-              <span className="text-2xl font-bold font-mono text-text">
-                {fusedVal > 1.0 ? `${fusedVal.toFixed(1)}th` : `${(fusedVal * 100).toFixed(1)}%`}
-              </span>
-            </div>
-            <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${isAnomalous ? 'bg-attack' : 'bg-safe'}`}
-                style={{ width: `${Math.min(100, fusedVal > 1.0 ? fusedVal : fusedVal * 100)}%` }}
+              <StatusBadge
+                label={isAnomalous ? 'Anomaly Alarm' : 'Nominal Stream'}
+                variant={isAnomalous ? 'attack' : 'safe'}
+                size="sm"
+                dot
               />
             </div>
-            <div className="flex justify-between text-[10px] text-muted">
-              <span>Rule: MAX_PERCENTILE</span>
-              <span className="font-semibold text-slate">State: {agreementState}</span>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-muted">Fused Percentile</span>
+                <span className="text-2xl font-bold font-mono text-text">
+                  {fusedPct.toFixed(1)}%
+                </span>
+              </div>
+              <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${isAnomalous ? 'bg-attack' : 'bg-safe'}`}
+                  style={{ width: `${Math.min(100, fusedPct)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted">
+                <span>Rule: MAX_PERCENTILE</span>
+                <span className="font-semibold text-slate">Mean: {secondaryMean.toFixed(1)}%</span>
+              </div>
+            </div>
+
+            {/* Sparkline / Trend Line */}
+            <div className="h-16 w-full pt-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={historyData}>
+                  <Line
+                    type="monotone"
+                    dataKey="fused_percentile"
+                    stroke="#DC2626"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <ReferenceLine y={95} stroke="#DC2626" strokeDasharray="2 2" strokeOpacity={0.6} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-border/60 text-xs space-y-1.5 text-muted">
+          <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted">
             <div className="flex justify-between">
-              <span>Verdict:</span>
-              <span className={`font-semibold ${isAnomalous ? 'text-attack' : 'text-safe'}`}>
-                {isAnomalous ? 'Flagged Anomalous' : 'Nominal Safe'}
-              </span>
+              <span>Agreement:</span>
+              <span className="font-semibold text-slate font-mono">{agreementState}</span>
             </div>
             <div className="flex justify-between">
               <span>Active Baseline:</span>
-              <span className="font-mono text-slate">{detectorData?.baseline_version || 'v1.0.0-anchor'}</span>
+              <span className="font-mono text-slate">{activeOutput?.baseline_version || 'v1.0.0-anchor'}</span>
             </div>
           </div>
         </div>
@@ -397,21 +571,38 @@ export const DetectionPage: React.FC = () => {
 
       {/* Middle Grid: CUSUM Trend & Detector Agreement */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: CUSUM Trend */}
+        {/* Left 2 Cols: CUSUM Trend with Status & Trigger Marker */}
         <div className="lg:col-span-2">
           <ChartCard
             title="CUSUM Persistent Shift Tracking"
-            subtitle="Cumulative sum anomaly statistic across successive windows (Alarm Threshold: 4.5)"
+            subtitle="Cumulative sum anomaly statistic across successive windows with trigger detection"
+            action={
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted">Status:</span>
+                <StatusBadge
+                  label={cusumStatus}
+                  variant={cusumStatus === 'triggered' ? 'attack' : cusumStatus === 'accumulating' ? 'suspicious' : 'safe'}
+                  size="sm"
+                  dot
+                />
+                {cusumIsAlarm && (
+                  <span className="text-xs font-bold text-attack flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Alarm
+                  </span>
+                )}
+              </div>
+            }
           >
-            {cusumChartData.length === 0 ? (
+            {historyData.length === 0 ? (
               <EmptyState title="No CUSUM Telemetry" description="Start replay to generate cumulative anomaly tracking." />
             ) : (
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={cusumChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <LineChart data={historyData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                     <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" />
-                    <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" domain={[0, 10]} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" domain={[0, 'auto']} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: '#FFFFFF',
@@ -421,14 +612,35 @@ export const DetectionPage: React.FC = () => {
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                    <ReferenceLine y={4.5} stroke="#DC2626" strokeDasharray="4 4" label={{ value: 'Alarm Threshold: 4.5', fill: '#DC2626', fontSize: 10 }} />
+                    <ReferenceLine
+                      y={4.5}
+                      stroke="#DC2626"
+                      strokeDasharray="4 4"
+                      label={{ value: 'Alarm Threshold: 4.5', fill: '#DC2626', fontSize: 10, position: 'insideTopRight' }}
+                    />
                     <Line
                       type="monotone"
                       dataKey="cusum_score"
                       name="Accumulated CUSUM"
                       stroke="#8B5CF6"
                       strokeWidth={2}
-                      dot={{ r: 2 }}
+                      dot={(props: any) => {
+                        const { cx, cy, payload } = props;
+                        if (payload.is_alarm || payload.cusum_score >= 4.5) {
+                          return (
+                            <circle
+                              key={`trigger-${cx}-${cy}`}
+                              cx={cx}
+                              cy={cy}
+                              r={5}
+                              fill="#DC2626"
+                              stroke="#FFFFFF"
+                              strokeWidth={2}
+                            />
+                          );
+                        }
+                        return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={2} fill="#8B5CF6" />;
+                      }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -437,7 +649,7 @@ export const DetectionPage: React.FC = () => {
           </ChartCard>
         </div>
 
-        {/* Right 1 Col: Detector Agreement Panel */}
+        {/* Right 1 Col: Detector Agreement Panel with Current State & History Strip */}
         <div className="lg:col-span-1">
           <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 h-full flex flex-col justify-between">
             <div>
@@ -445,51 +657,103 @@ export const DetectionPage: React.FC = () => {
                 <h3 className="text-sm font-semibold text-text">Detector Agreement State</h3>
                 <StatusBadge
                   label={agreementState}
-                  variant={agreementState === 'BOTH_FIRE' ? 'attack' : agreementState === 'IF_ONLY' ? 'suspicious' : 'safe'}
+                  variant={isBothFired ? 'attack' : (isIfOnly || isAeOnly) ? 'suspicious' : 'safe'}
                   size="sm"
                 />
               </div>
 
-              <div className="space-y-3 mt-4">
-                <div className={`p-3 rounded-lg border text-xs flex items-center justify-between ${agreementState === 'BOTH_FIRE' ? 'border-attack bg-attack/5' : 'border-border bg-bg/50'}`}>
-                  <span className="font-semibold text-text">BOTH_FIRE (Consensus Attack)</span>
-                  {agreementState === 'BOTH_FIRE' && <CheckCircle2 className="w-4 h-4 text-attack" />}
+              {/* Current Agreement State Cards */}
+              <div className="space-y-2 mt-4">
+                <div
+                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
+                    isBothFired ? 'border-attack bg-attack/10 font-bold' : 'border-border bg-bg/50 text-muted'
+                  }`}
+                >
+                  <span className="text-text">both_fired (Consensus Attack)</span>
+                  {isBothFired && <CheckCircle2 className="w-4 h-4 text-attack" />}
                 </div>
 
-                <div className={`p-3 rounded-lg border text-xs flex items-center justify-between ${agreementState === 'IF_ONLY' ? 'border-suspicious bg-suspicious/5' : 'border-border bg-bg/50'}`}>
-                  <span className="font-semibold text-text">IF_ONLY (Isolation Forest Active)</span>
-                  {agreementState === 'IF_ONLY' && <CheckCircle2 className="w-4 h-4 text-suspicious" />}
+                <div
+                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
+                    isIfOnly ? 'border-suspicious bg-suspicious/10 font-bold' : 'border-border bg-bg/50 text-muted'
+                  }`}
+                >
+                  <span className="text-text">only_isolation_forest (Tree Alone)</span>
+                  {isIfOnly && <CheckCircle2 className="w-4 h-4 text-suspicious" />}
                 </div>
 
-                <div className="p-3 rounded-lg border text-xs flex items-center justify-between border-border bg-bg/50 opacity-60">
-                  <span className="font-semibold text-text">AE_ONLY (Reconstruction MSE)</span>
-                  <span className="text-[10px] text-muted">Pending M2</span>
+                <div
+                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
+                    isAeOnly ? 'border-suspicious bg-suspicious/10 font-bold' : 'border-border bg-bg/50 text-muted'
+                  }`}
+                >
+                  <span className="text-text">only_autoencoder (Recon Alone)</span>
+                  {isAeOnly && <CheckCircle2 className="w-4 h-4 text-suspicious" />}
                 </div>
 
-                <div className={`p-3 rounded-lg border text-xs flex items-center justify-between ${agreementState === 'NONE' ? 'border-safe bg-safe/5' : 'border-border bg-bg/50'}`}>
-                  <span className="font-semibold text-text">NONE (All Detectors Nominal)</span>
-                  {agreementState === 'NONE' && <CheckCircle2 className="w-4 h-4 text-safe" />}
+                <div
+                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
+                    isNeither ? 'border-safe bg-safe/10 font-bold' : 'border-border bg-bg/50 text-muted'
+                  }`}
+                >
+                  <span className="text-text">neither (All Detectors Nominal)</span>
+                  {isNeither && <CheckCircle2 className="w-4 h-4 text-safe" />}
+                </div>
+              </div>
+
+              {/* Agreement History Strip */}
+              <div className="mt-4 pt-3 border-t border-border">
+                <span className="text-xs font-semibold text-text block mb-1.5">Agreement History Strip</span>
+                {historyData.length === 0 ? (
+                  <span className="text-[11px] text-muted">Awaiting replay telemetry...</span>
+                ) : (
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                    {historyData.map((h, idx) => {
+                      const state = h.agreement;
+                      const color =
+                        state === 'both_fired' || state === 'BOTH_FIRE'
+                          ? 'bg-attack'
+                          : state === 'only_isolation_forest' || state === 'IF_ONLY' || state === 'only_autoencoder' || state === 'AE_ONLY'
+                          ? 'bg-suspicious'
+                          : 'bg-safe';
+                      const isSel = h.window_id === selectedWindowId;
+                      return (
+                        <div
+                          key={`strip-${idx}`}
+                          onClick={() => setSelectedWindowId(h.window_id)}
+                          title={`${h.time}: ${state}`}
+                          className={`h-6 w-3.5 rounded-sm cursor-pointer transition-all ${color} ${
+                            isSel ? 'ring-2 ring-blue scale-110 shadow-sm' : 'opacity-80 hover:opacity-100'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="flex justify-between text-[10px] text-muted mt-1">
+                  <span>Earliest</span>
+                  <span>Latest window</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-bg border border-border text-xs text-muted flex items-start gap-2 mt-4">
+            <div className="p-3 rounded-lg bg-bg border border-border text-xs text-muted flex items-start gap-2 mt-2">
               <Info className="w-4 h-4 text-blue flex-shrink-0 mt-0.5" />
               <p>
-                Fused decision is currently driven by the calibrated Isolation Forest percentile score. Autoencoder will contribute in Milestone M2.
+                Consensus scoring fuses Isolation Forest and Autoencoder percentiles. When either crosses 95%, the fused score triggers.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Anomaly Windows Table */}
+      {/* Recent Anomaly Windows Table with All Columns and Status Badge per Row */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-text">Recent Telemetry Windows</h2>
             <p className="text-xs text-muted">
-              Click &quot;Inspect&quot; on any window row to view its calibrated feature attributions and anomaly scoring.
+              Click &quot;Inspect&quot; on any window row to view its multi-model anomaly scoring and calibrated percentiles.
             </p>
           </div>
           <SampleDataBadge isPlaceholder={isPlaceholder} />
