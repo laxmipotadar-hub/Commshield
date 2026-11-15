@@ -6,7 +6,9 @@ from .models import (
     BaselineRegistry,
     CanonicalWindow,
     CandidateBaseline,
+    DecisionTrace,
     DetectionResult,
+    DriftEvent,
     QuarantineWindow,
 )
 
@@ -18,6 +20,8 @@ __all__ = [
     "BaselineRegistry",
     "CandidateBaseline",
     "CanonicalWindow",
+    "DecisionTrace",
     "DetectionResult",
+    "DriftEvent",
     "QuarantineWindow",
 ]

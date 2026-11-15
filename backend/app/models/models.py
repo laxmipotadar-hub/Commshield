@@ -124,9 +124,39 @@ class QuarantineWindow(Base):
     window_id = Column(String(36), ForeignKey("canonical_windows.id", ondelete="CASCADE"), nullable=False)
     slice_id = Column(String(64), nullable=False, index=True)
     reason = Column(String(64), nullable=False)
+    scenario = Column(String(64), nullable=True)
     quarantined_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     window = relationship("CanonicalWindow", back_populates="quarantine_windows")
+
+
+class DriftEvent(Base):
+    __tablename__ = "drift_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    window_id = Column(String(36), nullable=False, index=True)
+    slice_id = Column(String(64), nullable=False, index=True)
+    event_time = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    volume_multiplier = Column(Float, nullable=False, default=1.0)
+    drift_detected = Column(Boolean, nullable=False, default=True)
+    attribution_id = Column(String(36), nullable=True)
+    decision_trace_id = Column(String(36), nullable=True)
+    attribution = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+class DecisionTrace(Base):
+    __tablename__ = "decision_traces"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    window_id = Column(String(36), nullable=False, index=True)
+    slice_id = Column(String(64), nullable=False, index=True)
+    alert_id = Column(String(36), nullable=True)
+    drift_event_id = Column(String(36), nullable=True)
+    steps = Column(JSON, nullable=False)
+    verdict = Column(String(32), nullable=False)
+    action = Column(String(32), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 
 
 class AuditEvent(Base):

@@ -81,12 +81,23 @@ def train_slice_baseline(
     X_list: List[List[float]] = []
     start_times: List[datetime] = []
     end_times: List[datetime] = []
+    volume_list: List[float] = []
+    comp_accum: Dict[str, float] = {}
 
     for w in training_windows:
         ratios = w.get("ratio_features", {})
         scaled = scaler.transform_vector(ratios)
         row = [scaled[f] for f in FEATURE_NAMES]
         X_list.append(row)
+
+        counters = w.get("raw_counters", {})
+        up_b = float(counters.get("total_bytes_uplink", 0))
+        dn_b = float(counters.get("total_bytes_downlink", 0))
+        volume_list.append(up_b + dn_b)
+
+        comp = w.get("composition_vector", {})
+        for k_cat, val in comp.items():
+            comp_accum[k_cat] = comp_accum.get(k_cat, 0.0) + float(val)
 
         w_start = w.get("window_start")
         w_end = w.get("window_end")
@@ -101,6 +112,15 @@ def train_slice_baseline(
             end_times.append(w_end)
 
     X = np.array(X_list, dtype=np.float32)
+
+    n_win = max(1, len(training_windows))
+    mean_volume = float(np.mean(volume_list)) if volume_list else 1_000_000_000.0
+    mean_composition = {k_cat: round(v / n_win, 5) for k_cat, v in comp_accum.items()} if comp_accum else {
+        "registration_ratio": 0.0778,
+        "session_setup_ratio": 0.9122,
+        "failure_ratio": 0.0044,
+        "other_signalling_ratio": 0.0056,
+    }
 
     # 3. Fit Isolation Forest detector
     if_detector = IsolationForestDetector(
@@ -136,6 +156,8 @@ def train_slice_baseline(
         },
         "scaler": scaler,
         "scaler_params": scaler.to_dict(),
+        "mean_volume_bytes": mean_volume,
+        "composition_vector": mean_composition,
         "threshold_params": {
             "threshold_percentile": threshold_percentile,
             "cusum_threshold": 4.5,

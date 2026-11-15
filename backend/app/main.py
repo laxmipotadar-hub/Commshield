@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import api_router
+from .api.attribution import router as attribution_router
 from .api.detection import router as detection_router
 from .api.governance import router as governance_router
 from .api.replay import router as replay_router
@@ -57,6 +58,7 @@ app.include_router(api_router)
 app.include_router(replay_router, prefix="/api")
 app.include_router(detection_router, prefix="/api")
 app.include_router(governance_router, prefix="/api")
+app.include_router(attribution_router, prefix="/api")
 app.get("/api/traffic/windows", response_model=PaginatedWindowsResponse, tags=["Windows & Detection"])(list_windows)
 
 

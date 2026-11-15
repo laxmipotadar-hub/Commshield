@@ -35,6 +35,7 @@ import {
   CandidateResponse,
   CanonicalTrafficWindow,
   ExplainabilityResponse,
+  QuarantineWindowItem,
 } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
 
@@ -45,6 +46,7 @@ export const OverviewPage: React.FC = () => {
   const [baselines, setBaselines] = useState<BaselineSummaryResponse[]>([]);
   const [candidates, setCandidates] = useState<CandidateResponse[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [quarantineItems, setQuarantineItems] = useState<QuarantineWindowItem[]>([]);
   const [explainMap, setExplainMap] = useState<Record<string, ExplainabilityResponse>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,11 +57,12 @@ export const OverviewPage: React.FC = () => {
     if (isInitial) setLoading(true);
     setError(null);
     try {
-      const [winRes, baseRes, candRes, alertRes] = await Promise.all([
+      const [winRes, baseRes, candRes, alertRes, quaranRes] = await Promise.all([
         api.getWindows({ limit: 20 }),
         api.getBaselines(),
         api.getCandidates('PENDING'),
         api.getAlerts().catch(() => [] as AlertItem[]),
+        api.getQuarantineWindows().catch(() => [] as QuarantineWindowItem[]),
       ]);
 
       const items = winRes.items || [];
@@ -69,6 +72,7 @@ export const OverviewPage: React.FC = () => {
       setBaselines(baseRes || []);
       setCandidates(candRes || []);
       setAlerts(alertRes || []);
+      setQuarantineItems(quaranRes || []);
 
       // Fetch explainability for recent windows
       if (items.length > 0) {
@@ -131,9 +135,9 @@ export const OverviewPage: React.FC = () => {
   const driftVerdict = firstWindowExplain?.attribution_summary?.verdict || 'likely_benign';
   const driftReason = firstWindowExplain?.attribution_summary?.abstain_reason;
 
-  const quarantinedCount = windows.filter(
-    (w) => explainMap[w.window_id]?.attribution_summary?.verdict === 'uncertain'
-  ).length;
+  const quarantinedCount = quarantineItems.length > 0
+    ? quarantineItems.length
+    : windows.filter((w) => explainMap[w.window_id]?.attribution_summary?.verdict === 'uncertain').length;
 
   // Chart Data: traffic volume over time from windows
   const chartData = [...windows]
@@ -341,7 +345,7 @@ export const OverviewPage: React.FC = () => {
         <StatCard
           title="Quarantined Windows"
           value={quarantinedCount}
-          subtitle="Windows isolated for candidate retraining"
+          subtitle={quarantinedCount > 0 ? `${quarantinedCount} isolated windows` : 'Zero windows isolated'}
           badge="Quarantine"
           badgeVariant="quarantined"
           icon={<GitBranch className="w-4 h-4 text-quarantined" />}

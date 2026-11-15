@@ -108,8 +108,11 @@ class ReplayService:
                 w_eval = dict(w)
                 w_eval["window_id"] = window_id
                 detection_service.analyze_window(w_eval, db=db)
-            except Exception as det_err:
-                logger.warning("Error running detection during replay: %s", det_err)
+                # Run attribution automatically inside replay pipeline
+                from .attribution import attribution_service
+                attribution_service.analyze_window(w_eval, db=db, scenario=self.dataset_id)
+            except Exception as pipe_err:
+                logger.warning("Error running detection/attribution during replay: %s", pipe_err)
         except Exception as e:
             db.rollback()
             logger.warning("Error storing window in database: %s", e)
@@ -172,6 +175,13 @@ class ReplayService:
         self.current_window_index = 0
         self.status = "RUNNING"
         self.current_timestamp = datetime.now(timezone.utc)
+
+        # Reset ADWIN trackers for fresh scenario run
+        try:
+            from .attribution import attribution_service
+            attribution_service.reset_trackers()
+        except Exception:
+            pass
 
         # Launch background task
         loop = asyncio.get_running_loop()

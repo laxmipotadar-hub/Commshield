@@ -89,6 +89,67 @@ export interface IsolationForestScore {
   is_flagged: boolean;
 }
 
+export interface ProportionalGrowthTest {
+  scaling_factor_k: number;
+  jsd_divergence: number;
+  jsd_null_threshold_99th: number;
+  passed: boolean;
+}
+
+export interface AttributionOutput {
+  window_id: string;
+  slice_id: string;
+  drift_detected: boolean;
+  verdict: 'likely_benign' | 'likely_attack' | 'uncertain' | string;
+  abstain_reason?: string | null;
+  confidence_type: string;
+  proportional_growth_test: ProportionalGrowthTest;
+  supporting_signals: Record<string, unknown>;
+  action?: string | null;
+  action_recommendation: string;
+  decision_trace_id?: string | null;
+}
+
+export interface DriftEventItem {
+  id: string;
+  window_id: string;
+  slice_id: string;
+  event_time: string;
+  volume_multiplier: number;
+  drift_detected: boolean;
+  verdict: 'likely_benign' | 'likely_attack' | 'uncertain' | string;
+  abstain_reason?: string | null;
+  action: string;
+  decision_trace_id?: string | null;
+  attribution?: Record<string, unknown> | null;
+}
+
+export interface DecisionTraceResponse {
+  id: string;
+  window_id: string;
+  slice_id: string;
+  alert_id?: string | null;
+  drift_event_id?: string | null;
+  verdict: string;
+  action: string;
+  steps: Array<{
+    step_name: string;
+    description: string;
+    timestamp: string;
+    details: Record<string, unknown>;
+  }>;
+  created_at: string;
+}
+
+export interface QuarantineWindowItem {
+  id: string;
+  window_id: string;
+  slice_id: string;
+  reason: string;
+  scenario?: string | null;
+  quarantined_at: string;
+}
+
 export interface AutoencoderScore {
   reconstruction_mse?: number | null;
   benign_percentile?: number | null;
@@ -339,4 +400,29 @@ export const api = {
     request<ThreeArmComparisonResponse>(
       `/api/v1/experiments/three-arm?dataset_id=${encodeURIComponent(datasetId)}`
     ),
+
+  // Attribution & Drift
+  getDriftEvents: (sliceId?: string, limit = 50) => {
+    const qs = sliceId ? `?slice_id=${encodeURIComponent(sliceId)}&limit=${limit}` : `?limit=${limit}`;
+    return request<DriftEventItem[]>(`/api/drift/events${qs}`);
+  },
+
+  getDecisionTrace: (traceId: string) =>
+    request<DecisionTraceResponse>(`/api/decision-traces/${encodeURIComponent(traceId)}`),
+
+  getQuarantineWindows: (sliceId?: string, limit = 100) => {
+    const qs = sliceId ? `?slice_id=${encodeURIComponent(sliceId)}&limit=${limit}` : `?limit=${limit}`;
+    return request<QuarantineWindowItem[]>(`/api/quarantine/windows${qs}`);
+  },
+
+  analyzeAttribution: (payload: {
+    window_id?: string;
+    window?: unknown;
+    scenario?: string;
+    force_drift?: boolean;
+  }) =>
+    request<AttributionOutput>('/api/attribution/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
