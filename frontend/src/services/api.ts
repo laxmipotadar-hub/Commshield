@@ -398,6 +398,74 @@ export interface AnalystFeedbackPayload {
 // API Client Methods
 // -------------------------------------------------------------
 
+export interface ArmMetricsSummary {
+  recall_mean: number | null;
+  recall_std: number | null;
+  recall_min?: number | null;
+  recall_max?: number | null;
+  fpr_mean: number;
+  fpr_std: number;
+  fpr_min?: number | null;
+  fpr_max?: number | null;
+  contamination_mean: number;
+  contamination_std: number;
+  contamination_min?: number | null;
+  contamination_max?: number | null;
+  adaptations_mean: number;
+  adaptations_min?: number | null;
+  adaptations_max?: number | null;
+  quarantined_mean: number;
+  quarantined_min?: number | null;
+  quarantined_max?: number | null;
+  recovery_time_mean: number;
+  recovery_time_min?: number | null;
+  recovery_time_max?: number | null;
+}
+
+export interface ScenarioSummaryData {
+  num_seeds: number;
+  seeds: number[];
+  arms: {
+    arm_a_static: ArmMetricsSummary;
+    arm_b_naive: ArmMetricsSummary;
+    arm_c_commshield: ArmMetricsSummary;
+  };
+}
+
+export interface ExperimentSummaryResponse {
+  config_version: string;
+  generated_at: string;
+  scenarios: string[];
+  seeds: number[];
+  summaries: Record<string, ScenarioSummaryData>;
+  runs?: Array<{
+    scenario: string;
+    seed: number;
+    config_version: string;
+    num_windows: number;
+    timestamp: string;
+    arms: Record<string, {
+      recall: number | null;
+      fpr: number;
+      baseline_contamination_final: number;
+      baseline_contamination_over_time: number[];
+      adaptations_count: number;
+      quarantined_count: number;
+      recovery_time_windows: number;
+    }>;
+  }>;
+}
+
+export interface ExperimentStatusResponse {
+  status: 'IDLE' | 'RUNNING' | 'COMPLETED' | 'FAILED' | string;
+  scenarios: string[];
+  seeds: number[];
+  progress: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error: string | null;
+}
+
 export const api = {
   // Health
   getHealth: () => request<HealthResponse>('/api/health'),
@@ -553,4 +621,17 @@ export const api = {
         body: JSON.stringify(payload),
       }
     ),
+
+  // Centrepiece Three-Arm Experiments
+  getExperimentResults: () => request<ExperimentSummaryResponse>('/api/experiments/results'),
+  getScenarioExperimentResults: (scenario: string) =>
+    request<{ scenario: string; config_version: string; generated_at: string; summary: ScenarioSummaryData }>(
+      `/api/experiments/results/${encodeURIComponent(scenario)}`
+    ),
+  getExperimentStatus: () => request<ExperimentStatusResponse>('/api/experiments/status'),
+  runExperiment: (payload: { scenarios?: string[]; seeds?: number[]; num_windows?: number }) =>
+    request<{ status: string; message: string }>('/api/experiments/run', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
