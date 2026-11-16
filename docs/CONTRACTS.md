@@ -76,6 +76,19 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | | `actor` | `String(64)` | NOT NULL | User ID or system service |
 | | `details` | `JSON` | NOT NULL | Event parameters, before/after diffs |
 | | `timestamp` | `DateTime(timezone=True)` | NOT NULL | Audit timestamp |
+| **`experiment_results`** | `id` | `String(36)` | PK, UUID | Unique experiment run ID |
+| | `scenario` | `String(64)` | Indexed, NOT NULL | Scenario name (`stable_benign`, etc.) |
+| | `seed` | `Integer` | Indexed, NOT NULL | Random generator seed |
+| | `arm` | `String(32)` | Indexed, NOT NULL | `arm_a_static`, `arm_b_naive`, `arm_c_commshield` |
+| | `config_version` | `String(32)` | NOT NULL | Evaluation configuration version |
+| | `recall` | `Float` | Nullable | Attack detection rate (recall) |
+| | `fpr` | `Float` | NOT NULL | False-positive rate on benign windows |
+| | `contamination_final` | `Float` | NOT NULL | Final attack fraction in active baseline |
+| | `adaptations_count` | `Integer` | NOT NULL | Number of promoted baseline adaptations |
+| | `quarantined_count` | `Integer` | NOT NULL | Number of quarantined windows/candidates |
+| | `recovery_time_windows` | `Integer` | Nullable | Post-attack recovery time in windows |
+| | `metrics` | `JSON` | NOT NULL | Full run metrics and contamination history |
+| | `timestamp` | `DateTime(timezone=True)` | NOT NULL | Experiment execution timestamp |
 
 ---
 
@@ -156,6 +169,10 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | `POST` | `/api/v1/candidates/{id}/reject` | Operator rejects candidate | `ApprovalActionRequest` | `CandidateResponse` |
 | `POST` | `/api/v1/baselines/rollback` | Atomic rollback to designated baseline | `RollbackRequest` | `RollbackResponse` |
 | `GET` | `/api/v1/experiments/three-arm` | Compare metrics across arms A/B/C | Query params: `dataset_id` | `ThreeArmComparisonResponse` |
+| `POST` | `/api/v1/experiments/run` | Trigger multi-seed 3-arm benchmark in background | `ExperimentRunRequest` | `Dict[str, Any]` |
+| `GET` | `/api/v1/experiments/status` | Execution status & progress of benchmark | None | `Dict[str, Any]` |
+| `GET` | `/api/v1/experiments/results` | Aggregated multi-seed experiment benchmark results | None | `Dict[str, Any]` |
+| `GET` | `/api/v1/experiments/results/{scenario}` | Single-scenario benchmark results | None | `Dict[str, Any]` |
 
 #### Governance Action JSON Schemas
 

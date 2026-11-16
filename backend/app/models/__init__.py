@@ -12,6 +12,7 @@ from .models import (
     DetectionResult,
     DriftBudget,
     DriftEvent,
+    ExperimentResult,
     QuarantineWindow,
 )
 
@@ -29,5 +30,6 @@ __all__ = [
     "DetectionResult",
     "DriftBudget",
     "DriftEvent",
+    "ExperimentResult",
     "QuarantineWindow",
 ]

@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from .attribution import router as attribution_router
 from .datasets import router as datasets_router
 from .detection import router as detection_router
+from .experiments import router as experiments_router
 from .governance import router as governance_router
 from .investigation import router as investigation_router
 from .replay import router as replay_router
@@ -16,5 +17,6 @@ api_router.include_router(governance_router)
 api_router.include_router(detection_router)
 api_router.include_router(attribution_router)
 api_router.include_router(investigation_router)
+api_router.include_router(experiments_router)
 
 __all__ = ["api_router"]

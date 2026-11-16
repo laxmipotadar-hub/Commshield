@@ -246,3 +246,22 @@ class AnomalyAlert(Base):
     fused_score = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 
+
+class ExperimentResult(Base):
+    __tablename__ = "experiment_results"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    scenario = Column(String(64), nullable=False, index=True)
+    seed = Column(Integer, nullable=False, index=True)
+    arm = Column(String(32), nullable=False, index=True)  # arm_a_static, arm_b_naive, arm_c_commshield
+    config_version = Column(String(32), nullable=False, default="v1.0.0")
+    recall = Column(Float, nullable=True)
+    fpr = Column(Float, nullable=False)
+    contamination_final = Column(Float, nullable=False, default=0.0)
+    adaptations_count = Column(Integer, nullable=False, default=0)
+    quarantined_count = Column(Integer, nullable=False, default=0)
+    recovery_time_windows = Column(Integer, nullable=True)
+    metrics = Column(JSON, nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
