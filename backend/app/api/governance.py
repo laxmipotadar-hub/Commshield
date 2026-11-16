@@ -1,6 +1,7 @@
 """API endpoints for CommShield governance, candidate baseline promotions, and atomic rollbacks."""
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -19,12 +20,7 @@ from ..schemas import (
     ThreeArmComparisonResponse,
 )
 from ..services.governance import governance_service
-from ..services.sample_data import (
-    get_sample_baselines,
-    get_sample_candidate_decision,
-    get_sample_candidates,
-    get_sample_three_arm,
-)
+from ml_engine.evaluation.benchmark import evaluate_three_arms
 
 router = APIRouter(tags=["Governance & Baselines"])
 
@@ -56,7 +52,6 @@ def list_baselines(
             threshold_params=r.threshold_params,
             feature_schema=r.feature_schema,
             created_at=r.created_at,
-            is_placeholder=False,
             is_candidate=False,
         )
         for r in rows
@@ -82,9 +77,20 @@ def list_baselines(
                 model_artifact_path=c.model_artifact_path or "",
                 scaler_params={},
                 threshold_params=c.gate_metrics or {},
-                feature_schema={"features": ["registrations_per_active_ue", "nas_failure_ratio", "pfcp_failure_ratio", "pdu_session_rate_per_ue", "bytes_per_session", "packets_per_session", "gtpu_volume_per_ue", "ue_hash_entropy", "new_ue_rate"]},
+                feature_schema={
+                    "features": [
+                        "registrations_per_active_ue",
+                        "nas_failure_ratio",
+                        "pfcp_failure_ratio",
+                        "pdu_session_rate_per_ue",
+                        "bytes_per_session",
+                        "packets_per_session",
+                        "gtpu_volume_per_ue",
+                        "ue_hash_entropy",
+                        "new_ue_rate",
+                    ]
+                },
                 created_at=c.created_at,
-                is_placeholder=False,
                 is_candidate=True,
                 candidate_status=c.status,
             )
@@ -99,31 +105,28 @@ def list_candidates(
     status: Optional[str] = Query(default=None, description="Filter by status: PENDING, APPROVED, REJECTED, ROLLED_BACK"),
     db: Session = Depends(get_db),
 ) -> List[CandidateResponse]:
-    """List pending shadow candidate baselines."""
+    """List shadow candidate baselines from database."""
     query = db.query(CandidateBaseline)
     if status:
         query = query.filter(CandidateBaseline.status == status)
 
     rows = query.order_by(CandidateBaseline.created_at.desc()).all()
-    if rows:
-        return [
-            CandidateResponse(
-                id=r.id,
-                slice_id=r.slice_id,
-                candidate_version=r.candidate_version,
-                active_baseline_id=r.active_baseline_id,
-                anchor_baseline_id=r.anchor_baseline_id,
-                status=r.status,
-                gate_metrics=r.gate_metrics,
-                decision_trace=r.decision_trace,
-                reviewed_by=r.reviewed_by,
-                reviewed_at=r.reviewed_at,
-                created_at=r.created_at,
-                is_placeholder=False,
-            )
-            for r in rows
-        ]
-    return get_sample_candidates(status=status)
+    return [
+        CandidateResponse(
+            id=r.id,
+            slice_id=r.slice_id,
+            candidate_version=r.candidate_version,
+            active_baseline_id=r.active_baseline_id,
+            anchor_baseline_id=r.anchor_baseline_id,
+            status=r.status,
+            gate_metrics=r.gate_metrics,
+            decision_trace=r.decision_trace,
+            reviewed_by=r.reviewed_by,
+            reviewed_at=r.reviewed_at,
+            created_at=r.created_at,
+        )
+        for r in rows
+    ]
 
 
 @router.post("/governance/evaluate")
@@ -178,10 +181,7 @@ def approve_candidate_governance(
     payload: GovernanceApproveRequest,
     db: Session = Depends(get_db),
 ) -> CandidateResponse:
-    """Operator approves candidate baseline promotion via governance endpoint.
-
-    Rejects with HTTP 409 Conflict if any mandatory check failed.
-    """
+    """Operator approves candidate baseline promotion via governance endpoint."""
     if not payload.candidate_id:
         raise HTTPException(status_code=400, detail="candidate_id is required.")
     return governance_service.approve_and_promote(
@@ -201,38 +201,39 @@ def approve_candidate(
 ) -> CandidateResponse:
     """Operator approves candidate baseline promotion by ID."""
     cand = db.query(CandidateBaseline).filter(CandidateBaseline.id == id).first()
-    if cand:
-        from pathlib import Path
-        if cand.model_artifact_path and Path(cand.model_artifact_path).is_file():
-            return governance_service.approve_and_promote(
-                candidate_id=id,
-                analyst_id=payload.analyst_id,
-                notes=payload.notes,
-                db=db,
-            )
-        cand.status = "APPROVED"
-        cand.reviewed_by = payload.analyst_id
-        cand.reviewed_at = datetime.now(timezone.utc)
-        cand_trace = list(cand.decision_trace or [])
-        cand_trace.append(f"Analyst promotion gate: APPROVED by {payload.analyst_id}")
-        cand.decision_trace = cand_trace
-        db.commit()
-        db.refresh(cand)
-        return CandidateResponse(
-            id=cand.id,
-            slice_id=cand.slice_id,
-            candidate_version=cand.candidate_version,
-            active_baseline_id=cand.active_baseline_id,
-            anchor_baseline_id=cand.anchor_baseline_id,
-            status=cand.status,
-            gate_metrics=cand.gate_metrics,
-            decision_trace=cand.decision_trace,
-            reviewed_by=cand.reviewed_by,
-            reviewed_at=cand.reviewed_at,
-            created_at=cand.created_at,
-            is_placeholder=False,
+    if not cand:
+        raise HTTPException(status_code=404, detail=f"Candidate baseline '{id}' not found.")
+
+    if cand.model_artifact_path and Path(cand.model_artifact_path).is_file():
+        return governance_service.approve_and_promote(
+            candidate_id=id,
+            analyst_id=payload.analyst_id,
+            notes=payload.notes,
+            db=db,
         )
-    return get_sample_candidate_decision(candidate_id=id, status="APPROVED", analyst_id=payload.analyst_id)
+
+    # For mock/test candidates without serialized model on disk
+    cand.status = "APPROVED"
+    cand.reviewed_by = payload.analyst_id
+    cand.reviewed_at = datetime.now(timezone.utc)
+    cand_trace = list(cand.decision_trace or [])
+    cand_trace.append(f"Analyst promotion gate: APPROVED by {payload.analyst_id}")
+    cand.decision_trace = cand_trace
+    db.commit()
+    db.refresh(cand)
+    return CandidateResponse(
+        id=cand.id,
+        slice_id=cand.slice_id,
+        candidate_version=cand.candidate_version,
+        active_baseline_id=cand.active_baseline_id,
+        anchor_baseline_id=cand.anchor_baseline_id,
+        status=cand.status,
+        gate_metrics=cand.gate_metrics,
+        decision_trace=cand.decision_trace,
+        reviewed_by=cand.reviewed_by,
+        reviewed_at=cand.reviewed_at,
+        created_at=cand.created_at,
+    )
 
 
 @router.post("/governance/reject", response_model=CandidateResponse)
@@ -261,14 +262,15 @@ def reject_candidate(
 ) -> CandidateResponse:
     """Operator rejects candidate baseline by ID."""
     cand = db.query(CandidateBaseline).filter(CandidateBaseline.id == id).first()
-    if cand:
-        return governance_service.reject_candidate(
-            candidate_id=id,
-            analyst_id=payload.analyst_id,
-            notes=payload.notes,
-            db=db,
-        )
-    return get_sample_candidate_decision(candidate_id=id, status="REJECTED", analyst_id=payload.analyst_id)
+    if not cand:
+        raise HTTPException(status_code=404, detail=f"Candidate baseline '{id}' not found.")
+
+    return governance_service.reject_candidate(
+        candidate_id=id,
+        analyst_id=payload.analyst_id,
+        notes=payload.notes,
+        db=db,
+    )
 
 
 @router.post("/governance/rollback", response_model=RollbackResponse)
@@ -295,5 +297,6 @@ def get_three_arm_comparison(
     dataset_id: Optional[str] = Query(default="5g_nidd_portscan_growth", description="Dataset identifier"),
     db: Session = Depends(get_db),
 ) -> ThreeArmComparisonResponse:
-    """Compare metrics across arms A/B/C."""
-    return get_sample_three_arm(dataset_id=dataset_id or "5g_nidd_portscan_growth")
+    """Empirical three-arm replay comparison across Static Anchor, Naive Retraining, and CommShield Gated."""
+    result = evaluate_three_arms(dataset_id=dataset_id or "5g_nidd_portscan_growth")
+    return ThreeArmComparisonResponse(**result)

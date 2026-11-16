@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertOctagon,
@@ -6,6 +7,7 @@ import {
   ShieldCheck,
   Radio,
   Layers,
+  Search,
 } from 'lucide-react';
 import {
   Area,
@@ -39,6 +41,7 @@ const sampleChartData = [
 ];
 
 export const OverviewView: React.FC = () => {
+  const navigate = useNavigate();
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -88,14 +91,30 @@ export const OverviewView: React.FC = () => {
     },
     {
       key: 'status',
-      header: 'Attribution State',
-      render: (w) => (
+      header: 'Telemetry State',
+      render: () => (
         <StatusBadge
-          label={w.is_placeholder ? 'Placeholder' : 'Live'}
-          variant={w.is_placeholder ? 'neutral' : 'safe'}
+          label="Canonical"
+          variant="safe"
           size="sm"
           dot
         />
+      ),
+    },
+    {
+      key: 'action',
+      header: 'Investigation',
+      render: (w) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/investigation/${w.window_id}`);
+          }}
+          className="px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-bg text-blue hover:bg-blue/10 border border-blue/20 transition-colors shadow-sm"
+        >
+          <Search className="w-3 h-3" />
+          <span>Investigate</span>
+        </button>
       ),
     },
   ];
@@ -283,6 +302,7 @@ export const OverviewView: React.FC = () => {
           data={windows}
           keyExtractor={(w) => w.window_id}
           isLoading={loading}
+          onRowClick={(w) => navigate(`/investigation/${w.window_id}`)}
           emptyMessage="No traffic windows available"
         />
       </div>

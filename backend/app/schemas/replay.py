@@ -19,7 +19,6 @@ class ReplayStatusResponse(BaseModel):
     total_windows: int
     speed_multiplier: float
     current_timestamp: datetime
-    is_placeholder: Optional[bool] = None
 
 
 class DatasetInfo(BaseModel):
@@ -34,7 +33,6 @@ class DatasetInfo(BaseModel):
 class DatasetListResponse(BaseModel):
     datasets: List[DatasetInfo]
     total: int
-    is_placeholder: Optional[bool] = None
 
 
 class WindowReplayEvent(BaseModel):
@@ -44,4 +42,3 @@ class WindowReplayEvent(BaseModel):
     detector_output: Optional[Dict[str, Any]] = None
     attribution_output: Optional[Dict[str, Any]] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    is_placeholder: Optional[bool] = None

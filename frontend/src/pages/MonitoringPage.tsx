@@ -29,7 +29,6 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  SampleDataBadge,
   StatCard,
 } from '../components';
 import { api, CanonicalTrafficWindow } from '../services/api';
@@ -45,7 +44,6 @@ export const MonitoringPage: React.FC = () => {
   const [timeRangeLimit, setTimeRangeLimit] = useState<number>(50);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPlaceholder, setIsPlaceholder] = useState(false);
 
   const fetchMonitoringData = async (isInitial = false) => {
     if (isInitial) setLoading(true);
@@ -56,7 +54,6 @@ export const MonitoringPage: React.FC = () => {
         limit: timeRangeLimit,
       });
       setWindows(res.items || []);
-      setIsPlaceholder(res.is_placeholder === true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch network monitoring data';
       setError(msg);
@@ -221,8 +218,6 @@ export const MonitoringPage: React.FC = () => {
 
         {/* Slice Filter and Time-Range Selector */}
         <div className="flex flex-wrap items-center gap-3">
-          <SampleDataBadge isPlaceholder={isPlaceholder} />
-
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-muted uppercase">Slice Filter:</span>
             <select

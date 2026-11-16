@@ -58,3 +58,32 @@ commshield/
    - `docs/ARCHITECTURE.md`: Module boundaries, data flow, pluggable interfaces, and milestones
    - `docs/CONTRACTS.md`: DB schemas, API endpoints, and canonical JSON contracts
    - `docs/TESTING.md`: Module verification matrices and test suites
+
+## Reproducible Pipeline Execution
+
+To run the complete pipeline end-to-end with one command (synthetic data generation, baseline training, scenario replay through detection, attribution, and governance):
+
+```bash
+# Reset database and replay scenario end-to-end
+python backend/scripts/run_demo.py --reset-db --scenario legitimate_growth --windows 60
+```
+
+To reset runtime telemetry and drift events while preserving immutable anchor baselines:
+```bash
+python backend/scripts/reset_db.py
+# Or via API:
+# curl -X POST http://localhost:8000/api/reset
+```
+
+## Where to Change What
+
+| Configuration Area | File / Path | Description & Notes |
+| :--- | :--- | :--- |
+| **Detection Thresholds** | `ml_engine/detection/config.py` | Percentiles (95th/98th/99th), CUSUM parameter $k$, alarm threshold $h$, fusion weights |
+| **Attribution Thresholds** | `ml_engine/attribution/config.py` | ADWIN $\delta$ sensitivity, JSD growth threshold ($\tau_{\text{JSD}}$), sample limits, ratio bounds |
+| **Governance Limits** | `ml_engine/governance/config.py` | Holdout FPR cap, canary retention limit, drift budget thresholds ($d_{\text{update}}, d_{\text{anchor}}, \Delta_{\max}$) |
+| **Scenarios & Datasets** | `data/synthetic/` & `backend/scripts/generate_synthetic_scenarios.py` | Scenario JSON files (`stable_benign`, `legitimate_growth`, `attack_in_growth`, `stealth_poisoning`) |
+| **Design System Colours** | `frontend/tailwind.config.js` | Palette definition: `safe` (emerald/teal), `attack` (red), `suspicious` (amber), `quarantined` (purple), `navy`, `blue` |
+| **UI Labels & Navigation** | `frontend/src/components/layout/Sidebar.tsx` & `frontend/src/pages/` | Navigation titles, page headings, status badge text, table column labels |
+| **API URLs & Client Endpoints** | `frontend/src/services/api.ts` & `frontend/vite.config.ts` | Backend REST endpoints, `/api` proxy target (`http://localhost:8000`), SSE stream URLs |
+

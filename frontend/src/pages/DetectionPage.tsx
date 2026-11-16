@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -6,6 +7,7 @@ import {
   Eye,
   Info,
   Layers,
+  Search,
   Zap,
 } from 'lucide-react';
 import {
@@ -26,7 +28,6 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  SampleDataBadge,
   StatusBadge,
 } from '../components';
 import {
@@ -43,6 +44,7 @@ interface WindowDetectionRecord {
 
 export const DetectionPage: React.FC = () => {
   const { pollTick } = useReplay();
+  const navigate = useNavigate();
 
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
   const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
@@ -50,7 +52,6 @@ export const DetectionPage: React.FC = () => {
   const [detectionMap, setDetectionMap] = useState<Record<string, DetectorOutput>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPlaceholder, setIsPlaceholder] = useState(false);
 
   // Fetch telemetry windows
   const fetchWindows = async (isInitial = false) => {
@@ -60,7 +61,6 @@ export const DetectionPage: React.FC = () => {
       const res = await api.getWindows({ limit: 30 });
       const items = res.items || [];
       setWindows(items);
-      setIsPlaceholder(res.is_placeholder === true);
       if (items.length > 0 && !selectedWindowId) {
         setSelectedWindowId(items[0].window_id);
       }
@@ -309,19 +309,34 @@ export const DetectionPage: React.FC = () => {
     },
     {
       key: 'action',
-      header: 'Inspect Window',
+      header: 'Inspect / Investigate',
       render: (w) => (
-        <button
-          onClick={() => setSelectedWindowId(w.window_id)}
-          className={`px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium transition-colors ${
-            w.window_id === selectedWindowId
-              ? 'bg-blue text-white shadow-sm'
-              : 'bg-bg text-slate hover:bg-slate/10 border border-border'
-          }`}
-        >
-          <Eye className="w-3 h-3" />
-          <span>{w.window_id === selectedWindowId ? 'Inspecting' : 'Inspect'}</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedWindowId(w.window_id);
+            }}
+            className={`px-2 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium transition-colors ${
+              w.window_id === selectedWindowId
+                ? 'bg-blue text-white shadow-sm'
+                : 'bg-bg text-slate hover:bg-slate/10 border border-border'
+            }`}
+          >
+            <Eye className="w-3 h-3" />
+            <span>{w.window_id === selectedWindowId ? 'Inspecting' : 'Inspect'}</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/investigation/${w.window_id}`);
+            }}
+            className="px-2 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-bg text-blue hover:bg-blue/10 border border-blue/20 transition-colors shadow-sm"
+          >
+            <Search className="w-3 h-3" />
+            <span>Investigate</span>
+          </button>
+        </div>
       ),
     },
   ];
@@ -345,7 +360,6 @@ export const DetectionPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <SampleDataBadge isPlaceholder={isPlaceholder} />
           {selectedWindowId && (
             <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-card border border-border text-muted">
               Active: {selectedWindowId.slice(0, 8)}...
@@ -756,13 +770,13 @@ export const DetectionPage: React.FC = () => {
               Click &quot;Inspect&quot; on any window row to view its multi-model anomaly scoring and calibrated percentiles.
             </p>
           </div>
-          <SampleDataBadge isPlaceholder={isPlaceholder} />
         </div>
 
         <DataTable
           columns={columns}
           data={windows}
           keyExtractor={(w) => w.window_id}
+          onRowClick={(w) => navigate(`/investigation/${w.window_id}`)}
           emptyMessage="No detection telemetry windows found."
         />
       </div>

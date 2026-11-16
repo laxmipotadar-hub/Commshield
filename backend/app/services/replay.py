@@ -133,11 +133,16 @@ class ReplayService:
                                 adaptation_windows=self._legitimate_windows_by_slice[slice_id],
                                 db=db,
                             )
+                            # Extract scaling factor from proportional growth test
+                            vol_k = 1.0
+                            if hasattr(attr_res, "proportional_growth_test") and attr_res.proportional_growth_test:
+                                vol_k = float(getattr(attr_res.proportional_growth_test, "scaling_factor_k", 1.0))
+
                             # Run governance pipeline automatically; promotion left PENDING
                             governance_service.evaluate_candidate(
                                 candidate_id=cand_row.id,
                                 db=db,
-                                volume_multiplier=attr_res.scaling_factor_k,
+                                volume_multiplier=vol_k,
                                 adaptation_windows=self._legitimate_windows_by_slice[slice_id],
                             )
                             self._candidate_created_by_slice[slice_id] = True
@@ -228,6 +233,25 @@ class ReplayService:
 
         return self.get_status()
 
+    def start_sync(self, dataset_id: str, speed_multiplier: float = 1.0) -> ReplayStatusResponse:
+        """Initialize scenario for synchronous stepping (used in CLI demo and tests)."""
+        self.stop()
+        self.dataset_id = dataset_id
+        self.speed_multiplier = max(0.1, speed_multiplier)
+        self._windows = self._load_scenario(dataset_id)
+        self.total_windows = len(self._windows)
+        self.current_window_index = 0
+        self.status = "RUNNING"
+        self.current_timestamp = datetime.now(timezone.utc)
+        self._legitimate_windows_by_slice.clear()
+        self._candidate_created_by_slice.clear()
+        try:
+            from .attribution import attribution_service
+            attribution_service.reset_trackers()
+        except Exception:
+            pass
+        return self.get_status()
+
     def pause(self) -> ReplayStatusResponse:
         """Pause active replay."""
         if self.status == "RUNNING":
@@ -256,7 +280,6 @@ class ReplayService:
             total_windows=self.total_windows,
             speed_multiplier=self.speed_multiplier,
             current_timestamp=self.current_timestamp,
-            is_placeholder=False if self.total_windows > 0 else True,
         )
 
     def step_sync(self, count: int = 1) -> int:

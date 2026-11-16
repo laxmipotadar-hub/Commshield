@@ -248,6 +248,7 @@ const AppLayout: React.FC = () => {
               <Route path="/attribution" element={<AttributionView />} />
               <Route path="/governance" element={<GovernanceView />} />
               <Route path="/investigation" element={<InvestigationView />} />
+              <Route path="/investigation/:id" element={<InvestigationView />} />
               <Route path="/experiments" element={<ExperimentsView />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

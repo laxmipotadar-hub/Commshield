@@ -69,17 +69,40 @@ def analyze_window(
     return output
 
 
+def parse_datetime(val: Optional[str]) -> Optional[datetime]:
+    if not val:
+        return None
+    try:
+        clean_val = val.replace("Z", "+00:00")
+        return datetime.fromisoformat(clean_val)
+    except Exception:
+        return None
+
+
 @router.get("/alerts", response_model=List[AlertItem])
 def list_alerts(
     slice_id: Optional[str] = Query(default=None, description="Filter alerts by slice ID"),
+    slice: Optional[str] = Query(default=None, description="Alias for slice_id"),
+    start_time: Optional[str] = Query(default=None, description="Start timestamp (ISO 8601)"),
+    start: Optional[str] = Query(default=None, description="Alias for start_time"),
+    end_time: Optional[str] = Query(default=None, description="End timestamp (ISO 8601)"),
+    end: Optional[str] = Query(default=None, description="Alias for end_time"),
     limit: int = Query(default=50, ge=1, le=500, description="Page limit"),
     offset: int = Query(default=0, ge=0, description="Page offset"),
     db: Session = Depends(get_db),
 ) -> List[AlertItem]:
-    """Retrieve anomaly alerts recorded in anomaly_alerts table."""
+    """Retrieve anomaly alerts recorded in anomaly_alerts table with slice and time range filtering."""
+    target_slice = slice_id or slice
+    t_start = parse_datetime(start_time or start)
+    t_end = parse_datetime(end_time or end)
+
     query = db.query(AnomalyAlert)
-    if slice_id:
-        query = query.filter(AnomalyAlert.slice_id == slice_id)
+    if target_slice:
+        query = query.filter(AnomalyAlert.slice_id == target_slice)
+    if t_start:
+        query = query.filter(AnomalyAlert.created_at >= t_start)
+    if t_end:
+        query = query.filter(AnomalyAlert.created_at <= t_end)
 
     rows = query.order_by(AnomalyAlert.created_at.desc()).offset(offset).limit(limit).all()
     results: List[AlertItem] = []
@@ -94,7 +117,6 @@ def list_alerts(
                 is_anomalous=r.is_anomalous,
                 fused_score=r.fused_score,
                 created_at=r.created_at,
-                is_placeholder=False,
             )
         )
     return results
@@ -166,5 +188,4 @@ def get_dashboard_overview(
         pending_updates_count=pending_count,
         recent_alerts=recent_alerts,
         traffic_over_time=traffic_over_time[-20:],
-        is_placeholder=False,
     )

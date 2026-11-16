@@ -1,5 +1,6 @@
 """API endpoints for CommShield drift attribution, drift events, and decision traces."""
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -63,18 +64,41 @@ def analyze_drift_and_attribution(
     return output
 
 
+def parse_datetime(val: Optional[str]) -> Optional[datetime]:
+    if not val:
+        return None
+    try:
+        clean_val = val.replace("Z", "+00:00")
+        return datetime.fromisoformat(clean_val)
+    except Exception:
+        return None
+
+
 @router.get("/drift/events", response_model=List[DriftEventItem])
 @router.get("/v1/drift/events", response_model=List[DriftEventItem])
 def list_drift_events(
     slice_id: Optional[str] = None,
+    slice: Optional[str] = None,
+    start_time: Optional[str] = None,
+    start: Optional[str] = None,
+    end_time: Optional[str] = None,
+    end: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
 ) -> List[DriftEventItem]:
-    """Retrieve recorded ADWIN drift events and their corresponding attributions."""
+    """Retrieve recorded ADWIN drift events with slice and time range filtering."""
+    target_slice = slice_id or slice
+    t_start = parse_datetime(start_time or start)
+    t_end = parse_datetime(end_time or end)
+
     query = db.query(DriftEvent)
-    if slice_id:
-        query = query.filter(DriftEvent.slice_id == slice_id)
+    if target_slice:
+        query = query.filter(DriftEvent.slice_id == target_slice)
+    if t_start:
+        query = query.filter(DriftEvent.event_time >= t_start)
+    if t_end:
+        query = query.filter(DriftEvent.event_time <= t_end)
 
     safe_limit = int(limit) if isinstance(limit, (int, float, str)) else 50
     safe_offset = int(offset) if isinstance(offset, (int, float, str)) else 0
@@ -98,6 +122,34 @@ def list_drift_events(
             )
         )
     return results
+
+
+@router.get("/decision-traces", response_model=List[DecisionTraceResponse])
+@router.get("/v1/decision-traces", response_model=List[DecisionTraceResponse])
+def list_decision_traces(
+    slice_id: Optional[str] = Query(None, alias="slice"),
+    limit: int = 50,
+    db: Session = Depends(get_db),
+) -> List[DecisionTraceResponse]:
+    """List recent decision traces across attribution and governance steps."""
+    query = db.query(DecisionTrace)
+    if slice_id:
+        query = query.filter(DecisionTrace.slice_id == slice_id)
+    rows = query.order_by(DecisionTrace.created_at.desc()).limit(limit).all()
+    return [
+        DecisionTraceResponse(
+            id=r.id,
+            window_id=r.window_id,
+            slice_id=r.slice_id,
+            alert_id=r.alert_id,
+            drift_event_id=r.drift_event_id,
+            verdict=r.verdict,
+            action=r.action,
+            steps=r.steps or [],
+            created_at=r.created_at,
+        )
+        for r in rows
+    ]
 
 
 @router.get("/decision-traces/{trace_id}", response_model=DecisionTraceResponse)

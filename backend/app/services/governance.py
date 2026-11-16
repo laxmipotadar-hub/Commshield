@@ -343,7 +343,6 @@ class GovernanceService:
                 reviewed_by=cand.reviewed_by,
                 reviewed_at=cand.reviewed_at,
                 created_at=cand.created_at,
-                is_placeholder=False,
             )
         except HTTPException:
             db.rollback()
@@ -420,7 +419,6 @@ class GovernanceService:
             reviewed_by=cand.reviewed_by,
             reviewed_at=cand.reviewed_at,
             created_at=cand.created_at,
-            is_placeholder=False,
         )
 
     def rollback_baseline(
@@ -498,7 +496,6 @@ class GovernanceService:
                 active_version=target_version,
                 restored_artifacts=["model", "scaler", "thresholds", "schema"],
                 timestamp=datetime.now(timezone.utc),
-                is_placeholder=False,
             )
         except Exception as e:
             db.rollback()

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertOctagon,
@@ -6,6 +7,7 @@ import {
   FileText,
   GitBranch,
   Radio,
+  Search,
   ShieldCheck,
   XCircle,
 } from 'lucide-react';
@@ -63,6 +65,7 @@ interface RawAttribution {
 
 export const AttributionView: React.FC = () => {
   const { pollTick } = useReplay();
+  const navigate = useNavigate();
 
   const [driftEvents, setDriftEvents] = useState<DriftEventItem[]>([]);
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
@@ -254,20 +257,35 @@ export const AttributionView: React.FC = () => {
       },
     },
     {
-      key: 'trace',
-      header: 'Audit Trace',
+      key: 'actions',
+      header: 'Trace & Investigation',
       render: (e) => (
-        <button
-          onClick={() => setSelectedTraceId(e.decision_trace_id || e.window_id)}
-          className={`px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium transition-colors ${
-            selectedTraceId === (e.decision_trace_id || e.window_id)
-              ? 'bg-blue text-white shadow-sm'
-              : 'bg-bg text-slate hover:bg-slate/10 border border-border'
-          }`}
-        >
-          <FileText className="w-3 h-3" />
-          <span>Decision Trace</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setSelectedTraceId(e.decision_trace_id || e.window_id);
+            }}
+            className={`px-2 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium transition-colors ${
+              selectedTraceId === (e.decision_trace_id || e.window_id)
+                ? 'bg-blue text-white shadow-sm'
+                : 'bg-bg text-slate hover:bg-slate/10 border border-border'
+            }`}
+          >
+            <FileText className="w-3 h-3" />
+            <span>Trace</span>
+          </button>
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              navigate(`/investigation/${e.window_id || e.id}`);
+            }}
+            className="px-2 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-bg text-blue hover:bg-blue/10 border border-blue/20 transition-colors shadow-sm"
+          >
+            <Search className="w-3 h-3" />
+            <span>Investigate</span>
+          </button>
+        </div>
       ),
     },
   ];
@@ -606,6 +624,7 @@ export const AttributionView: React.FC = () => {
             columns={columns}
             data={driftEvents}
             keyExtractor={(e) => e.id}
+            onRowClick={(e) => navigate(`/investigation/${e.window_id || e.id}`)}
             emptyMessage="No drift events found."
           />
         )}

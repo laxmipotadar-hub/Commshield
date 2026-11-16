@@ -142,7 +142,6 @@ async def test_endpoint_detection_analyze(client: AsyncClient):
 
     # fused percentile equals max of IF and AE percentiles
     assert res_data["fusion"]["fused_percentile"] >= res_data["isolation_forest"]["benign_percentile"]
-    assert res_data["is_placeholder"] is False
 
 
 @pytest.mark.anyio
@@ -158,7 +157,6 @@ async def test_endpoint_alerts(client: AsyncClient):
         assert "window_id" in alert
         assert "slice_id" in alert
         assert "detector_output" in alert
-        assert alert["is_placeholder"] is False
 
 
 @pytest.mark.anyio
@@ -174,7 +172,6 @@ async def test_endpoint_baselines(client: AsyncClient):
     assert b["version"] == "v1.0.0-anchor"
     assert b["is_anchor"] is True
     assert b["is_active"] is True
-    assert b["is_placeholder"] is False
 
 
 @pytest.mark.anyio
@@ -191,7 +188,6 @@ async def test_endpoint_dashboard_overview(client: AsyncClient):
     assert "active_baseline_version" in data
     assert "recent_alerts" in data
     assert "traffic_over_time" in data
-    assert data["is_placeholder"] is False
 
 
 def test_scenario_metrics_and_print():

@@ -41,7 +41,6 @@ export interface DatasetInfo {
 export interface DatasetListResponse {
   datasets: DatasetInfo[];
   total: number;
-  is_placeholder?: boolean;
 }
 
 export interface ReplayStartRequest {
@@ -58,7 +57,6 @@ export interface ReplayStatusResponse {
   total_windows: number;
   speed_multiplier: number;
   current_timestamp: string;
-  is_placeholder?: boolean;
 }
 
 export interface CanonicalTrafficWindow {
@@ -71,7 +69,6 @@ export interface CanonicalTrafficWindow {
   raw_counters: Record<string, number>;
   ratio_features: Record<string, number>;
   composition_vector: Record<string, number>;
-  is_placeholder?: boolean;
 }
 
 export interface PaginatedWindowsResponse {
@@ -79,7 +76,6 @@ export interface PaginatedWindowsResponse {
   total: number;
   limit: number;
   offset: number;
-  is_placeholder?: boolean;
 }
 
 export interface IsolationForestScore {
@@ -182,7 +178,6 @@ export interface DetectorOutput {
   autoencoder?: AutoencoderScore | null;
   fusion: FusionScore;
   cusum?: CusumScore | null;
-  is_placeholder?: boolean;
 }
 
 export interface AlertItem {
@@ -194,7 +189,6 @@ export interface AlertItem {
   is_anomalous: boolean;
   fused_score?: number | null;
   created_at: string;
-  is_placeholder?: boolean;
   is_candidate?: boolean;
   candidate_status?: string;
 }
@@ -214,7 +208,6 @@ export interface DashboardOverviewResponse {
     packets: number;
     slice_id?: string;
   }>;
-  is_placeholder?: boolean;
 }
 
 export interface ExplainabilityResponse {
@@ -229,7 +222,6 @@ export interface ExplainabilityResponse {
     verdict: string;
     abstain_reason: string | null;
   };
-  is_placeholder?: boolean;
 }
 
 export interface BaselineSummaryResponse {
@@ -246,7 +238,6 @@ export interface BaselineSummaryResponse {
   threshold_params: Record<string, unknown>;
   feature_schema: Record<string, unknown>;
   created_at: string;
-  is_placeholder?: boolean;
   is_candidate?: boolean;
   candidate_status?: string;
 }
@@ -263,7 +254,6 @@ export interface CandidateResponse {
   reviewed_by?: string | null;
   reviewed_at?: string | null;
   created_at: string;
-  is_placeholder?: boolean;
   is_candidate?: boolean;
   candidate_status?: string;
 }
@@ -287,7 +277,6 @@ export interface RollbackResponse {
   active_version: string;
   restored_artifacts: string[];
   timestamp: string;
-  is_placeholder?: boolean;
 }
 
 export interface ThreeArmComparisonResponse {
@@ -301,7 +290,108 @@ export interface ThreeArmComparisonResponse {
     poisoning_susceptibility?: number;
     [key: string]: unknown;
   }>;
-  is_placeholder?: boolean;
+}
+
+export interface InvestigationDetailsResponse {
+  alert_header: {
+    id: string;
+    window_id: string;
+    slice_id: string;
+    nf_id: string;
+    timestamp: string;
+    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    final_decision: 'Alert' | 'Quarantine' | 'Abstain' | 'Normal';
+    baseline_version: string;
+  };
+  traffic_series: Array<{
+    window_id: string;
+    time: string;
+    observed_packets: number;
+    observed_bytes_mb: number;
+    expected_min: number;
+    expected_max: number;
+    expected_median: number;
+    is_current: boolean;
+    is_deviated: boolean;
+  }>;
+  evidence: {
+    detector_scores: {
+      isolation_forest: {
+        score: number;
+        percentile: number;
+        threshold: number;
+        flagged: boolean;
+      };
+      autoencoder: {
+        reconstruction_mse: number;
+        percentile: number;
+        threshold: number;
+        flagged: boolean;
+      };
+      fusion: {
+        fused_percentile: number;
+        threshold: number;
+        flagged: boolean;
+      };
+    };
+    cusum: {
+      score: number;
+      allowance_k: number;
+      threshold_h: number;
+      is_alarm: boolean;
+    };
+    js_divergence: {
+      value: number;
+      threshold: number;
+      is_pass: boolean;
+      interpretation: string;
+    };
+    volume_multiplier: {
+      multiplier: number;
+      expected_baseline: number;
+      is_proportional: boolean;
+    };
+    threat_indicators: Array<{
+      feature: string;
+      observed_value: number;
+      baseline_median: number;
+      iqr_deviation: number;
+      status: 'danger' | 'warn' | 'ok';
+    }>;
+  };
+  timeline_steps: Array<{
+    step_number: number;
+    title: string;
+    explanation: string;
+    outcome: 'pass' | 'warn' | 'fail';
+    timestamp: string;
+  }>;
+  why_explanation: {
+    verdict: string;
+    summary: string;
+    key_reasons: string[];
+    quarantine_reason: string | null;
+    abstain_reason: string | null;
+  };
+  governance_link: {
+    candidate_id: string;
+    candidate_version: string;
+    status: string;
+    href: string;
+  } | null;
+  feedback_history: Array<{
+    id: string;
+    analyst_id: string;
+    classification: string;
+    notes: string;
+    timestamp: string;
+  }>;
+}
+
+export interface AnalystFeedbackPayload {
+  analyst_id: string;
+  classification: 'TRUE_POSITIVE' | 'FALSE_POSITIVE' | 'NOTE';
+  notes: string;
 }
 
 // -------------------------------------------------------------
@@ -450,4 +540,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  // Investigation & Analyst Feedback
+  getInvestigationDetails: (targetId: string) =>
+    request<InvestigationDetailsResponse>(`/api/investigation/${encodeURIComponent(targetId)}`),
+
+  submitInvestigationFeedback: (targetId: string, payload: AnalystFeedbackPayload) =>
+    request<{ status: string; feedback_id: string }>(
+      `/api/investigation/${encodeURIComponent(targetId)}/feedback`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
 };

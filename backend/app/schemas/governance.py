@@ -41,7 +41,6 @@ class RollbackResponse(BaseModel):
     active_version: str
     restored_artifacts: List[str]
     timestamp: datetime
-    is_placeholder: Optional[bool] = None
 
 
 class BaselineSummaryResponse(BaseModel):
@@ -60,7 +59,8 @@ class BaselineSummaryResponse(BaseModel):
     threshold_params: Dict[str, Any]
     feature_schema: Dict[str, Any]
     created_at: datetime
-    is_placeholder: Optional[bool] = None
+    is_candidate: Optional[bool] = False
+    candidate_status: Optional[str] = None
 
 
 class CandidateResponse(BaseModel):
@@ -77,7 +77,6 @@ class CandidateResponse(BaseModel):
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     created_at: datetime
-    is_placeholder: Optional[bool] = None
 
 
 class CandidateBaselinePackage(BaseModel):
@@ -93,7 +92,6 @@ class CandidateBaselinePackage(BaseModel):
     gate_evaluations: Dict[str, Any]
     overall_governance_decision: str
     decision_trace: List[str]
-    is_placeholder: Optional[bool] = None
 
 
 class ThreeArmComparisonResponse(BaseModel):
@@ -101,4 +99,3 @@ class ThreeArmComparisonResponse(BaseModel):
 
     dataset_id: str
     arms: Dict[str, Any]
-    is_placeholder: Optional[bool] = None

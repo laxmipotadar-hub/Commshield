@@ -52,7 +52,6 @@ class DetectorOutput(BaseModel):
     autoencoder: AutoencoderScore
     fusion: FusionScore
     cusum: CusumScore
-    is_placeholder: Optional[bool] = False
 
 
 class AnalyzeRequest(BaseModel):
@@ -76,7 +75,6 @@ class AlertItem(BaseModel):
     is_anomalous: bool
     fused_score: Optional[float] = None
     created_at: datetime
-    is_placeholder: Optional[bool] = False
 
 
 class DashboardOverviewResponse(BaseModel):
@@ -91,4 +89,3 @@ class DashboardOverviewResponse(BaseModel):
     pending_updates_count: int
     recent_alerts: List[Dict[str, Any]]
     traffic_over_time: List[Dict[str, Any]]
-    is_placeholder: bool = False

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
+import json
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -12,14 +13,22 @@ from ..schemas import (
     WindowReplayEvent,
 )
 from ..services.replay import replay_service
-from ..services.sample_data import get_sample_window_event
 
 router = APIRouter(prefix="/replay", tags=["Replay"])
 
 
 @router.post("/start", response_model=ReplayStatusResponse)
 async def start_replay(payload: ReplayStartRequest) -> ReplayStatusResponse:
-    """Start replay stream across 3 arms in a background task."""
+    """Start replay stream across 3 arms in a background task.
+    
+    Refuses to start if a replay is already RUNNING.
+    """
+    if replay_service.status == "RUNNING":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Replay is already running for dataset '{replay_service.dataset_id}'. Stop or pause active replay before starting a new one.",
+        )
+
     status = await replay_service.start(
         dataset_id=payload.dataset_id,
         speed_multiplier=payload.speed_multiplier,
@@ -60,7 +69,7 @@ def stream_replay(
 ):
     """Server-Sent Events stream of replay windows."""
     def event_generator():
-        db_windows = db.query(CanonicalWindow).limit(10).all()
+        db_windows = db.query(CanonicalWindow).order_by(CanonicalWindow.window_start.asc()).limit(50).all()
         if db_windows:
             for w in db_windows:
                 event = WindowReplayEvent(
@@ -78,11 +87,16 @@ def stream_replay(
                         "composition_vector": w.composition_vector,
                     },
                     timestamp=datetime.now(timezone.utc),
-                    is_placeholder=False,
                 )
                 yield f"data: {event.model_dump_json()}\n\n"
         else:
-            sample_event = get_sample_window_event()
-            yield f"data: {sample_event.model_dump_json()}\n\n"
+            idle_event = {
+                "event_type": "status",
+                "status": replay_service.status,
+                "current_window_index": replay_service.current_window_index,
+                "total_windows": replay_service.total_windows,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            yield f"data: {json.dumps(idle_event)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

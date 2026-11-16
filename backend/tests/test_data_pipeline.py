@@ -185,7 +185,6 @@ async def test_replay_stores_expected_number_of_windows(client: AsyncClient):
     data_windows = res_windows.json()
     assert data_windows["total"] >= 5
     assert len(data_windows["items"]) >= 5
-    assert data_windows["is_placeholder"] is False
 
     # Test GET /api/replay/status
     res_status = await client.get("/api/replay/status")

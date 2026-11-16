@@ -43,6 +43,12 @@ class DetectionService:
         self._engines: Dict[str, DetectionEngine] = {}
         self._cusum = CusumDetector()
 
+    def clear_cache(self) -> None:
+        """Clear all in-memory loaded baselines and engines."""
+        self._loaded_baselines.clear()
+        self._engines.clear()
+        self._cusum = CusumDetector()
+
     def reload_baseline(self, slice_id: str, bundle: Optional[Dict[str, Any]] = None) -> None:
         """Invalidate or update in-memory baseline cache for a slice."""
         self._loaded_baselines.pop(slice_id, None)
@@ -157,40 +163,9 @@ class DetectionService:
         try:
             bundle = self.get_baseline_bundle(slice_id, db=db)
             if not bundle:
-                # Fallback placeholder if no baseline available
-                return DetectorOutput(
-                    window_id=window_id,
-                    slice_id=slice_id,
-                    nf_id=nf_id,
-                    evaluated_at=datetime.now(timezone.utc),
-                    baseline_version="v1.0.0-anchor",
-                    isolation_forest=IsolationForestScore(
-                        raw_score_negated=0.5,
-                        benign_percentile=50.0,
-                        threshold_percentile=95.0,
-                        is_flagged=False,
-                    ),
-                    autoencoder=AutoencoderScore(
-                        reconstruction_mse=0.01,
-                        benign_percentile=50.0,
-                        threshold_percentile=95.0,
-                        is_flagged=False,
-                    ),
-                    fusion=FusionScore(
-                        primary_rule="MAX_PERCENTILE",
-                        fused_percentile=50.0,
-                        secondary_mean_percentile=50.0,
-                        agreement_state="neither",
-                        is_anomalous=False,
-                    ),
-                    cusum=CusumScore(
-                        accumulated_statistic=0.0,
-                        alarm_threshold=4.5,
-                        is_alarm=False,
-                        status="idle",
-                    ),
-                    is_placeholder=True,
-                )
+                bundle = self._get_anchor_bundle(slice_id)
+                if not bundle:
+                    raise RuntimeError(f"No active or anchor baseline bundle found for slice '{slice_id}'. Run baseline training first.")
 
             scaler = bundle["scaler"]
             threshold_params = bundle.get("threshold_params", {})
@@ -252,7 +227,6 @@ class DetectionService:
                     is_alarm=cusum_is_alarm,
                     status=cusum_data["status"],
                 ),
-                is_placeholder=False,
             )
 
             # 1. Write to anomaly_alerts if should_alert

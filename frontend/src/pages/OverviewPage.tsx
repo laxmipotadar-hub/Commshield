@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
   GitBranch,
   Layers,
   Radio,
+  Search,
   ShieldCheck,
   TrendingUp,
 } from 'lucide-react';
@@ -24,7 +26,6 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  SampleDataBadge,
   StatCard,
   StatusBadge,
 } from '../components';
@@ -41,6 +42,7 @@ import { useReplay } from '../context/ReplayContext';
 
 export const OverviewPage: React.FC = () => {
   const { pollTick } = useReplay();
+  const navigate = useNavigate();
 
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
   const [baselines, setBaselines] = useState<BaselineSummaryResponse[]>([]);
@@ -50,8 +52,6 @@ export const OverviewPage: React.FC = () => {
   const [explainMap, setExplainMap] = useState<Record<string, ExplainabilityResponse>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [windowsPlaceholder, setWindowsPlaceholder] = useState(false);
 
   const fetchData = async (isInitial = false) => {
     if (isInitial) setLoading(true);
@@ -67,7 +67,6 @@ export const OverviewPage: React.FC = () => {
 
       const items = winRes.items || [];
       setWindows(items);
-      setWindowsPlaceholder(winRes.is_placeholder === true);
 
       setBaselines(baseRes || []);
       setCandidates(candRes || []);
@@ -230,6 +229,22 @@ export const OverviewPage: React.FC = () => {
         );
       },
     },
+    {
+      key: 'action',
+      header: 'Investigation',
+      render: (a) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/investigation/${a.window_id || a.id}`);
+          }}
+          className="px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-bg text-blue hover:bg-blue/10 border border-blue/20 transition-colors shadow-sm"
+        >
+          <Search className="w-3 h-3" />
+          <span>Investigate</span>
+        </button>
+      ),
+    },
   ];
 
   // Windows Table Columns
@@ -282,6 +297,22 @@ export const OverviewPage: React.FC = () => {
         return <StatusBadge label="Nominal Benign" variant="safe" size="sm" dot />;
       },
     },
+    {
+      key: 'investigate',
+      header: 'Investigation',
+      render: (w) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/investigation/${w.window_id}`);
+          }}
+          className="px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-bg text-slate hover:bg-slate/10 border border-border transition-colors"
+        >
+          <Search className="w-3 h-3" />
+          <span>Investigate</span>
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -294,9 +325,6 @@ export const OverviewPage: React.FC = () => {
             5G Core zero-trust telemetry stream, anomaly alerts, and active baseline status.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <SampleDataBadge isPlaceholder={windowsPlaceholder} />
-        </div>
       </div>
 
       {/* 1. Stat Cards Grid (7 key indicators per design) */}
@@ -307,8 +335,6 @@ export const OverviewPage: React.FC = () => {
           value={trafficDisplay}
           subtitle={`${windows.length} windows captured`}
           icon={<TrendingUp className="w-4 h-4 text-blue" />}
-          badge={windowsPlaceholder ? 'Sample data' : undefined}
-          badgeVariant="neutral"
         />
 
         {/* 2. Active Slices */}
@@ -317,8 +343,6 @@ export const OverviewPage: React.FC = () => {
           value={activeSlicesCount}
           subtitle={uniqueSlices.join(', ') || 'eMBB, URLLC, mMTC'}
           icon={<Radio className="w-4 h-4 text-teal" />}
-          badge={windowsPlaceholder ? 'Sample data' : undefined}
-          badgeVariant="neutral"
         />
 
         {/* 3. Anomaly Alerts */}
@@ -376,7 +400,6 @@ export const OverviewPage: React.FC = () => {
       <ChartCard
         title="Live Traffic Volume Over Time"
         subtitle="Uplink and Downlink megabytes aggregated across 60s windows"
-        action={windowsPlaceholder ? <SampleDataBadge isPlaceholder={windowsPlaceholder} /> : undefined}
       >
         {chartData.length === 0 ? (
           <EmptyState
@@ -454,6 +477,7 @@ export const OverviewPage: React.FC = () => {
           columns={alertItemColumns}
           data={alerts}
           keyExtractor={(a) => a.id}
+          onRowClick={(a) => navigate(`/investigation/${a.window_id || a.id}`)}
           emptyMessage="No anomaly alerts triggered. Stream is operating within normal baseline bounds."
         />
       </div>
@@ -464,16 +488,16 @@ export const OverviewPage: React.FC = () => {
           <div>
             <h2 className="text-base font-semibold text-text">Recent Telemetry Windows</h2>
             <p className="text-xs text-muted">
-              Latest canonical windows streamed through the zero-trust evaluation pipeline.
+              Latest canonical windows streamed through the zero-trust evaluation pipeline. Click any row to inspect.
             </p>
           </div>
-          <SampleDataBadge isPlaceholder={windowsPlaceholder} />
         </div>
 
         <DataTable
           columns={alertColumns}
           data={windows}
           keyExtractor={(w) => w.window_id}
+          onRowClick={(w) => navigate(`/investigation/${w.window_id}`)}
           emptyMessage="No telemetry windows found. Start a replay to ingest data."
         />
       </div>
