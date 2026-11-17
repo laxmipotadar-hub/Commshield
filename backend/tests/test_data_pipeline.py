@@ -120,14 +120,12 @@ def test_no_scaler_leakage():
 
 
 def test_adapters_protocol():
-    """Verify adapter interface and FiveGNIDDAdapter stub exception."""
-    stub = FiveGNIDDAdapter()
-    with pytest.raises(NotImplementedError) as exc_info:
-        list(stub.parse_records([]))
-    assert "Milestone M2" in str(exc_info.value)
-
-    with pytest.raises(NotImplementedError):
-        stub.aggregate_window([], "slice", "nf", 60, datetime.now(), datetime.now())
+    """Verify adapter interface and FiveGNIDDAdapter execution."""
+    adapter_nidd = FiveGNIDDAdapter()
+    assert list(adapter_nidd.parse_records([])) == []
+    empty_win = adapter_nidd.aggregate_window([], "sst-1-sd-010203", "UPF-01", 60, datetime.now(timezone.utc), datetime.now(timezone.utc))
+    assert empty_win["slice_id"] == "sst-1-sd-010203"
+    assert "raw_counters" in empty_win
 
     # Verify SyntheticAdapter
     adapter = SyntheticAdapter()

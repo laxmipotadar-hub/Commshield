@@ -73,7 +73,7 @@ def check_and_train_baselines(db):
         print("[run_demo] Calibrated slice baselines verified in registry.")
 
 
-def run_pipeline_demo(scenario: str, reset_db: bool = False, max_windows: int = 60):
+def run_pipeline_demo(scenario: str, data_source: str = "synthetic", reset_db: bool = False, max_windows: int = 60):
     """Execute end-to-end scenario replay and print formatted summary."""
     # Ensure tables exist
     Base.metadata.create_all(bind=engine)
@@ -92,8 +92,8 @@ def run_pipeline_demo(scenario: str, reset_db: bool = False, max_windows: int = 
         check_and_train_baselines(db)
 
         # 4. Load and step through scenario
-        print(f"\n[run_demo] Starting end-to-end replay for scenario: '{scenario}'...")
-        replay_service.start_sync(scenario)
+        print(f"\n[run_demo] Starting end-to-end replay for scenario: '{scenario}' (source: {data_source})...")
+        replay_service.start_sync(scenario, data_source=data_source)
         total_available = replay_service.total_windows
         step_count = min(max_windows, total_available)
 
@@ -127,6 +127,9 @@ def run_pipeline_demo(scenario: str, reset_db: bool = False, max_windows: int = 
         print("                 COMMSHIELD PIPELINE REPLAY SUMMARY")
         print("=" * 80)
         print(f"Scenario Identifier        : {scenario}")
+        print(f"Telemetry Data Source      : {data_source}")
+        if data_source == "fiveg_nidd" or "5g_nidd" in scenario.lower():
+            print(f"Slice Assignment Status    : Assigned Topology (BS1 -> eMBB, BS2 -> URLLC; not real 3GPP slices)")
         print(f"Execution Timestamp        : {datetime.now(timezone.utc).isoformat()}")
         print("-" * 80)
         print(f"Windows Stored in DB       : {stored_windows}")
@@ -152,8 +155,15 @@ def main():
         "--scenario",
         type=str,
         default="legitimate_growth",
-        choices=["stable_benign", "legitimate_growth", "slow_attack_ramp", "attack_in_growth", "mimicry_attack", "5g_nidd_portscan_growth"],
+        choices=["stable_benign", "legitimate_growth", "slow_attack_ramp", "attack_in_growth", "mimicry_attack", "5g_nidd_portscan_growth", "fiveg_nidd"],
         help="Scenario to replay end-to-end",
+    )
+    parser.add_argument(
+        "--data-source",
+        type=str,
+        default="synthetic",
+        choices=["synthetic", "fiveg_nidd"],
+        help="Telemetry data source: synthetic or fiveg_nidd",
     )
     parser.add_argument(
         "--reset-db",
@@ -168,8 +178,14 @@ def main():
     )
     args = parser.parse_args()
 
+    # If scenario is 5g_nidd or fiveg_nidd, default data_source to fiveg_nidd
+    data_src = args.data_source
+    if args.scenario in ("5g_nidd_portscan_growth", "fiveg_nidd"):
+        data_src = "fiveg_nidd"
+
     run_pipeline_demo(
         scenario=args.scenario,
+        data_source=data_src,
         reset_db=args.reset_db,
         max_windows=args.windows,
     )

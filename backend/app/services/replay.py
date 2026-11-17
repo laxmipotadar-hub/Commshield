@@ -28,6 +28,7 @@ class ReplayService:
     def __init__(self):
         self.status: str = "STOPPED"
         self.dataset_id: str = "stable_benign"
+        self.data_source: str = "synthetic"
         self.current_window_index: int = 0
         self.total_windows: int = 0
         self.speed_multiplier: float = 1.0
@@ -41,9 +42,69 @@ class ReplayService:
         self._legitimate_windows_by_slice: Dict[str, List[Dict[str, Any]]] = {}
         self._candidate_created_by_slice: Dict[str, bool] = {}
 
-    def _load_scenario(self, dataset_id: str) -> List[Dict[str, Any]]:
-        """Load windows from scenario file in data/synthetic/."""
-        # Check direct json file or with .json suffix
+    def _load_scenario(
+        self,
+        dataset_id: str,
+        data_source: Optional[str] = "synthetic",
+        window_scale_sec: int = 60,
+    ) -> List[Dict[str, Any]]:
+        """Load windows from scenario file in data/synthetic/ or adapt real 5G-NIDD telemetry."""
+        is_fiveg = (
+            data_source == "fiveg_nidd"
+            or str(dataset_id).lower() in ("fiveg_nidd", "5g_nidd", "5g_nidd_portscan_growth")
+        )
+
+        if is_fiveg:
+            # Check for pre-aggregated json
+            for cand in [
+                SYNTHETIC_DATA_DIR / f"{dataset_id}.json",
+                SYNTHETIC_DATA_DIR / "5g_nidd_portscan_growth.json",
+                PROJECT_ROOT / "data" / "processed" / f"{dataset_id}.json",
+            ]:
+                if cand.is_file():
+                    try:
+                        with open(cand, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            windows = data.get("windows", [])
+                            if windows:
+                                return windows
+                    except Exception as e:
+                        logger.warning("Failed loading cached 5G-NIDD windows from %s: %s", cand, e)
+
+            # Adapt directly from raw 5G-NIDD CSV files or fixture
+            try:
+                import csv
+                from ml_engine.preprocessing.adapters.fiveg_nidd import FiveGNIDDAdapter, BS1_SLICE_ID
+                adapter = FiveGNIDDAdapter()
+
+                raw_cands = [
+                    PROJECT_ROOT / "backend" / "tests" / "fixtures" / "nidd_sample.csv",
+                    PROJECT_ROOT / "data" / "raw" / "5g-nidd" / "BS1_each_attack_csv" / "UDPScan1.csv",
+                    PROJECT_ROOT / "data" / "raw" / "5g-nidd" / "BS1_each_attack_csv" / "ICMPFlood1.csv",
+                    PROJECT_ROOT / "data" / "raw" / "5g-nidd" / "BTS1_BTS2_fields_preserved.csv",
+                ]
+                for raw_f in raw_cands:
+                    if raw_f.is_file():
+                        logger.info("Adapting real 5G-NIDD traffic from %s", raw_f)
+                        with open(raw_f, "r", encoding="utf-8", errors="replace") as f:
+                            reader = csv.DictReader(f)
+                            rows = []
+                            for idx, r in enumerate(reader):
+                                rows.append(r)
+                                if idx >= 5000:
+                                    break
+                        windows = adapter.adapt(
+                            rows,
+                            slice_id=BS1_SLICE_ID,
+                            nf_id="UPF-01",
+                            window_duration_sec=window_scale_sec,
+                        )
+                        if windows:
+                            return windows
+            except Exception as e:
+                logger.warning("Error adapting 5G-NIDD records in replay service: %s", e)
+
+        # Standard synthetic scenario loading
         candidates = [
             SYNTHETIC_DATA_DIR / f"{dataset_id}.json",
             SYNTHETIC_DATA_DIR / dataset_id,
@@ -196,6 +257,7 @@ class ReplayService:
         speed_multiplier: float = 1.0,
         active_arms: Optional[List[str]] = None,
         window_scale_sec: int = 60,
+        data_source: Optional[str] = "synthetic",
     ) -> ReplayStatusResponse:
         """Start or restart a replay background task."""
         # Cancel previous running task if any
@@ -207,12 +269,13 @@ class ReplayService:
                 pass
 
         self.dataset_id = dataset_id
+        self.data_source = data_source or ("fiveg_nidd" if str(dataset_id).lower() in ("fiveg_nidd", "5g_nidd", "5g_nidd_portscan_growth") else "synthetic")
         self.speed_multiplier = max(0.1, speed_multiplier)
         self.window_scale_sec = window_scale_sec
         if active_arms:
             self.active_arms = active_arms
 
-        self._windows = self._load_scenario(dataset_id)
+        self._windows = self._load_scenario(dataset_id, data_source=self.data_source, window_scale_sec=self.window_scale_sec)
         self.total_windows = len(self._windows)
         self.current_window_index = 0
         self.status = "RUNNING"
@@ -233,12 +296,18 @@ class ReplayService:
 
         return self.get_status()
 
-    def start_sync(self, dataset_id: str, speed_multiplier: float = 1.0) -> ReplayStatusResponse:
+    def start_sync(
+        self,
+        dataset_id: str,
+        speed_multiplier: float = 1.0,
+        data_source: Optional[str] = "synthetic",
+    ) -> ReplayStatusResponse:
         """Initialize scenario for synchronous stepping (used in CLI demo and tests)."""
         self.stop()
         self.dataset_id = dataset_id
+        self.data_source = data_source or ("fiveg_nidd" if str(dataset_id).lower() in ("fiveg_nidd", "5g_nidd", "5g_nidd_portscan_growth") else "synthetic")
         self.speed_multiplier = max(0.1, speed_multiplier)
-        self._windows = self._load_scenario(dataset_id)
+        self._windows = self._load_scenario(dataset_id, data_source=self.data_source, window_scale_sec=self.window_scale_sec)
         self.total_windows = len(self._windows)
         self.current_window_index = 0
         self.status = "RUNNING"
@@ -276,6 +345,7 @@ class ReplayService:
         return ReplayStatusResponse(
             status=self.status,
             dataset_id=self.dataset_id,
+            data_source=self.data_source,
             current_window_index=self.current_window_index,
             total_windows=self.total_windows,
             speed_multiplier=self.speed_multiplier,

@@ -34,6 +34,7 @@ async def start_replay(payload: ReplayStartRequest) -> ReplayStatusResponse:
         speed_multiplier=payload.speed_multiplier,
         active_arms=payload.active_arms,
         window_scale_sec=payload.window_scale_sec,
+        data_source=payload.data_source,
     )
     return status
 
