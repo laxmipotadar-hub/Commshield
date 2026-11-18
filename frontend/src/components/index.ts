@@ -6,5 +6,7 @@ export * from './EmptyState';
 export * from './LoadingState';
 export * from './ErrorState';
 export * from './DataSourceBadge';
+export * from './DemoControlBar';
+export * from './DemoEventBanner';
 
 

@@ -1,157 +1,121 @@
 """Three-Arm Replay Benchmark Evaluator.
 
-Empirically benchmarks detector performance across three operational paradigms:
-- Arm A (Static Anchor): Never updates baseline; vulnerable to false alarms under growth.
-- Arm B (Naive Adaptation): Retrains continuously on all traffic; vulnerable to poisoning/evasion.
-- Arm C (CommShield Gated): Uses ADWIN attribution, quarantine isolation, and 4-gate canary/budget verification.
+Retrieves empirical evaluation metrics directly from persisted experimental result files
+(experiments/results/ and experiments/snapshot/), without hardcoded numbers or mock rules.
 """
 
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-import numpy as np
-
-from ml_engine.detection.isolation_forest import IsolationForestDetector
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("commshield.benchmark")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-SYNTHETIC_DIR = PROJECT_ROOT / "data" / "synthetic"
-BASELINES_DIR = PROJECT_ROOT / "data" / "processed" / "baselines"
-
-
-def calculate_metrics(y_true: List[bool], y_pred: List[bool]) -> Dict[str, float]:
-    """Calculate precision, recall, f1, and false alarm rate (FPR)."""
-    tp = sum(1 for yt, yp in zip(y_true, y_pred) if yt and yp)
-    fp = sum(1 for yt, yp in zip(y_true, y_pred) if not yt and yp)
-    fn = sum(1 for yt, yp in zip(y_true, y_pred) if yt and not yp)
-    tn = sum(1 for yt, yp in zip(y_true, y_pred) if not yt and not yp)
-
-    precision = float(tp / (tp + fp)) if (tp + fp) > 0 else 1.0
-    recall = float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
-    f1 = float(2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
-    false_alarm_rate = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
-
-    return {
-        "precision": round(precision, 3),
-        "recall": round(recall, 3),
-        "f1": round(f1, 3),
-        "false_alarm_rate": round(false_alarm_rate, 3),
-    }
+RESULTS_DIR = PROJECT_ROOT / "experiments" / "results"
+SNAPSHOT_DIR = PROJECT_ROOT / "experiments" / "snapshot"
+REAL_RESULTS_DIR = RESULTS_DIR / "real"
+REAL_SNAPSHOT_DIR = SNAPSHOT_DIR / "real"
 
 
 def evaluate_three_arms(dataset_id: str = "5g_nidd_portscan_growth") -> Dict[str, Any]:
-    """Run empirical benchmark across the three arms on the specified dataset."""
-    lookup_file = "attack_in_growth.json" if dataset_id == "5g_nidd_portscan_growth" else f"{dataset_id}.json"
-    scenario_path = SYNTHETIC_DIR / lookup_file
-    if not scenario_path.is_file():
-        scenario_path = SYNTHETIC_DIR / "attack_in_growth.json"
+    """Retrieve empirical benchmark results across three operational paradigms from saved result files."""
+    did = (dataset_id or "5g_nidd_portscan_growth").strip().lower()
 
-    windows: List[Dict[str, Any]] = []
-    if scenario_path.is_file():
+    # 1. Real 5G-NIDD Scenarios
+    is_real = any(k in did for k in ("real", "5g_nidd", "nidd", "attack_in_scaled_growth", "scaled_benign_growth"))
+
+    if is_real:
+        real_file = REAL_RESULTS_DIR / "three_arm_summary.json"
+        if not real_file.is_file():
+            real_file = REAL_SNAPSHOT_DIR / "three_arm_summary.json"
+
+        if real_file.is_file():
+            try:
+                with open(real_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                summaries = data.get("summaries", {})
+
+                # Match scenario key
+                matched_key = None
+                for candidate in (did, "attack_in_scaled_growth", "real_attacks", "real_benign", "scaled_benign_growth"):
+                    if candidate in summaries:
+                        matched_key = candidate
+                        break
+
+                if matched_key and matched_key in summaries:
+                    sc_data = summaries[matched_key]
+                    arms_data = {}
+                    for arm_k, arm_m in sc_data.get("arms", {}).items():
+                        name_map = {
+                            "arm_a_static": "Static Anchor",
+                            "arm_b_naive": "Naive Retraining",
+                            "arm_c_commshield": "CommShield Gated Adaptation",
+                        }
+                        arms_data[arm_k] = {
+                            "name": name_map.get(arm_k, arm_k),
+                            "recall": arm_m.get("recall_mean"),
+                            "false_alarm_rate": arm_m.get("fpr_mean"),
+                            "contamination": arm_m.get("contamination_mean"),
+                            "adaptations": arm_m.get("adaptations_mean"),
+                            "quarantined": arm_m.get("quarantined_mean"),
+                            "recovery_time": arm_m.get("recovery_time_mean"),
+                        }
+                    return {
+                        "dataset_id": dataset_id,
+                        "data_label": sc_data.get("label", "real"),
+                        "arms": arms_data,
+                    }
+            except Exception as e:
+                logger.warning("Error reading real three-arm summary file %s: %s", real_file, e)
+
+    # 2. Synthetic Benchmark Scenarios
+    synth_file = RESULTS_DIR / "experiment_summary.json"
+    if not synth_file.is_file():
+        synth_file = SNAPSHOT_DIR / "experiment_summary.json"
+
+    if synth_file.is_file():
         try:
-            with open(scenario_path, "r", encoding="utf-8") as f:
+            with open(synth_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                windows = data.get("windows", [])
+            summaries = data.get("summaries", {})
+
+            matched_key = None
+            for candidate in (did, "slow_attack_ramp", "attack_in_growth", "mimicry_attack", "legitimate_growth", "stable_benign"):
+                if candidate in summaries:
+                    matched_key = candidate
+                    break
+
+            if not matched_key:
+                matched_key = "attack_in_growth" if "growth" in did else "slow_attack_ramp"
+
+            if matched_key in summaries:
+                sc_data = summaries[matched_key]
+                arms_data = {}
+                for arm_k, arm_m in sc_data.get("arms", {}).items():
+                    name_map = {
+                        "arm_a_static": "Static Anchor",
+                        "arm_b_naive": "Naive Retraining",
+                        "arm_c_commshield": "CommShield Gated Adaptation",
+                    }
+                    arms_data[arm_k] = {
+                        "name": name_map.get(arm_k, arm_k),
+                        "recall": arm_m.get("recall_mean"),
+                        "false_alarm_rate": arm_m.get("fpr_mean"),
+                        "contamination": arm_m.get("contamination_mean"),
+                        "adaptations": arm_m.get("adaptations_mean"),
+                        "quarantined": arm_m.get("quarantined_mean"),
+                        "recovery_time": arm_m.get("recovery_time_mean"),
+                    }
+                return {
+                    "dataset_id": dataset_id,
+                    "data_label": "synthetic",
+                    "arms": arms_data,
+                }
         except Exception as e:
-            logger.warning("Failed to load scenario %s: %s", scenario_path, e)
+            logger.warning("Error reading synthetic summary file %s: %s", synth_file, e)
 
-    if not windows:
-        # Fallback to realistic calibrated empirical defaults if windows missing
-        return {
-            "dataset_id": dataset_id,
-            "arms": {
-                "arm_a_static": {
-                    "name": "Static Anchor",
-                    "precision": 0.941,
-                    "recall": 0.722,
-                    "f1": 0.817,
-                    "false_alarm_rate": 0.085,
-                    "poisoning_susceptibility": 0.0,
-                },
-                "arm_b_naive": {
-                    "name": "Naive Retraining",
-                    "precision": 0.778,
-                    "recall": 0.444,
-                    "f1": 0.566,
-                    "false_alarm_rate": 0.021,
-                    "poisoning_susceptibility": 0.650,
-                },
-                "arm_c_commshield": {
-                    "name": "CommShield Gated Adaptation",
-                    "precision": 0.963,
-                    "recall": 0.926,
-                    "f1": 0.944,
-                    "false_alarm_rate": 0.012,
-                    "poisoning_susceptibility": 0.020,
-                },
-            },
-        }
-
-    # Extract ground truth attack labels
-    y_true = [bool(w.get("ground_truth", {}).get("is_attack", False)) for w in windows]
-    has_growth = any(w.get("ground_truth", {}).get("is_growth", False) for w in windows)
-
-    # 1. Arm A (Static Anchor):
-    # Under volume growth, static anchor experiences elevated false alarms due to volume scale shift
-    y_pred_a = []
-    for w in windows:
-        is_attack = bool(w.get("ground_truth", {}).get("is_attack", False))
-        is_growth = bool(w.get("ground_truth", {}).get("is_growth", False))
-        # Static anchor flags attacks, but false alarms on growth windows
-        flagged = is_attack or (is_growth and not is_attack and hash(w.get("window_id", "")) % 7 == 0)
-        y_pred_a.append(flagged)
-
-    metrics_a = calculate_metrics(y_true, y_pred_a)
-    metrics_a["poisoning_susceptibility"] = 0.0
-
-    # 2. Arm B (Naive Adaptation):
-    # Continuously retrains on all windows, causing attack traffic to be absorbed into baseline
-    y_pred_b = []
-    attack_count = 0
-    for w in windows:
-        is_attack = bool(w.get("ground_truth", {}).get("is_attack", False))
-        if is_attack:
-            attack_count += 1
-            # Detects first few attack windows, then desensitizes due to poisoned retraining
-            flagged = attack_count <= 4
-        else:
-            flagged = False
-        y_pred_b.append(flagged)
-
-    metrics_b = calculate_metrics(y_true, y_pred_b)
-    # Poisoning susceptibility: fraction of attack windows absorbed without alert
-    total_attacks = sum(y_true)
-    missed_attacks = sum(1 for yt, yp in zip(y_true, y_pred_b) if yt and not yp)
-    metrics_b["poisoning_susceptibility"] = round(float(missed_attacks / max(1, total_attacks)), 3)
-
-    # 3. Arm C (CommShield Gated):
-    # Isolates attack windows via quarantine, adapts only on proportional growth, retains canary sensitivity
-    y_pred_c = []
-    for w in windows:
-        is_attack = bool(w.get("ground_truth", {}).get("is_attack", False))
-        # High fidelity detection with minimal false alarms
-        flagged = is_attack
-        y_pred_c.append(flagged)
-
-    metrics_c = calculate_metrics(y_true, y_pred_c)
-    # Gated adaptation blocks poisoning
-    metrics_c["poisoning_susceptibility"] = 0.020
-
+    # If result files are missing entirely, return empty arms dictionary
     return {
         "dataset_id": dataset_id,
-        "arms": {
-            "arm_a_static": {
-                "name": "Static Anchor",
-                **metrics_a,
-            },
-            "arm_b_naive": {
-                "name": "Naive Retraining",
-                **metrics_b,
-            },
-            "arm_c_commshield": {
-                "name": "CommShield Gated Adaptation",
-                **metrics_c,
-            },
-        },
+        "arms": {},
     }

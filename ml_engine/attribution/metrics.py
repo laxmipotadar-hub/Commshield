@@ -108,11 +108,45 @@ def evaluate_per_ue_rate(
     }
 
 
+def compute_control_slice_concordance(
+    slice1_window: Dict[str, Any],
+    slice2_window: Optional[Dict[str, Any]],
+    jsd_threshold: float = 0.05,
+    rate_tolerance: float = 0.35,
+) -> Optional[bool]:
+    """Compute concordance between slice 1 and control slice 2 using proportional growth measure.
+    
+    Returns:
+        True: Slice 2 composition and volume move together with slice 1 (network-wide shift).
+        False: Localized shift in slice 1, slice 2 composition or scaling deviates.
+        None: Second-slice data is unavailable for this scenario/window.
+    """
+    if not slice2_window:
+        return None
+
+    c1 = slice1_window.get("composition_vector", {})
+    c2 = slice2_window.get("composition_vector", {})
+    if not c1 or not c2:
+        return None
+
+    # 1. Compare composition divergence between slices
+    jsd = compute_jsd(c1, c2)
+
+    # 2. Compare per-UE session rate deviation between slices
+    r1 = float(slice1_window.get("ratio_features", {}).get("pdu_session_rate_per_ue", 1.0))
+    r2 = float(slice2_window.get("ratio_features", {}).get("pdu_session_rate_per_ue", 1.0))
+    rate_dev = abs(r1 - r2) / max(0.1, r1)
+
+    # Both slices moving together in composition and session rate
+    is_concordant = bool(jsd <= jsd_threshold and rate_dev <= rate_tolerance)
+    return is_concordant
+
+
 def evaluate_threat_indicators(
     current_ratios: Dict[str, float],
     baseline_bundle: Dict[str, Any],
     detector_output: Optional[Dict[str, Any]] = None,
-    control_slice_concordant: bool = True,
+    control_slice_concordant: Optional[bool] = None,
     change_log_match: bool = False,
 ) -> Dict[str, Any]:
     """Evaluate supporting threat indicators defined in COMMSHIELD_SPEC_v9.md."""
@@ -137,7 +171,11 @@ def evaluate_threat_indicators(
     if detector_output and "fusion" in detector_output:
         agreement_state = detector_output["fusion"].get("agreement_state", "NONE")
 
-    concordance_label = "NETWORK_WIDE_EXPANSION" if control_slice_concordant else "LOCALIZED_TO_SLICE_1"
+    concordance_label = (
+        None
+        if control_slice_concordant is None
+        else ("NETWORK_WIDE_EXPANSION" if control_slice_concordant else "LOCALIZED_TO_SLICE_1")
+    )
 
     # Independent domain threat indicators (failure signals and entropy collapse)
     has_threat = bool(

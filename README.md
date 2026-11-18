@@ -9,7 +9,7 @@ CommShield is a telecom-native anomaly detection and baseline governance platfor
 | **Frontend** | React 18, TypeScript, Tailwind CSS, Recharts, Vite |
 | **Backend** | FastAPI, SQLite (via SQLAlchemy, Postgres-portable), Pydantic v2 |
 | **ML Engine** | Python 3.11+, scikit-learn (Isolation Forest), PyTorch (Autoencoder), NumPy, Pandas, SciPy |
-| **Data & Replay**| 5G-NIDD captures, Open5GS/UERANSIM testbed logs, real-growth backbones (MAWI) |
+| **Data & Replay**| 5G-NIDD real flow captures, parametric synthetic stream generators |
 
 ## Directory Structure
 

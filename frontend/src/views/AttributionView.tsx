@@ -48,6 +48,7 @@ interface RawSupportingSignals {
   ue_entropy_delta?: number;
   detector_agreement_state?: string;
   new_ue_rate?: number;
+  control_slice_concordance?: string | null;
 }
 
 interface RawAttribution {
@@ -571,6 +572,17 @@ export const AttributionView: React.FC = () => {
                 size="sm"
               />
             </div>
+
+            {supportingSignals.control_slice_concordance && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-bg/50 border border-border/60">
+                <span className="text-slate font-medium">Control Slice Concordance</span>
+                <StatusBadge
+                  label={supportingSignals.control_slice_concordance === 'NETWORK_WIDE_EXPANSION' ? 'Concordant' : 'Discordant'}
+                  variant={supportingSignals.control_slice_concordance === 'NETWORK_WIDE_EXPANSION' ? 'safe' : 'attack'}
+                  size="sm"
+                />
+              </div>
+            )}
           </div>
         </div>
 

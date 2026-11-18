@@ -231,6 +231,38 @@ class GovernanceService:
             logger.warning("Rejected promotion for candidate %s: %s", candidate_id, reason)
             raise HTTPException(status_code=409, detail=reason)
 
+        # 1b. Dwell time enforcement: verify minimum interval between promotions
+        from ml_engine.governance.config import DWELL_TIME_MIN_SECONDS
+        if DWELL_TIME_MIN_SECONDS > 0:
+            last_approval = (
+                db.query(ApprovalLog)
+                .filter(ApprovalLog.slice_id == cand.slice_id, ApprovalLog.action == "APPROVED")
+                .order_by(ApprovalLog.created_at.desc())
+                .first()
+            )
+            if last_approval and last_approval.created_at:
+                now_utc = datetime.now(timezone.utc)
+                last_dt = last_approval.created_at
+                if last_dt.tzinfo is None:
+                    last_dt = last_dt.replace(tzinfo=timezone.utc)
+                elapsed_sec = (now_utc - last_dt).total_seconds()
+                if elapsed_sec < DWELL_TIME_MIN_SECONDS:
+                    reason = (
+                        f"Dwell time check: FAILED ({elapsed_sec:.1f}s elapsed < {DWELL_TIME_MIN_SECONDS}s "
+                        f"minimum interval required between promotions)."
+                    )
+                    cand_trace = list(cand.decision_trace or [])
+                    cand_trace.append(reason)
+                    cand.decision_trace = cand_trace
+                    db.commit()
+                    logger.warning("Rejected promotion for candidate %s: %s", candidate_id, reason)
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Dwell time violation: {elapsed_sec:.1f}s elapsed since last promotion, minimum interval is {DWELL_TIME_MIN_SECONDS}s.",
+                    )
+
+        dwell_line = f"Dwell time check: PASSED (minimum interval of {DWELL_TIME_MIN_SECONDS}s satisfied)."
+
         # 2. Load candidate bundle
         artifact_path = Path(cand.model_artifact_path) if cand.model_artifact_path else None
         if not artifact_path or not artifact_path.is_file():
@@ -281,6 +313,7 @@ class GovernanceService:
             cand.reviewed_by = analyst_id
             cand.reviewed_at = datetime.now(timezone.utc)
             cand_trace = list(cand.decision_trace or [])
+            cand_trace.append(dwell_line)
             cand_trace.append(f"Analyst promotion gate: APPROVED by {analyst_id}. Promoted to active baseline.")
             cand.decision_trace = cand_trace
 

@@ -62,12 +62,23 @@ accuracy, and governance integrity of automated 5G Core anomaly detection baseli
 ### Where CommShield Helped
 1. **Contamination Elimination**: Arm C maintained strictly **0.0% baseline contamination** across all attack scenarios (`slow_attack_ramp`, `attack_in_growth`, `mimicry_attack`). Quarantined attack windows were mathematically isolated from candidate training sets.
 2. **Attack Evasion Resistance**: Arm B suffered severe attack blinding in `slow_attack_ramp` and `attack_in_growth` as it absorbed attack traffic into its training data (contamination rising to 40-70%), cutting its attack recall in half. Arm C maintained full attack recall because its active baseline remained pure.
-3. **Legitimate Growth Accommodation**: Under `legitimate_growth`, Arm A suffered alert fatigue (elevated FPR) as traffic outgrew the frozen anchor, whereas Arm C safely adapted via approved shadow candidates once proportional growth was proven ($JSD \le 0.035$).
+3. **Growth vs Poisoning Trade-off**: Gated adaptation keeps baseline contamination strictly at 0.0% where naive adaptation reaches 56.0% to 83.3% across the slow ramp, attack-in-growth, and mimicry scenarios. However, under synthetic legitimate growth, Arm C made 0 adaptations because candidates did not pass the conservative governance gates, leaving FPR at approximately 97.5% (similar to the static anchor).
 
 ### Where CommShield Did Not Help & Trade-offs
 1. **Adaptation Delay (Inertia)**: CommShield requires verified proportional growth accumulation and a 4-check governance gate before promoting candidates. Under rapid growth, it adapts more conservatively than naive retraining.
 2. **Human Approval Dependency**: In production, Arm C relies on an analyst approval gate. If operators are slow or unavailable, the system remains on the previous baseline.
 3. **Synthetic Data Disclosure**: All evaluation streams in this benchmark were synthesized using `SyntheticGenerator` modeling Open5GS/5G-NIDD profiles with diurnal noise and mathematical proportional scaling. While deterministic and multi-seeded, real operator core traffic contains complex burstiness not fully captured in synthetic generation.
+
+---
+
+## Known Limitations
+
+- **Growth vs. Poisoning Protection Trade-off**: Gated adaptation achieves 0.0% baseline contamination across attack scenarios (where naive adaptation absorbs 56.0% to 83.3% attack data), but made 0 adaptations under synthetic legitimate growth, resulting in elevated false positive rates (~97.5%).
+- **Clean Growth Candidate Rejection**: Under empirical governance testing, a clean candidate trained on scaled benign traffic was rejected by the canary retention gate (retention dropped to 25.0%) and the drift budget gate ($D_{rms} = 6.65$), preventing automated promotion without manual override.
+- **Poisoned Candidate Rejected Only by Holdout**: The poisoned candidate passed canary retention with 100.0% recall, and was blocked exclusively by the normal holdout gate (holdout FPR reaching 100.0%).
+- **Small Window Counts**: In the 5G-NIDD real evaluation, attack campaigns yielded small sample sizes (1 to 11 attack windows and 3 to 20 benign windows per campaign), constraining confidence interval widths.
+- **ICMPFlood 0.0% Recall Across All Detectors**: Isolation Forest, Autoencoder, Percentile Fusion, and the Z-score baseline all achieved 0.0% recall on the trickle ICMP flood attack (613 packets over 20 minutes obscured in 60-second window aggregations).
+- **Unimplemented Modules**: Ablations (the seven planned ablation variations), re-anchoring to updated operational anchors, and time-of-day seasonal context are not implemented.
 
 ---
 

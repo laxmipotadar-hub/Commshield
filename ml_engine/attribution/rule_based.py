@@ -12,6 +12,7 @@ from .config import (
     RecommendedAction,
 )
 from .metrics import (
+    compute_control_slice_concordance,
     compute_volume_multiplier,
     evaluate_per_ue_rate,
     evaluate_proportional_growth,
@@ -32,11 +33,14 @@ class RuleBasedAttributor(BaseAttributor):
         recent_windows: Optional[List[Dict[str, Any]]] = None,
         drift_detected: bool = False,
         detector_output: Optional[Dict[str, Any]] = None,
-        control_slice_concordant: bool = True,
+        control_slice_concordant: Optional[bool] = None,
         change_log_match: bool = False,
+        control_slice_window: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Apply strict attribution rules in sequential order."""
+        if control_slice_concordant is None and control_slice_window is not None:
+            control_slice_concordant = compute_control_slice_concordance(window, control_slice_window)
         window_id = window.get("window_id", "")
         slice_id = window.get("slice_id", "sst-1-sd-010203")
         raw_counters = window.get("raw_counters", {})

@@ -1,9 +1,22 @@
+import logging
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+import numpy as np
 from sqlalchemy.orm import Session
 
+try:
+    import shap
+    HAS_SHAP = True
+except ImportError:
+    shap = None
+    HAS_SHAP = False
+
+from ml_engine.preprocessing.windowing import FEATURE_NAMES
+from ..services.detection import detection_service
 from ..database import get_db
+
+logger = logging.getLogger("commshield.windows")
 from ..models import (
     AttributionResult,
     Baseline,
@@ -104,22 +117,6 @@ def explain_window(
         .filter(Baseline.slice_id == db_window.slice_id, Baseline.is_active == True)
         .first()
     )
-    scaler_params = active_base.scaler_params if active_base and active_base.scaler_params else {}
-    medians = scaler_params.get("medians", {})
-    iqrs = scaler_params.get("iqrs", {})
-
-    ratio_features = db_window.ratio_features or {}
-    shap_values = {}
-    top_contributors = []
-    for k, v in ratio_features.items():
-        med = float(medians.get(k, 0.0))
-        iqr = float(max(0.0001, iqrs.get(k, 1.0)))
-        dev = round((float(v) - med) / iqr, 4)
-        shap_values[k] = dev
-        if abs(dev) > 1.5:
-            top_contributors.append((k, dev))
-
-    top_contributors.sort(key=lambda x: abs(x[1]), reverse=True)
 
     # 2. Query detection and attribution outcomes
     det = db.query(DetectionResult).filter(DetectionResult.window_id == window_id).first()
@@ -130,13 +127,63 @@ def explain_window(
     verdict = attr.verdict if attr else ("likely_attack" if is_anom else "likely_benign")
     abstain = attr.abstain_reason if attr else None
 
-    # 3. Formulate hypothesis
+    # 3. For flagged windows only: compute real SHAP values for Isolation Forest with TreeExplainer
+    shap_values = {}
+    top_contributors = []
+    ratio_features = db_window.ratio_features or {}
+
+    if is_anom:
+        computed = False
+        if HAS_SHAP:
+            try:
+                bundle = detection_service.get_baseline_bundle(db_window.slice_id, db=db)
+                if bundle and "isolation_forest" in bundle:
+                    if_det = bundle["isolation_forest"]
+                    scaler = bundle.get("scaler")
+                    if scaler and hasattr(scaler, "transform_vector"):
+                        scaled_vec = scaler.transform_vector(ratio_features)
+                        x_vals = [float(scaled_vec.get(f, 0.0)) for f in FEATURE_NAMES]
+                    else:
+                        scaler_params = active_base.scaler_params if active_base and active_base.scaler_params else {}
+                        meds = scaler_params.get("medians", {})
+                        iqrs = scaler_params.get("iqrs", {})
+                        x_vals = [
+                            (float(ratio_features.get(f, 0.0)) - float(meds.get(f, 0.0))) / max(1e-4, float(iqrs.get(f, 1.0)))
+                            for f in FEATURE_NAMES
+                        ]
+
+                    X = np.array([x_vals], dtype=float)
+                    explainer = shap.TreeExplainer(if_det.model)
+                    sv = explainer.shap_values(X)
+                    if isinstance(sv, list):
+                        sv = sv[0]
+                    if sv.ndim > 1:
+                        sv = sv[0]
+                    shap_values = {f: round(float(val), 4) for f, val in zip(FEATURE_NAMES, sv)}
+                    computed = True
+            except Exception as e:
+                logger.warning("Failed computing SHAP with TreeExplainer: %s", e)
+
+        if not computed:
+            # Fallback to per-feature robust z-scores if SHAP cannot run
+            scaler_params = active_base.scaler_params if active_base and active_base.scaler_params else {}
+            medians = scaler_params.get("medians", {})
+            iqrs = scaler_params.get("iqrs", {})
+            for k, v in ratio_features.items():
+                med = float(medians.get(k, 0.0))
+                iqr = float(max(0.0001, iqrs.get(k, 1.0)))
+                dev = round((float(v) - med) / iqr, 4)
+                shap_values[k] = dev
+
+        top_contributors = sorted(shap_values.items(), key=lambda x: abs(x[1]), reverse=True)
+
+    # 4. Formulate hypothesis
     if is_anom:
         if top_contributors:
             main_feat, dev_val = top_contributors[0]
             hypothesis = (
-                f"Elevated risk: feature '{main_feat}' deviated by {dev_val:+.2f} sigma "
-                f"from active baseline {active_base.version if active_base else 'v1.0.0-anchor'}."
+                f"Elevated risk: feature '{main_feat}' contributed {dev_val:+.4f} (SHAP) "
+                f"towards anomaly threshold against active baseline {active_base.version if active_base else 'v1.0.0-anchor'}."
             )
         else:
             hypothesis = "Multi-detector anomaly triggered across combined traffic indicators."

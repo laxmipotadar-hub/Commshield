@@ -174,6 +174,89 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | `GET` | `/api/v1/experiments/results` | Aggregated multi-seed experiment benchmark results | Query params: `data_source` (`synthetic`, `5g_nidd`, `real`, `open5gs_lab`) | `Dict[str, Any]` |
 | `GET` | `/api/v1/experiments/results/{scenario}` | Single-scenario benchmark results | Query params: `data_source` (`synthetic`, `5g_nidd`, `real`) | `Dict[str, Any]` |
 
+### Demo Mode Endpoints
+
+| Method | Route | Description | Request Payload | Response Payload |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/demo/scenarios` (or `/api/demo/scenarios`) | Pre-packaged real-data 5G-NIDD replay presets with key event timelines | None | `DemoScenariosResponse` |
+
+#### Demo Scenarios API JSON Schema
+
+```json
+{
+  "DemoScenariosResponse": {
+    "source_attribution": "5G-NIDD Real Capture (CIC/UNB testbed) with assigned slices",
+    "fixed_seed": 42,
+    "scenarios": [
+      {
+        "id": "real_benign",
+        "preset_number": 1,
+        "name": "Real Benign Traffic (5G-NIDD)",
+        "description": "40 consecutive 60s windows of authentic baseline benign traffic from 5G Standalone core tap points.",
+        "data_label": "real",
+        "dataset_id": "demo_real_benign",
+        "best_attack_type": null,
+        "window_range": { "start_index": 0, "end_index": 39, "total_windows": 40 },
+        "key_events": [
+          { "window_index": 0, "event_type": "nominal_start", "caption": "Replay started: Nominal 5G core user-plane telemetry flowing through calibrated baseline." },
+          { "window_index": 18, "event_type": "drift_alarm", "caption": "Natural variation detected: ADWIN triggers drift alarm; attribution confirms proportional composition." },
+          { "window_index": 39, "event_type": "nominal_complete", "caption": "Replay completed: 0 attack windows injected, 0.0% baseline contamination, nominal 5% FPR." }
+        ]
+      },
+      {
+        "id": "real_attack",
+        "preset_number": 2,
+        "name": "Real Attack Traffic (SYNScan)",
+        "description": "20 clean baseline benign windows followed by an authentic 5G-NIDD SYNScan reconnaissance attack window.",
+        "data_label": "real",
+        "dataset_id": "demo_real_attack",
+        "best_attack_type": "SYNScan",
+        "window_range": { "start_index": 0, "end_index": 20, "total_windows": 21 },
+        "key_events": [
+          { "window_index": 0, "event_type": "baseline_lead_in", "caption": "Replay started: Clean benign traffic active on eMBB slice before reconnaissance onset." },
+          { "window_index": 20, "event_type": "first_alert", "caption": "First Alert: SYNScan attack detected immediately (fused score p=0.999 >= 0.98, delay 0w)." },
+          { "window_index": 20, "event_type": "quarantine_isolation", "caption": "Quarantine Action: Malicious window isolated in quarantine; baseline contamination remains strictly 0.0%." }
+        ]
+      },
+      {
+        "id": "scaled_growth",
+        "preset_number": 3,
+        "name": "Real Benign Traffic Scaled 2x",
+        "description": "Real benign 5G-NIDD traffic scaled 2.0x with composition preserved, modeling enterprise capacity expansion.",
+        "data_label": "semi-synthetic",
+        "dataset_id": "demo_scaled_growth",
+        "best_attack_type": null,
+        "window_range": { "start_index": 0, "end_index": 39, "total_windows": 40 },
+        "key_events": [
+          { "window_index": 0, "event_type": "baseline_1x", "caption": "Replay started: 1x unscaled baseline benign traffic flowing normally." },
+          { "window_index": 20, "event_type": "growth_onset", "caption": "Volume Surge: Traffic scales 2.0x; ADWIN drift detector fires across uplink and downlink counters." },
+          { "window_index": 25, "event_type": "candidate_built", "caption": "Shadow Candidate Built: Proportional growth verified (JSD=0.0034 <= 0.035, per-UE deviation=0.167 <= 0.25)." },
+          { "window_index": 25, "event_type": "governance_failure", "caption": "Governance Gate Triggered: Clean candidate fails canary retention (recall drops to 25%) and drift budget (D_rms=6.65 > 2.5) -> Rejected." }
+        ]
+      },
+      {
+        "id": "attack_in_growth",
+        "preset_number": 4,
+        "name": "Real Attack Injected into Scaled Growth",
+        "description": "An authentic 5G-NIDD attack window hidden inside 2.0x scaled benign growth traffic.",
+        "data_label": "semi-synthetic",
+        "dataset_id": "demo_attack_in_growth",
+        "best_attack_type": "SYNScan",
+        "window_range": { "start_index": 0, "end_index": 20, "total_windows": 21 },
+        "key_events": [
+          { "window_index": 0, "event_type": "scaled_growth_lead_in", "caption": "Replay started: 2.0x scaled high-volume traffic active across eMBB slice." },
+          { "window_index": 20, "event_type": "attack_injected_alert", "caption": "Attack Injected: Real attack window detected instantly despite 2x volume expansion (p=0.999)." },
+          { "window_index": 20, "event_type": "quarantine_isolation", "caption": "Quarantine Isolation: Attack window isolated; candidate baseline training excludes attack traffic." },
+          { "window_index": 20, "event_type": "governance_trace", "caption": "Decision Trace & Three-Arm Comparison: Arm C blocks contamination (0.0%), whereas naive Arm B is poisoned." }
+        ],
+        "three_arm_summary": { ... },
+        "decision_trace": { ... }
+      }
+    ]
+  }
+}
+```
+
 #### Governance Action JSON Schemas
 
 ```json

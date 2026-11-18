@@ -49,17 +49,31 @@ class ReplayService:
         window_scale_sec: int = 60,
     ) -> List[Dict[str, Any]]:
         """Load windows from scenario file in data/synthetic/ or adapt real 5G-NIDD telemetry."""
+        # Demo alias resolution
+        demo_aliases = {
+            "real_benign": "demo_real_benign",
+            "real_attack": "demo_real_attack",
+            "real_attacks": "demo_real_attack",
+            "scaled_growth": "demo_scaled_growth",
+            "scaled_benign_growth": "demo_scaled_growth",
+            "attack_in_growth": "demo_attack_in_growth",
+            "attack_in_scaled_growth": "demo_attack_in_growth",
+        }
+        resolved_id = demo_aliases.get(dataset_id, dataset_id)
+
         is_fiveg = (
-            data_source == "fiveg_nidd"
+            data_source in ("fiveg_nidd", "5g_nidd", "real")
+            or resolved_id.startswith("demo_")
             or str(dataset_id).lower() in ("fiveg_nidd", "5g_nidd", "5g_nidd_portscan_growth")
         )
 
-        if is_fiveg:
+        if is_fiveg or resolved_id.startswith("demo_"):
             # Check for pre-aggregated json
             for cand in [
+                SYNTHETIC_DATA_DIR / f"{resolved_id}.json",
                 SYNTHETIC_DATA_DIR / f"{dataset_id}.json",
                 SYNTHETIC_DATA_DIR / "5g_nidd_portscan_growth.json",
-                PROJECT_ROOT / "data" / "processed" / f"{dataset_id}.json",
+                PROJECT_ROOT / "data" / "processed" / f"{resolved_id}.json",
             ]:
                 if cand.is_file():
                     try:
@@ -275,6 +289,11 @@ class ReplayService:
         if active_arms:
             self.active_arms = active_arms
 
+        import random
+        import numpy as np
+        random.seed(42)
+        np.random.seed(42)
+
         self._windows = self._load_scenario(dataset_id, data_source=self.data_source, window_scale_sec=self.window_scale_sec)
         self.total_windows = len(self._windows)
         self.current_window_index = 0
@@ -307,6 +326,11 @@ class ReplayService:
         self.dataset_id = dataset_id
         self.data_source = data_source or ("fiveg_nidd" if str(dataset_id).lower() in ("fiveg_nidd", "5g_nidd", "5g_nidd_portscan_growth") else "synthetic")
         self.speed_multiplier = max(0.1, speed_multiplier)
+        import random
+        import numpy as np
+        random.seed(42)
+        np.random.seed(42)
+
         self._windows = self._load_scenario(dataset_id, data_source=self.data_source, window_scale_sec=self.window_scale_sec)
         self.total_windows = len(self._windows)
         self.current_window_index = 0

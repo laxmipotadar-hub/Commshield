@@ -20,7 +20,7 @@ import {
   Sliders,
   User,
 } from 'lucide-react';
-import { StatusBadge } from './components';
+import { StatusBadge, DemoControlBar, DemoEventBanner } from './components';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitoringPage } from './pages/MonitoringPage';
 import { DetectionPage } from './pages/DetectionPage';
@@ -29,6 +29,7 @@ import { GovernanceView } from './views/GovernanceView';
 import { InvestigationView } from './views/InvestigationView';
 import { ExperimentsView } from './views/ExperimentsView';
 import { ReplayProvider, SCENARIOS, ScenarioId, useReplay } from './context/ReplayContext';
+import { DemoProvider } from './context/DemoContext';
 
 interface NavItem {
   name: string;
@@ -180,6 +181,9 @@ const AppLayout: React.FC = () => {
 
           {/* Right: Replay Controls & Active Baseline Badge */}
           <div className="flex items-center gap-3 flex-wrap justify-end">
+            {/* Demo Mode Presentation Controls */}
+            <DemoControlBar />
+
             {/* Data Source Selector */}
             <div className="flex items-center gap-1.5 bg-bg px-2.5 py-1 rounded-lg border border-border">
               <Database className="w-3.5 h-3.5 text-teal" />
@@ -263,6 +267,9 @@ const AppLayout: React.FC = () => {
         {/* Independently Scrolling Content Area */}
         <main className="flex-1 overflow-y-auto p-6 bg-bg">
           <div className="max-w-7xl mx-auto">
+            {/* Presentation Demo Mode Key Event & Scenario 4 Banner */}
+            <DemoEventBanner />
+
             <Routes>
               <Route path="/" element={<OverviewPage />} />
               <Route path="/monitoring" element={<MonitoringPage />} />
@@ -284,7 +291,9 @@ const AppLayout: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <ReplayProvider>
-      <AppLayout />
+      <DemoProvider>
+        <AppLayout />
+      </DemoProvider>
     </ReplayProvider>
   );
 };

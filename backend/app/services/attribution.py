@@ -86,6 +86,23 @@ class AttributionService:
             if alert_row:
                 detector_output = alert_row.detector_output
 
+            # 4b. Fetch real second-slice data (BS2 vs BS1 in real data; slice 2 vs 1 in synthetic)
+            second_slice_id = "sst-2-sd-010203" if slice_id == "sst-1-sd-010203" else "sst-1-sd-010203"
+            control_slice_row = (
+                db.query(CanonicalWindow)
+                .filter(CanonicalWindow.slice_id == second_slice_id)
+                .order_by(CanonicalWindow.window_start.desc())
+                .first()
+            )
+            control_slice_window = None
+            if control_slice_row:
+                control_slice_window = {
+                    "slice_id": control_slice_row.slice_id,
+                    "raw_counters": control_slice_row.raw_counters or {},
+                    "ratio_features": control_slice_row.ratio_features or {},
+                    "composition_vector": control_slice_row.composition_vector or {},
+                }
+
             # 5. Execute Attribution
             attribution_dict = self.engine.attribute(
                 window=window,
@@ -93,6 +110,7 @@ class AttributionService:
                 recent_windows=recent_history,
                 drift_detected=drift_detected,
                 detector_output=detector_output,
+                control_slice_window=control_slice_window,
             )
 
             verdict = attribution_dict["verdict"]

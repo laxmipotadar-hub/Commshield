@@ -73,8 +73,8 @@ PERSISTENT_DRIFT_THRESHOLD: int = 3
 MIN_ADAPTATION_WINDOWS: int = 5
 
 # Dwell time in seconds required between successive baseline promotions
-# to allow operational observation. (Set to 0 in replay/test environments).
-DWELL_TIME_MIN_SECONDS: int = 0
+# to allow operational observation.
+DWELL_TIME_MIN_SECONDS: int = 300
 
 # Small epsilon added to denominator for robust z-score calculation stability.
 EPSILON: float = 1e-6

@@ -43,6 +43,58 @@ export interface DatasetListResponse {
   total: number;
 }
 
+export interface DemoKeyEvent {
+  window_index: number;
+  event_type: string;
+  caption: string;
+}
+
+export interface DemoWindowRange {
+  start_index: number;
+  end_index: number;
+  total_windows: number;
+}
+
+export interface DemoPreset {
+  id: string;
+  preset_number: number;
+  name: string;
+  description: string;
+  data_label: 'real' | 'semi-synthetic';
+  dataset_id: string;
+  best_attack_type?: string | null;
+  window_range: DemoWindowRange;
+  key_events: DemoKeyEvent[];
+  three_arm_summary?: {
+    scenario: string;
+    data_label: string;
+    arms: Record<string, {
+      name: string;
+      recall: number | null;
+      fpr: number;
+      contamination: number;
+      adaptations: number;
+      quarantined: number;
+    }>;
+  };
+  decision_trace?: {
+    candidate_version: string;
+    overall_status: string;
+    checks: Array<{
+      name: string;
+      status: string;
+      detail: string;
+    }>;
+    conclusion: string;
+  };
+}
+
+export interface DemoScenariosResponse {
+  scenarios: DemoPreset[];
+  source_attribution: string;
+  fixed_seed: number;
+}
+
 export interface ReplayStartRequest {
   dataset_id: string;
   data_source?: string;
@@ -282,13 +334,17 @@ export interface RollbackResponse {
 
 export interface ThreeArmComparisonResponse {
   dataset_id: string;
+  data_label?: string;
   arms: Record<string, {
     name: string;
     precision?: number;
-    recall?: number;
+    recall?: number | null;
     f1?: number;
     false_alarm_rate?: number;
-    poisoning_susceptibility?: number;
+    contamination?: number;
+    adaptations?: number;
+    quarantined?: number;
+    recovery_time?: number;
     [key: string]: unknown;
   }>;
 }
@@ -636,4 +692,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  // Demo Mode
+  getDemoScenarios: () => request<DemoScenariosResponse>('/api/demo/scenarios'),
 };
