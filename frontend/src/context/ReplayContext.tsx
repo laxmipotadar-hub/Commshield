@@ -10,10 +10,14 @@ export const SCENARIOS = [
 ] as const;
 
 export type ScenarioId = (typeof SCENARIOS)[number]['id'];
+export type DataSourceId = 'synthetic' | '5g_nidd' | 'open5gs_lab';
 
 interface ReplayContextType {
   selectedScenario: ScenarioId;
   setSelectedScenario: (scenario: ScenarioId) => void;
+  selectedDataSource: DataSourceId;
+  setSelectedDataSource: (source: DataSourceId) => void;
+  open5gsAvailable: boolean;
   speed: number;
   setSpeed: (speed: number) => void;
   status: 'STOPPED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | string;
@@ -34,6 +38,8 @@ const ReplayContext = createContext<ReplayContextType | undefined>(undefined);
 
 export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('stable_benign');
+  const [selectedDataSource, setSelectedDataSource] = useState<DataSourceId>('synthetic');
+  const [open5gsAvailable, setOpen5gsAvailable] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(2.0);
   const [status, setStatus] = useState<string>('STOPPED');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -49,6 +55,12 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setStatus(res.status);
     setCurrentIndex(res.current_window_index ?? 0);
     setTotalWindows(res.total_windows ?? 0);
+    if ((res as any).data_source) {
+      const src = (res as any).data_source;
+      if (src === '5g_nidd' || src === 'open5gs_lab' || src === 'synthetic') {
+        setSelectedDataSource(src);
+      }
+    }
   };
 
   const refreshStatus = async () => {
@@ -60,7 +72,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Fetch initial active baseline
+  // Fetch initial active baseline and probe Open5GS lab availability
   useEffect(() => {
     api
       .getBaselines()
@@ -74,6 +86,16 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
       .catch((e) => console.warn('Could not fetch active baseline:', e));
 
+    // Probe whether Open5GS lab experimental results exist
+    api
+      .getExperimentResults('open5gs_lab')
+      .then((res) => {
+        if (res && res.scenarios && res.scenarios.length > 0) {
+          setOpen5gsAvailable(true);
+        }
+      })
+      .catch(() => setOpen5gsAvailable(false));
+
     refreshStatus();
   }, []);
 
@@ -81,6 +103,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const res = await api.startReplay({
         dataset_id: selectedScenario,
+        data_source: selectedDataSource,
         speed_multiplier: speed,
       });
       applyStatus(res);
@@ -158,6 +181,9 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         selectedScenario,
         setSelectedScenario,
+        selectedDataSource,
+        setSelectedDataSource,
+        open5gsAvailable,
         speed,
         setSpeed,
         status,

@@ -294,3 +294,41 @@ async def test_three_arm_comparison(client: AsyncClient):
     assert "arm_a_static" in data["arms"]
     assert "arm_b_naive" in data["arms"]
     assert "arm_c_commshield" in data["arms"]
+
+
+@pytest.mark.anyio
+async def test_get_experiment_results_data_source_filter(client: AsyncClient):
+    # 1. Synthetic data source
+    res_synth = await client.get("/api/experiments/results?data_source=synthetic")
+    assert res_synth.status_code == 200
+    data_synth = res_synth.json()
+    assert data_synth["data_source"] == "synthetic"
+    assert "summaries" in data_synth or "results" in data_synth
+
+    # 2. Real 5G-NIDD data source
+    res_real = await client.get("/api/experiments/results?data_source=5g_nidd")
+    assert res_real.status_code == 200
+    data_real = res_real.json()
+    assert data_real["data_source"] == "5g_nidd"
+    assert "summaries" in data_real
+    assert "real_benign" in data_real["summaries"]
+    assert "real_attacks" in data_real["summaries"]
+    assert "detection_evaluation" in data_real
+
+    # 3. Open5GS lab data source (not yet ingested -> 404)
+    res_open5gs = await client.get("/api/experiments/results?data_source=open5gs_lab")
+    assert res_open5gs.status_code == 404
+
+    # 4. Scenario filter with data source
+    res_sc_real = await client.get("/api/experiments/results/real_attacks?data_source=5g_nidd")
+    assert res_sc_real.status_code == 200
+    assert res_sc_real.json()["scenario"] == "real_attacks"
+
+
+def test_offline_snapshot_integrity():
+    snapshot_dir = Path(__file__).resolve().parent.parent.parent / "experiments" / "snapshot"
+    assert (snapshot_dir / "experiment_summary.json").is_file()
+    assert (snapshot_dir / "real" / "three_arm_summary.json").is_file()
+    assert (snapshot_dir / "real" / "detection_evaluation.json").is_file()
+    assert (snapshot_dir / "README.md").is_file()
+

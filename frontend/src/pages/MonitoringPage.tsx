@@ -26,6 +26,7 @@ import {
   ChartCard,
   Column,
   DataTable,
+  DataSourceBadge,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -216,8 +217,9 @@ export const MonitoringPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Slice Filter and Time-Range Selector */}
+        {/* Slice Filter, Time-Range Selector and Data Source Badge */}
         <div className="flex flex-wrap items-center gap-3">
+          <DataSourceBadge />
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-muted uppercase">Slice Filter:</span>
             <select

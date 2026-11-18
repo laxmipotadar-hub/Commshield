@@ -30,6 +30,7 @@ import {
 import {
   Column,
   DataTable,
+  DataSourceBadge,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -716,8 +717,9 @@ export const GovernanceView: React.FC = () => {
           </p>
         </div>
 
-        {/* Action Buttons Toolbar */}
+        {/* Action Buttons Toolbar & Data Source Badge */}
         <div className="flex items-center gap-3 flex-wrap">
+          <DataSourceBadge />
           {/* Approve Button (Teal, disabled until all mandatory checks pass) */}
           <div className="relative group">
             <button

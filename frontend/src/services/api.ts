@@ -45,6 +45,7 @@ export interface DatasetListResponse {
 
 export interface ReplayStartRequest {
   dataset_id: string;
+  data_source?: string;
   speed_multiplier?: number;
   active_arms?: string[];
   window_scale_sec?: number;
@@ -623,10 +624,11 @@ export const api = {
     ),
 
   // Centrepiece Three-Arm Experiments
-  getExperimentResults: () => request<ExperimentSummaryResponse>('/api/experiments/results'),
-  getScenarioExperimentResults: (scenario: string) =>
+  getExperimentResults: (dataSource = 'synthetic') =>
+    request<ExperimentSummaryResponse>(`/api/experiments/results?data_source=${encodeURIComponent(dataSource)}`),
+  getScenarioExperimentResults: (scenario: string, dataSource = 'synthetic') =>
     request<{ scenario: string; config_version: string; generated_at: string; summary: ScenarioSummaryData }>(
-      `/api/experiments/results/${encodeURIComponent(scenario)}`
+      `/api/experiments/results/${encodeURIComponent(scenario)}?data_source=${encodeURIComponent(dataSource)}`
     ),
   getExperimentStatus: () => request<ExperimentStatusResponse>('/api/experiments/status'),
   runExperiment: (payload: { scenarios?: string[]; seeds?: number[]; num_windows?: number }) =>

@@ -5,7 +5,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -17,6 +17,9 @@ logger = logging.getLogger("commshield.api.experiments")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 RESULTS_DIR = PROJECT_ROOT / "experiments" / "results"
+SNAPSHOT_DIR = PROJECT_ROOT / "experiments" / "snapshot"
+REAL_RESULTS_DIR = RESULTS_DIR / "real"
+REAL_SNAPSHOT_DIR = SNAPSHOT_DIR / "real"
 
 # Global in-memory experiment execution status tracker
 _EXPERIMENT_STATUS: Dict[str, Any] = {
@@ -101,61 +104,178 @@ def get_experiment_status() -> Dict[str, Any]:
 
 
 @router.get("/results")
-def get_all_experiment_results(db: Session = Depends(get_db)) -> Dict[str, Any]:
-    """Retrieve the aggregated multi-seed experiment benchmark results across all scenarios."""
+def get_all_experiment_results(
+    data_source: Optional[str] = Query(default="synthetic", description="Data source filter ('synthetic', '5g_nidd', 'real', 'open5gs_lab')"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Retrieve the aggregated multi-seed experiment benchmark results across all scenarios.
+    
+    Accepts data_source filter ('synthetic', '5g_nidd', 'real', 'open5gs_lab').
+    Falls back to offline snapshots in experiments/snapshot/ if live results or database records are absent.
+    """
+    src = (data_source or "synthetic").strip().lower()
+
+    # --- Real 5G-NIDD Data Source ---
+    if src in ("real", "5g_nidd", "fiveg_nidd"):
+        real_file = REAL_RESULTS_DIR / "three_arm_summary.json"
+        is_snapshot = False
+        if not real_file.is_file():
+            real_file = REAL_SNAPSHOT_DIR / "three_arm_summary.json"
+            is_snapshot = True
+
+        if not real_file.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="No real 5G-NIDD experiment results found. Run experiments/run_real_experiments.py.",
+            )
+
+        try:
+            with open(real_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["data_source"] = "5g_nidd"
+            data["source"] = "snapshot" if is_snapshot else "results"
+
+            # Attach complementary evaluation summaries if available
+            parent_dir = real_file.parent
+            for aux_name, aux_file in [
+                ("detection_evaluation", parent_dir / "detection_evaluation.json"),
+                ("growth_attribution", parent_dir / "growth_attribution.json"),
+                ("governance_evaluation", parent_dir / "governance_evaluation.json"),
+                ("metadata", parent_dir / "metadata.json"),
+            ]:
+                if aux_file.is_file():
+                    try:
+                        with open(aux_file, "r", encoding="utf-8") as af:
+                            data[aux_name] = json.load(af)
+                    except Exception as e:
+                        logger.warning("Error reading %s: %s", aux_file, e)
+
+            return data
+        except Exception as e:
+            logger.error("Error loading real experiment results: %s", e)
+            raise HTTPException(status_code=500, detail=f"Failed to read real experiment results: {e}")
+
+    # --- Open5GS Lab Data Source ---
+    if src in ("open5gs_lab", "open5gs"):
+        open5gs_file = RESULTS_DIR / "open5gs" / "summary.json"
+        if not open5gs_file.is_file():
+            open5gs_file = SNAPSHOT_DIR / "open5gs" / "summary.json"
+
+        if not open5gs_file.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="No Open5GS lab experiment benchmark results found. Open5GS lab capture is not yet ingested.",
+            )
+
+        try:
+            with open(open5gs_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["data_source"] = "open5gs_lab"
+            return data
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to read Open5GS lab results: {e}")
+
+    # --- Default: Synthetic Data Source ---
     summary_file = RESULTS_DIR / "experiment_summary.json"
     if summary_file.is_file():
         try:
             with open(summary_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                data["data_source"] = "synthetic"
+                data["source"] = "results"
+                return data
         except Exception as e:
             logger.warning("Error reading summary file: %s", e)
 
-    # Fallback: Query from experiment_results DB table
+    # Fallback 1: Query from experiment_results DB table
     rows = db.query(ExperimentResult).all()
-    if not rows:
-        raise HTTPException(
-            status_code=404,
-            detail="No experiment benchmark results found. Run /api/experiments/run or execute experiments/run_experiments.py.",
-        )
+    if rows:
+        scenarios = list(set(r.scenario for r in rows))
+        seeds = list(set(r.seed for r in rows))
 
-    scenarios = list(set(r.scenario for r in rows))
-    seeds = list(set(r.seed for r in rows))
+        return {
+            "data_source": "synthetic",
+            "source": "database",
+            "scenarios": scenarios,
+            "seeds": seeds,
+            "total_records": len(rows),
+            "results": [
+                {
+                    "id": r.id,
+                    "scenario": r.scenario,
+                    "seed": r.seed,
+                    "arm": r.arm,
+                    "config_version": r.config_version,
+                    "recall": r.recall,
+                    "fpr": r.fpr,
+                    "contamination_final": r.contamination_final,
+                    "adaptations_count": r.adaptations_count,
+                    "quarantined_count": r.quarantined_count,
+                    "recovery_time_windows": r.recovery_time_windows,
+                    "metrics": r.metrics,
+                    "timestamp": r.timestamp.isoformat(),
+                }
+                for r in rows
+            ],
+        }
 
-    return {
-        "source": "database",
-        "scenarios": scenarios,
-        "seeds": seeds,
-        "total_records": len(rows),
-        "results": [
-            {
-                "id": r.id,
-                "scenario": r.scenario,
-                "seed": r.seed,
-                "arm": r.arm,
-                "config_version": r.config_version,
-                "recall": r.recall,
-                "fpr": r.fpr,
-                "contamination_final": r.contamination_final,
-                "adaptations_count": r.adaptations_count,
-                "quarantined_count": r.quarantined_count,
-                "recovery_time_windows": r.recovery_time_windows,
-                "metrics": r.metrics,
-                "timestamp": r.timestamp.isoformat(),
-            }
-            for r in rows
-        ],
-    }
+    # Fallback 2: Read offline snapshot in experiments/snapshot/
+    snapshot_file = SNAPSHOT_DIR / "experiment_summary.json"
+    if snapshot_file.is_file():
+        try:
+            with open(snapshot_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                data["data_source"] = "synthetic"
+                data["source"] = "snapshot"
+                return data
+        except Exception as e:
+            logger.warning("Error reading snapshot file: %s", e)
+
+    raise HTTPException(
+        status_code=404,
+        detail="No experiment benchmark results found. Run /api/experiments/run or execute experiments/run_experiments.py.",
+    )
 
 
 @router.get("/results/{scenario}")
 def get_scenario_experiment_results(
     scenario: str,
+    data_source: Optional[str] = Query(default="synthetic", description="Data source filter ('synthetic', '5g_nidd', 'real')"),
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
     """Retrieve multi-seed benchmark results for a designated scenario."""
-    # Check summary file first
+    src = (data_source or "synthetic").strip().lower()
+
+    if src in ("real", "5g_nidd", "fiveg_nidd"):
+        real_file = REAL_RESULTS_DIR / "three_arm_summary.json"
+        if not real_file.is_file():
+            real_file = REAL_SNAPSHOT_DIR / "three_arm_summary.json"
+
+        if real_file.is_file():
+            try:
+                with open(real_file, "r", encoding="utf-8") as f:
+                    summary_data = json.load(f)
+                    summaries = summary_data.get("summaries", {})
+                    if scenario in summaries:
+                        return {
+                            "scenario": scenario,
+                            "data_source": "5g_nidd",
+                            "config_version": summary_data.get("config_version", "v1.0.0-real-eval"),
+                            "summary": summaries[scenario],
+                        }
+            except Exception as e:
+                logger.warning("Error reading real scenario summary: %s", e)
+
+        raise HTTPException(
+            status_code=404,
+            detail=f"Real data experiment results for scenario '{scenario}' not found.",
+        )
+
+    # Check synthetic summary file first
     summary_file = RESULTS_DIR / "experiment_summary.json"
+    if not summary_file.is_file():
+        summary_file = SNAPSHOT_DIR / "experiment_summary.json"
+
     if summary_file.is_file():
         try:
             with open(summary_file, "r", encoding="utf-8") as f:
@@ -164,6 +284,7 @@ def get_scenario_experiment_results(
                 if scenario in summaries:
                     return {
                         "scenario": scenario,
+                        "data_source": "synthetic",
                         "config_version": summary_data.get("config_version", "v1.0.0"),
                         "generated_at": summary_data.get("generated_at"),
                         "summary": summaries[scenario],
@@ -181,6 +302,7 @@ def get_scenario_experiment_results(
 
     return {
         "scenario": scenario,
+        "data_source": "synthetic",
         "total_runs": len(rows),
         "records": [
             {

@@ -1,0 +1,245 @@
+{
+  "config_version": "v1.0.0",
+  "generated_at": "2026-11-17T15:02:09.169544+00:00",
+  "scenarios": [
+    "stable_benign",
+    "legitimate_growth",
+    "slow_attack_ramp",
+    "attack_in_growth",
+    "mimicry_attack"
+  ],
+  "seeds": [
+    42,
+    101,
+    2024,
+    777,
+    999
+  ],
+  "summaries": {
+    "stable_benign": {
+      "num_seeds": 5,
+      "seeds": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.23,
+          "fpr_std": 0.0557,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.21,
+          "fpr_std": 0.1251,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 2.2,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.23,
+          "fpr_std": 0.0557,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 2.2,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "legitimate_growth": {
+      "num_seeds": 5,
+      "seeds": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.97,
+          "fpr_std": 0.0187,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.375,
+          "fpr_std": 0.1072,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 4.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.97,
+          "fpr_std": 0.0187,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 4.0,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "slow_attack_ramp": {
+      "num_seeds": 5,
+      "seeds": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.1834,
+          "fpr_std": 0.0333,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": 0.9143,
+          "recall_std": 0.0802,
+          "fpr_mean": 0.1834,
+          "fpr_std": 0.0333,
+          "contamination_mean": 0.832,
+          "contamination_std": 0.1372,
+          "adaptations_mean": 2.2,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.1834,
+          "fpr_std": 0.0333,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 2.2,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "attack_in_growth": {
+      "num_seeds": 5,
+      "seeds": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.925,
+          "fpr_std": 0.0468,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": 0.9667,
+          "recall_std": 0.0486,
+          "fpr_mean": 0.5875,
+          "fpr_std": 0.05,
+          "contamination_mean": 0.56,
+          "contamination_std": 0.0,
+          "adaptations_mean": 4.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.925,
+          "fpr_std": 0.0468,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 4.0,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "mimicry_attack": {
+      "num_seeds": 5,
+      "seeds": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.21,
+          "fpr_std": 0.049,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.4
+        },
+        "arm_b_naive": {
+          "recall_mean": 0.56,
+          "recall_std": 0.3007,
+          "fpr_mean": 0.25,
+          "fpr_std": 0.0548,
+          "contamination_mean": 0.744,
+          "contamination_std": 0.0697,
+          "adaptations_mean": 2.2,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.4
+        },
+        "arm_c_commshield": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.21,
+          "fpr_std": 0.049,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 2.2,
+          "recovery_time_mean": 0.4
+        }
+      }
+    }
+  }
+}

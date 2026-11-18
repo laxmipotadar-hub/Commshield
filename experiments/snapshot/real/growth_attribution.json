@@ -1,0 +1,53 @@
+{
+  "label": "semi-synthetic",
+  "scaling_levels": {
+    "1.5x": {
+      "composition_preserved": {
+        "verdict": "likely_benign",
+        "abstain_reason": null,
+        "jsd_divergence": null,
+        "scaling_factor_k": null,
+        "proportional_passed": true
+      },
+      "composition_shifted": {
+        "verdict": "likely_attack",
+        "abstain_reason": null,
+        "jsd_divergence": null,
+        "scaling_factor_k": null,
+        "rejected_or_flagged_attack": true
+      }
+    },
+    "2.0x": {
+      "composition_preserved": {
+        "verdict": "likely_benign",
+        "abstain_reason": null,
+        "jsd_divergence": null,
+        "scaling_factor_k": null,
+        "proportional_passed": true
+      },
+      "composition_shifted": {
+        "verdict": "likely_attack",
+        "abstain_reason": null,
+        "jsd_divergence": null,
+        "scaling_factor_k": null,
+        "rejected_or_flagged_attack": true
+      }
+    },
+    "3.0x": {
+      "composition_preserved": {
+        "verdict": "likely_benign",
+        "abstain_reason": null,
+        "jsd_divergence": null,
+        "scaling_factor_k": null,
+        "proportional_passed": true
+      },
+      "composition_shifted": {
+        "verdict": "likely_attack",
+        "abstain_reason": null,
+        "jsd_divergence": null,
+        "scaling_factor_k": null,
+        "rejected_or_flagged_attack": true
+      }
+    }
+  }
+}

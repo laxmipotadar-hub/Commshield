@@ -23,6 +23,7 @@ import {
   ChartCard,
   Column,
   DataTable,
+  DataSourceBadge,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -325,6 +326,7 @@ export const OverviewPage: React.FC = () => {
             5G Core zero-trust telemetry stream, anomaly alerts, and active baseline status.
           </p>
         </div>
+        <DataSourceBadge />
       </div>
 
       {/* 1. Stat Cards Grid (7 key indicators per design) */}

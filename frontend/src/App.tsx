@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import {
   AlertOctagon,
+  Database,
   GitBranch,
   LayoutDashboard,
   Pause,
@@ -49,6 +50,9 @@ const AppLayout: React.FC = () => {
   const {
     selectedScenario,
     setSelectedScenario,
+    selectedDataSource,
+    setSelectedDataSource,
+    open5gsAvailable,
     speed,
     setSpeed,
     status,
@@ -175,7 +179,25 @@ const AppLayout: React.FC = () => {
           </div>
 
           {/* Right: Replay Controls & Active Baseline Badge */}
-          <div className="flex items-center gap-4 flex-wrap justify-end">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            {/* Data Source Selector */}
+            <div className="flex items-center gap-1.5 bg-bg px-2.5 py-1 rounded-lg border border-border">
+              <Database className="w-3.5 h-3.5 text-teal" />
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+                Source:
+              </span>
+              <select
+                value={selectedDataSource}
+                onChange={(e) => setSelectedDataSource(e.target.value as any)}
+                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+                title="Active Telemetry Data Source"
+              >
+                <option value="synthetic">Synthetic</option>
+                <option value="5g_nidd">5G-NIDD</option>
+                {open5gsAvailable && <option value="open5gs_lab">Open5GS lab</option>}
+              </select>
+            </div>
+
             {/* Replay Controls */}
             <div className="flex items-center gap-2 bg-bg px-2.5 py-1 rounded-lg border border-border">
               <button

@@ -28,6 +28,7 @@ import {
   ChartCard,
   Column,
   DataTable,
+  DataSourceBadge,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -308,7 +309,8 @@ export const AttributionView: React.FC = () => {
             Statistical ADWIN drift detection, proportional-growth JSD divergence testing, and principled abstention.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <DataSourceBadge />
           <StatusBadge
             label={`${driftEvents.length} Drift Events`}
             variant={driftEvents.length > 0 ? 'suspicious' : 'safe'}

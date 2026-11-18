@@ -171,8 +171,8 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | `GET` | `/api/v1/experiments/three-arm` | Compare metrics across arms A/B/C | Query params: `dataset_id` | `ThreeArmComparisonResponse` |
 | `POST` | `/api/v1/experiments/run` | Trigger multi-seed 3-arm benchmark in background | `ExperimentRunRequest` | `Dict[str, Any]` |
 | `GET` | `/api/v1/experiments/status` | Execution status & progress of benchmark | None | `Dict[str, Any]` |
-| `GET` | `/api/v1/experiments/results` | Aggregated multi-seed experiment benchmark results | None | `Dict[str, Any]` |
-| `GET` | `/api/v1/experiments/results/{scenario}` | Single-scenario benchmark results | None | `Dict[str, Any]` |
+| `GET` | `/api/v1/experiments/results` | Aggregated multi-seed experiment benchmark results | Query params: `data_source` (`synthetic`, `5g_nidd`, `real`, `open5gs_lab`) | `Dict[str, Any]` |
+| `GET` | `/api/v1/experiments/results/{scenario}` | Single-scenario benchmark results | Query params: `data_source` (`synthetic`, `5g_nidd`, `real`) | `Dict[str, Any]` |
 
 #### Governance Action JSON Schemas
 

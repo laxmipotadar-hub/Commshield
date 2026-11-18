@@ -620,11 +620,11 @@ def evaluate_three_arms_on_real_scenarios(
         # Compute aggregate mean and std across seeds
         sc_arms_summary: Dict[str, Any] = {}
         for arm_k, m_list in seed_metrics.items():
-            rec_vals = [m["recall"] for m in m_list if m["recall"] is not None]
-            fpr_vals = [m["fpr"] for m in m_list]
+            rec_vals = [m["attack_detection_rate_recall"] for m in m_list if m["attack_detection_rate_recall"] is not None]
+            fpr_vals = [m["false_positive_rate_fpr"] for m in m_list]
             contam_vals = [m["baseline_contamination_final"] for m in m_list]
-            adapt_vals = [m["adaptations_count"] for m in m_list]
-            quaran_vals = [m["quarantined_count"] for m in m_list]
+            adapt_vals = [m["number_of_adaptations"] for m in m_list]
+            quaran_vals = [m["quarantined_windows_count"] for m in m_list]
             recov_vals = [m["recovery_time_windows"] for m in m_list if m["recovery_time_windows"] is not None]
 
             sc_arms_summary[arm_k] = {

@@ -25,6 +25,7 @@ import {
   ChartCard,
   Column,
   DataTable,
+  DataSourceBadge,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -359,7 +360,8 @@ export const DetectionPage: React.FC = () => {
             Multi-model unsupervised scoring (Isolation Forest + Dense Autoencoder), calibrated percentiles, and CUSUM tracking.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <DataSourceBadge />
           {selectedWindowId && (
             <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-card border border-border text-muted">
               Active: {selectedWindowId.slice(0, 8)}...
