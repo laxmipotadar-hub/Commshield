@@ -1,13 +1,21 @@
 import math
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, Iterator, List
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
-from .base import TelemetryAdapter
+from .base import (
+    DEFAULT_SUPPRESSION_K,
+    SUPPRESSED_ENTROPY_VALUE,
+    TelemetryAdapter,
+    enforce_aggregate_boundary,
+)
 
 
 class SyntheticAdapter(TelemetryAdapter):
     """Telemetry adapter for synthetic parametric 5G core telemetry streams."""
+
+    def __init__(self, suppression_k: Optional[int] = None):
+        self.suppression_k = suppression_k if suppression_k is not None else DEFAULT_SUPPRESSION_K
 
     def parse_records(self, records: Iterable[Any]) -> Iterator[Dict[str, Any]]:
         for rec in records:
@@ -92,9 +100,14 @@ class SyntheticAdapter(TelemetryAdapter):
         bytes_per_session = round((ul_bytes + dl_bytes) / pdu_denom, 2)
         packets_per_session = round(packets / pdu_denom, 2)
         gtpu_volume_per_ue = round((ul_bytes + dl_bytes) / ue_denom, 2)
-        ue_hash_entropy = round(
-            sum(entropy_vals) / len(entropy_vals) if entropy_vals else 7.42, 3
-        )
+        # Small-group k-anonymity suppression:
+        # If distinct active UEs < K, suppress entropy aggregate
+        if active_ue_max < self.suppression_k:
+            ue_hash_entropy = SUPPRESSED_ENTROPY_VALUE
+        else:
+            ue_hash_entropy = round(
+                sum(entropy_vals) / len(entropy_vals) if entropy_vals else 7.42, 3
+            )
         new_ue_rate = round(new_ue_counts / ue_denom, 4)
 
         # Compute normalized composition vector (sum to 1.0)
@@ -151,4 +164,4 @@ class SyntheticAdapter(TelemetryAdapter):
             },
         }
 
-        return canonical_window
+        return enforce_aggregate_boundary(canonical_window)

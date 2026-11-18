@@ -5,12 +5,22 @@
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
+export function getAnalystToken(): string {
+  return localStorage.getItem('commshield_analyst_token') || 'commshield-analyst-secret-v1';
+}
+
+export function setAnalystToken(token: string): void {
+  localStorage.setItem('commshield_analyst_token', token);
+}
+
 // Generic fetch helper
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  const headers = {
+  const token = getAnalystToken();
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
 
   const response = await fetch(url, { ...options, headers });

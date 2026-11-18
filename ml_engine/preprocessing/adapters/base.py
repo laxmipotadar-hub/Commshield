@@ -1,6 +1,125 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, Iterable, Iterator, List
+import hashlib
+import hmac
+import os
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Union
+
+# Documented Privacy Constants
+SUPPRESSED_ENTROPY_VALUE: float = -1.0
+DEFAULT_SUPPRESSION_K: int = int(os.getenv("COMMSHIELD_SUPPRESSION_K", "5"))
+DEFAULT_HMAC_SALT: bytes = b"commshield-pseudonymization-default-salt-v1"
+
+# Strict Allowlist Schemas for Canonical Aggregate Windows (CONTRACTS.md)
+CANONICAL_WINDOW_ALLOWLIST: Set[str] = {
+    "window_id",
+    "slice_id",
+    "nf_id",
+    "window_start",
+    "window_end",
+    "duration_sec",
+    "raw_counters",
+    "ratio_features",
+    "composition_vector",
+    "ground_truth",
+}
+
+RAW_COUNTERS_ALLOWLIST: Set[str] = {
+    "active_ue_count",
+    "registration_attempts",
+    "registration_failures",
+    "pdu_sessions_established",
+    "nas_messages_total",
+    "nas_failures",
+    "pfcp_association_messages",
+    "pfcp_failures",
+    "total_bytes_uplink",
+    "total_bytes_downlink",
+    "total_packets",
+    "gtpu_teid_count",
+}
+
+RATIO_FEATURES_ALLOWLIST: Set[str] = {
+    "registrations_per_active_ue",
+    "nas_failure_ratio",
+    "pfcp_failure_ratio",
+    "pdu_session_rate_per_ue",
+    "bytes_per_session",
+    "packets_per_session",
+    "gtpu_volume_per_ue",
+    "ue_hash_entropy",
+    "new_ue_rate",
+}
+
+COMPOSITION_VECTOR_ALLOWLIST: Set[str] = {
+    "registration_ratio",
+    "session_setup_ratio",
+    "failure_ratio",
+    "other_signalling_ratio",
+}
+
+
+def get_hmac_secret() -> bytes:
+    """Retrieve HMAC secret key from environment without logging or committing."""
+    secret = os.getenv("COMMSHIELD_HMAC_KEY")
+    if secret:
+        return secret.encode("utf-8")
+    return DEFAULT_HMAC_SALT
+
+
+def pseudonymize_identifier(identifier: str, key: Optional[Union[bytes, str]] = None) -> str:
+    """Pseudonymise a network or subscriber identifier (IP/UE) using HMAC-SHA256.
+    
+    Guarantees deterministic pseudonym generation for matching within an deployment
+    while preventing rainbow table attacks or unauthorized re-identification.
+    """
+    if not identifier:
+        return ""
+    if key is None:
+        hmac_key = get_hmac_secret()
+    elif isinstance(key, str):
+        hmac_key = key.encode("utf-8")
+    else:
+        hmac_key = key
+    return hmac.new(hmac_key, identifier.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def enforce_aggregate_boundary(window: Dict[str, Any]) -> Dict[str, Any]:
+    """Filter window dictionary strictly against aggregate-only allowlist schemas.
+    
+    Guarantees that no raw identifiers (IP addresses, port numbers, subscriber IDs,
+    or flow payloads) escape the adapter boundary into the database, API, or models.
+    """
+    clean_window: Dict[str, Any] = {}
+    for k, v in window.items():
+        if k in CANONICAL_WINDOW_ALLOWLIST:
+            clean_window[k] = v
+
+    # 1. Filter raw_counters (allow numbers only)
+    raw_counters = clean_window.get("raw_counters") or {}
+    clean_window["raw_counters"] = {
+        k: (int(v) if isinstance(v, (int, float)) and v == int(v) else float(v))
+        for k, v in raw_counters.items()
+        if k in RAW_COUNTERS_ALLOWLIST and isinstance(v, (int, float))
+    }
+
+    # 2. Filter ratio_features (allow floats only)
+    ratio_features = clean_window.get("ratio_features") or {}
+    clean_window["ratio_features"] = {
+        k: (float(v) if v is not None else None)
+        for k, v in ratio_features.items()
+        if k in RATIO_FEATURES_ALLOWLIST and (isinstance(v, (int, float)) or v is None)
+    }
+
+    # 3. Filter composition_vector (allow floats only)
+    comp_vector = clean_window.get("composition_vector") or {}
+    clean_window["composition_vector"] = {
+        k: float(v)
+        for k, v in comp_vector.items()
+        if k in COMPOSITION_VECTOR_ALLOWLIST and isinstance(v, (int, float))
+    }
+
+    return clean_window
 
 
 class TelemetryAdapter(ABC):

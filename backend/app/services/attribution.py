@@ -103,15 +103,41 @@ class AttributionService:
                     "composition_vector": control_slice_row.composition_vector or {},
                 }
 
+            # 4c. Check Small-Group Suppression on entropy (K-anonymity)
+            raw_ratios = window.get("ratio_features", {})
+            cur_entropy_val = raw_ratios.get("ue_hash_entropy")
+            is_entropy_suppressed = bool(
+                cur_entropy_val is not None
+                and float(cur_entropy_val) < 0.0  # Documented SUPPRESSED_ENTROPY_VALUE is -1.0
+            )
+
+            window_for_attr = window
+            if is_entropy_suppressed:
+                # Handle as missing evidence: substitute baseline median so entropy delta is 0.0 (neutral)
+                scaler_params = bundle.get("scaler_params", {}) if bundle else {}
+                medians = scaler_params.get("medians", {})
+                base_entropy = float(medians.get("ue_hash_entropy", 7.4))
+                window_for_attr = dict(window)
+                ratios_copy = dict(raw_ratios)
+                ratios_copy["ue_hash_entropy"] = base_entropy
+                window_for_attr["ratio_features"] = ratios_copy
+
             # 5. Execute Attribution
             attribution_dict = self.engine.attribute(
-                window=window,
+                window=window_for_attr,
                 baseline_bundle=bundle,
                 recent_windows=recent_history,
                 drift_detected=drift_detected,
                 detector_output=detector_output,
                 control_slice_window=control_slice_window,
             )
+
+            if is_entropy_suppressed:
+                supp_signals = attribution_dict.get("supporting_signals", {})
+                supp_signals["ue_entropy_delta"] = None
+                supp_signals["entropy_drop_triggered"] = False
+                supp_signals["entropy_suppressed"] = True
+                attribution_dict["supporting_signals"] = supp_signals
 
             verdict = attribution_dict["verdict"]
             abstain_reason = attribution_dict.get("abstain_reason")

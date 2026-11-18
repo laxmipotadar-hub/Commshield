@@ -7,8 +7,10 @@ import {
 } from 'react-router-dom';
 import {
   AlertOctagon,
+  Check,
   Database,
   GitBranch,
+  Key,
   LayoutDashboard,
   Pause,
   Play,
@@ -19,8 +21,10 @@ import {
   ShieldCheck,
   Sliders,
   User,
+  X,
 } from 'lucide-react';
 import { StatusBadge, DemoControlBar, DemoEventBanner } from './components';
+import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitoringPage } from './pages/MonitoringPage';
 import { DetectionPage } from './pages/DetectionPage';
@@ -68,6 +72,9 @@ const AppLayout: React.FC = () => {
   } = useReplay();
 
   const isRunning = status === 'RUNNING';
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [tokenInput, setTokenInput] = React.useState('');
+  const [tokenSaved, setTokenSaved] = React.useState(false);
 
   return (
     <div className="h-screen flex overflow-hidden bg-bg">
@@ -131,7 +138,12 @@ const AppLayout: React.FC = () => {
               </div>
             </div>
             <button
-              title="Settings"
+              title="Operator Settings & Access Control"
+              onClick={() => {
+                setTokenInput(getAnalystToken());
+                setTokenSaved(false);
+                setShowSettings(true);
+              }}
               className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-slate/50 transition-colors"
             >
               <Settings className="w-4 h-4" />
@@ -284,6 +296,73 @@ const AppLayout: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-6 text-text">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-blue" />
+                <h3 className="font-semibold text-base">Operator Access Control</h3>
+              </div>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-muted hover:text-text p-1 rounded-lg hover:bg-bg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
+                  Analyst Token (Authorization Header)
+                </label>
+                <p className="text-xs text-muted mb-2">
+                  Used for governance approvals, candidate rejections, and baseline rollbacks. Matches COMMSHIELD_ANALYST_TOKEN.
+                </p>
+                <input
+                  type="password"
+                  value={tokenInput}
+                  onChange={(e) => {
+                    setTokenInput(e.target.value);
+                    setTokenSaved(false);
+                  }}
+                  placeholder="Enter analyst token..."
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-xs font-mono text-text focus:outline-none focus:ring-1 focus:ring-blue"
+                />
+              </div>
+
+              {tokenSaved && (
+                <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-lg">
+                  <Check className="w-4 h-4" />
+                  <span>Token saved to local session.</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="px-3 py-1.5 text-xs font-medium text-muted hover:text-text rounded-lg hover:bg-bg transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setAnalystToken(tokenInput);
+                  setTokenSaved(true);
+                  setTimeout(() => setShowSettings(false), 600);
+                }}
+                className="px-4 py-1.5 text-xs font-semibold text-white bg-blue rounded-lg hover:bg-blue/90 transition-colors shadow-sm"
+              >
+                Save Token
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

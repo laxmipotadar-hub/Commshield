@@ -165,9 +165,9 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/baselines` | List active & anchor baselines | Query params: `slice_id` | `List[BaselineSummaryResponse]` |
 | `GET` | `/api/v1/candidates` | List pending shadow candidate baselines | Query params: `status` | `List[CandidateResponse]` |
-| `POST` | `/api/v1/candidates/{id}/approve` | Operator approves promotion | `ApprovalActionRequest` | `CandidateResponse` |
-| `POST` | `/api/v1/candidates/{id}/reject` | Operator rejects candidate | `ApprovalActionRequest` | `CandidateResponse` |
-| `POST` | `/api/v1/baselines/rollback` | Atomic rollback to designated baseline | `RollbackRequest` | `RollbackResponse` |
+| `POST` | `/api/v1/candidates/{id}/approve` | Operator approves promotion (requires `Authorization: Bearer <analyst_token>`) | `ApprovalActionRequest` | `CandidateResponse` |
+| `POST` | `/api/v1/candidates/{id}/reject` | Operator rejects candidate (requires `Authorization: Bearer <analyst_token>`) | `ApprovalActionRequest` | `CandidateResponse` |
+| `POST` | `/api/v1/baselines/rollback` | Atomic rollback to designated baseline (requires `Authorization: Bearer <analyst_token>`) | `RollbackRequest` | `RollbackResponse` |
 | `GET` | `/api/v1/experiments/three-arm` | Compare metrics across arms A/B/C | Query params: `dataset_id` | `ThreeArmComparisonResponse` |
 | `POST` | `/api/v1/experiments/run` | Trigger multi-seed 3-arm benchmark in background | `ExperimentRunRequest` | `Dict[str, Any]` |
 | `GET` | `/api/v1/experiments/status` | Execution status & progress of benchmark | None | `Dict[str, Any]` |

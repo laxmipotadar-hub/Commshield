@@ -39,3 +39,27 @@ All hard-coded fallback metrics and placeholder heuristics have been removed. Ev
    - Verified that control-slice concordance is dynamically computed, not constant.
    - Verified that SHAP values sum consistently on flagged anomalous windows.
    - Verified that dwell time blocks a second promotion inside the configured interval.
+
+## Milestone Status: Privacy by Design & Zero-Trust Governance
+
+CommShield has enforced end-to-end privacy by design across the pipeline, verified by automated unit and integration tests:
+
+1. **Cryptographic Pseudonymisation**:
+   - Replaced identifier hashing with keyed `HMAC-SHA256` (`COMMSHIELD_HMAC_KEY`) in `ml_engine/preprocessing/adapters/base.py`.
+   - Verified that Shannon entropy of identifier frequencies is invariant under deterministic pseudonymisation.
+
+2. **Aggregate-Only Boundary**:
+   - Defined strict allowlists (`CANONICAL_WINDOW_ALLOWLIST`, `RAW_COUNTERS_ALLOWLIST`, `RATIO_FEATURES_ALLOWLIST`, `COMPOSITION_VECTOR_ALLOWLIST`) enforced via `enforce_aggregate_boundary()`.
+   - Guaranteed that raw IP addresses, port numbers, or subscriber traces are stripped before reaching detectors, database, or API responses.
+
+3. **Small-Group Suppression ($K$-Anonymity)**:
+   - When a slice window contains fewer than $K$ distinct active UEs ($K=5$), `ue_hash_entropy` is set to `-1.0` (`SUPPRESSED_ENTROPY_VALUE`).
+   - Attribution engine handles suppressed entropy as missing evidence without tripping false alarms or altering gate thresholds.
+
+4. **Access Control & Authorization**:
+   - Enforced `Authorization: Bearer <analyst_token>` (`COMMSHIELD_ANALYST_TOKEN`) on all state-mutating candidate approval, rejection, and rollback endpoints.
+   - Maintained read-only access for demo mode and added operator token management in the frontend Settings modal.
+
+5. **Privacy Documentation & Verification**:
+   - Documented retention policies (30-day sliding telemetry window, immutable anchor/audit trails) and carrier private-network requirements in `docs/PRIVACY.md`.
+   - Created comprehensive privacy test suite in `backend/tests/test_privacy.py` covering IP redaction, keyed HMAC, small-group suppression, and 401 unauthorized access controls.

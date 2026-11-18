@@ -17,7 +17,13 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 import uuid
 
-from .base import TelemetryAdapter
+from .base import (
+    DEFAULT_SUPPRESSION_K,
+    SUPPRESSED_ENTROPY_VALUE,
+    TelemetryAdapter,
+    enforce_aggregate_boundary,
+    pseudonymize_identifier,
+)
 
 # Canonical network slice mapping for 5G-NIDD (Assigned slices, not native 3GPP tags)
 BS1_SLICE_ID = "sst-1-sd-010203"  # Assigned: eMBB
@@ -68,8 +74,13 @@ class FiveGNIDDAdapter(TelemetryAdapter):
     and default to zero / safe ratios without fabrication.
     """
 
-    def __init__(self, default_attack_threshold: float = 0.05):
+    def __init__(
+        self,
+        default_attack_threshold: float = 0.05,
+        suppression_k: Optional[int] = None,
+    ):
         self.default_attack_threshold = default_attack_threshold
+        self.suppression_k = suppression_k if suppression_k is not None else DEFAULT_SUPPRESSION_K
         # Track seen client IPs per slice to compute new_ue_rate across consecutive windows
         self._previous_ues_by_slice: Dict[str, Set[str]] = {}
 
@@ -147,9 +158,11 @@ class FiveGNIDDAdapter(TelemetryAdapter):
             if ts is None:
                 ts = datetime.now(timezone.utc)
 
-            # 2. Extract network headers & identifiers
-            src_addr = str(rec.get("SrcAddr") or rec.get("src_addr") or rec.get("src_ip") or "").strip()
-            dst_addr = str(rec.get("DstAddr") or rec.get("dst_addr") or rec.get("dst_ip") or "").strip()
+            # 2. Extract network headers & identifiers (HMAC-SHA256 pseudonymised immediately)
+            src_raw = str(rec.get("SrcAddr") or rec.get("src_addr") or rec.get("src_ip") or "").strip()
+            dst_raw = str(rec.get("DstAddr") or rec.get("dst_addr") or rec.get("dst_ip") or "").strip()
+            src_addr = pseudonymize_identifier(src_raw) if src_raw else ""
+            dst_addr = pseudonymize_identifier(dst_raw) if dst_raw else ""
             proto = str(rec.get("Proto") or rec.get("proto") or "other").strip().lower()
 
             try:
@@ -251,7 +264,11 @@ class FiveGNIDDAdapter(TelemetryAdapter):
         gtpu_volume_per_ue = round((total_bytes_uplink + total_bytes_downlink) / ue_denom, 2)
 
         # Client IP Shannon entropy: H(X) = - sum(p * log2(p))
-        if client_ips:
+        # Small-group k-anonymity suppression:
+        # If active distinct UEs < K, suppress entropy aggregate to documented value (-1.0)
+        if active_ue_count < self.suppression_k:
+            ue_hash_entropy = SUPPRESSED_ENTROPY_VALUE
+        elif client_ips:
             ip_counts = Counter(client_ips)
             n_ips = len(client_ips)
             entropy = -sum((cnt / n_ips) * math.log2(cnt / n_ips) for cnt in ip_counts.values())
@@ -366,7 +383,7 @@ class FiveGNIDDAdapter(TelemetryAdapter):
             },
         }
 
-        return canonical_window
+        return enforce_aggregate_boundary(canonical_window)
 
 
 def split_chronologically(

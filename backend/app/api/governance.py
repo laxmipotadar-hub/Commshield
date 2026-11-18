@@ -1,9 +1,10 @@
 """API endpoints for CommShield governance, candidate baseline promotions, and atomic rollbacks."""
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -23,6 +24,25 @@ from ..services.governance import governance_service
 from ml_engine.evaluation.benchmark import evaluate_three_arms
 
 router = APIRouter(tags=["Governance & Baselines"])
+
+
+def require_analyst_token(authorization: Optional[str] = Header(None)) -> str:
+    """Validate Bearer analyst authorization token from environment for state mutations."""
+    expected_token = os.getenv("COMMSHIELD_ANALYST_TOKEN", "commshield-analyst-secret-v1")
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Missing Authorization header for state-mutating governance action.",
+        )
+    token = authorization.strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    if token != expected_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Invalid analyst authorization token.",
+        )
+    return token
 
 
 @router.get("/baselines", response_model=List[BaselineSummaryResponse])
@@ -180,6 +200,7 @@ def evaluate_candidate_endpoint(
 def approve_candidate_governance(
     payload: GovernanceApproveRequest,
     db: Session = Depends(get_db),
+    token: str = Depends(require_analyst_token),
 ) -> CandidateResponse:
     """Operator approves candidate baseline promotion via governance endpoint."""
     if not payload.candidate_id:
@@ -198,6 +219,7 @@ def approve_candidate(
     id: str,
     payload: ApprovalActionRequest,
     db: Session = Depends(get_db),
+    token: str = Depends(require_analyst_token),
 ) -> CandidateResponse:
     """Operator approves candidate baseline promotion by ID."""
     cand = db.query(CandidateBaseline).filter(CandidateBaseline.id == id).first()
@@ -241,6 +263,7 @@ def approve_candidate(
 def reject_candidate_governance(
     payload: GovernanceRejectRequest,
     db: Session = Depends(get_db),
+    token: str = Depends(require_analyst_token),
 ) -> CandidateResponse:
     """Operator rejects candidate baseline via governance endpoint."""
     if not payload.candidate_id:
@@ -259,6 +282,7 @@ def reject_candidate(
     id: str,
     payload: ApprovalActionRequest,
     db: Session = Depends(get_db),
+    token: str = Depends(require_analyst_token),
 ) -> CandidateResponse:
     """Operator rejects candidate baseline by ID."""
     cand = db.query(CandidateBaseline).filter(CandidateBaseline.id == id).first()
@@ -280,6 +304,7 @@ def reject_candidate(
 def rollback_baseline(
     payload: RollbackRequest,
     db: Session = Depends(get_db),
+    token: str = Depends(require_analyst_token),
 ) -> RollbackResponse:
     """Atomic rollback to designated baseline."""
     return governance_service.rollback_baseline(
