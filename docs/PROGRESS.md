@@ -63,3 +63,38 @@ CommShield has enforced end-to-end privacy by design across the pipeline, verifi
 5. **Privacy Documentation & Verification**:
    - Documented retention policies (30-day sliding telemetry window, immutable anchor/audit trails) and carrier private-network requirements in `docs/PRIVACY.md`.
    - Created comprehensive privacy test suite in `backend/tests/test_privacy.py` covering IP redaction, keyed HMAC, small-group suppression, and 401 unauthorized access controls.
+
+## Milestone Status: Learned Drift Attributor Beside Rules Baseline
+
+A small, regularized learned drift attributor has been introduced beside the existing hand-crafted rules attributor, maintaining rules as the baseline and graceful fallback without introducing new UI pages.
+
+1. **Signals & No-Leakage Feature Extraction (`ml_engine/attribution/learned.py`)**:
+   - Strictly restricted features to the 9 canonical attribution signals audited in `docs/AI_FEASIBILITY.md`: `scaling_factor_k`, `jsd_divergence`, `ue_entropy_delta`, `new_ue_rate`, `nas_failure_ratio`, `pfcp_failure_ratio`, `detector_agreement_numeric`, `control_slice_concordant`, and `per_ue_rate_deviation`.
+   - Zero raw identifiers (`imsi`, `src_ip`), zero window labels, and zero ground truth enter the feature extractor or model.
+
+2. **Small Regularized Model (`ml_engine/attribution/learned.py`)**:
+   - Implemented an L2-regularized linear classifier (9 weights + 1 bias) with fixed random seed (42) using SciPy L-BFGS-B optimization.
+   - Bounded model capacity prevents overfitting to diurnal patterns or single synthetic growth curves while preserving mathematical interpretability and monotonic regularization.
+   - Enforced a standard deviation floor ($\ge 0.05$) to guarantee numerical stability across low-variance features.
+
+3. **Tuning Streams Training (`ml_engine/attribution/trainer.py`)**:
+   - Trained exclusively on synthetic tuning streams generated with dedicated isolated seed (8888).
+   - Test streams (seeds 42, 101, 2024, 777, 999) and the entire real 5G-NIDD generator family were held out strictly.
+   - Binary classes: benign growth ($y=0$) vs attack ($y=1$), with attack-during-growth windows labeled strictly by individual window ground truth. Model parameters persisted to `ml_engine/attribution/learned_model.json`.
+
+4. **Sequential Evidence Accumulation ($N=3$)**:
+   - Implemented sequential smoothing over horizon $N=3$ windows before issuing a verdict, preventing single noisy or transitional windows from prematurely flipping verdicts.
+
+5. **Decision Categories & Backend Integration (`backend/app/services/attribution.py`, `docs/CONTRACTS.md`)**:
+   - Output restricted to evidence categories: `likely_benign`, `likely_attack`, `uncertain` (no raw probabilities exposed to operators).
+   - Added configuration flag `attributor = "rules" | "learned"` (default `"rules"`).
+   - Exposed `attributor_configured`, `produced_by`, and `fallback_used` in the `evidence_evaluated` step of `DecisionTrace`.
+
+6. **Comparative Evaluation (`experiments/results/attribution/learned_vs_rules_summary.json`)**:
+   - Evaluated across 5 test seeds and held-out real 5G-NIDD family with 1000-iteration bootstrap 95% confidence intervals.
+   - Synthetic attack recall: `slow_attack_ramp` (Rules: 83.8%, Learned: 74.3%), `attack_in_growth` (Rules: 88.9%, Learned: 63.3%). Precision remained 100.0% for both.
+   - Held-out real 5G-NIDD: 100.0% attack recall across SYNFlood, HTTPFlood, UDPScan, SlowrateDoS for both engines.
+   - **Weakest Result**: Synthetic `attack_in_growth` attack recall dropped by 25.6% (88.9% down to 63.3%, with abstention rising from 46.7% to 62.0%) due to sequential lag ($N=3$) and legitimate growth volume dampening anomaly ratios into the ambiguous zone ($0.40 - 0.60$).
+
+7. **Verification & Tests (`backend/tests/test_learned_attribution.py`)**:
+   - 7 automated test cases passing: no label leakage, feature schema order matching, bitwise determinism, held-out family isolation, sequential decision accumulation, graceful fallback, and backend decision trace verification.

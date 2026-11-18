@@ -24,6 +24,7 @@ class AttributionOutput(BaseModel):
     action: Optional[str] = None
     action_recommendation: str
     decision_trace_id: Optional[str] = None
+    attributor_type: Optional[str] = "rules"
 
 
 class AttributionAnalyzeRequest(BaseModel):

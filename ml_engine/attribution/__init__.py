@@ -7,7 +7,15 @@ from .config import (
     AttributionConfig,
     AttributionVerdict,
     DEFAULT_ATTRIBUTION_CONFIG,
+    DEFAULT_LEARNED_ATTRIBUTION_CONFIG,
+    LEARNED_ATTRIBUTION_FEATURES,
+    LearnedAttributionConfig,
     RecommendedAction,
+)
+from .learned import (
+    LearnedAttributor,
+    SmallRegularizedAttributionModel,
+    extract_attribution_features,
 )
 from .metrics import (
     compute_jsd,
@@ -27,7 +35,13 @@ __all__ = [
     "AttributionConfig",
     "AttributionVerdict",
     "DEFAULT_ATTRIBUTION_CONFIG",
+    "DEFAULT_LEARNED_ATTRIBUTION_CONFIG",
+    "LEARNED_ATTRIBUTION_FEATURES",
+    "LearnedAttributionConfig",
     "RecommendedAction",
+    "LearnedAttributor",
+    "SmallRegularizedAttributionModel",
+    "extract_attribution_features",
     "compute_jsd",
     "compute_volume_multiplier",
     "evaluate_per_ue_rate",

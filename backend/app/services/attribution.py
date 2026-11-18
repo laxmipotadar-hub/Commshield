@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional
 import uuid
 
@@ -22,6 +23,7 @@ from .detection import detection_service
 from ml_engine.attribution import (
     AdwinSliceTracker,
     AttributionEngine,
+    LearnedAttributor,
     RuleBasedAttributor,
 )
 
@@ -31,10 +33,27 @@ logger = logging.getLogger("commshield.attribution")
 class AttributionService:
     """Manages drift detection and evidence-based attribution workflows."""
 
-    def __init__(self):
+    def __init__(self, attributor_flag: Optional[str] = None):
         self.adwin_tracker = AdwinSliceTracker()
-        self.engine = AttributionEngine(default_attributor=RuleBasedAttributor())
+        self.attributor_flag = (attributor_flag or os.getenv("COMMSHIELD_ATTRIBUTOR", "rules")).lower().strip()
+        if self.attributor_flag not in ("rules", "learned"):
+            self.attributor_flag = "rules"
+
+        self.rule_attributor = RuleBasedAttributor()
+        self.learned_attributor = LearnedAttributor(fallback_attributor=self.rule_attributor)
+        self.engine = AttributionEngine(default_attributor=self.rule_attributor)
+        self.engine.register_attributor("rules", self.rule_attributor)
+        self.engine.register_attributor("learned", self.learned_attributor)
         self.recent_windows_by_slice: Dict[str, List[Dict[str, Any]]] = {}
+
+    def set_attributor(self, flag: str) -> None:
+        """Switch active attributor between 'rules' and 'learned'."""
+        flag_clean = flag.lower().strip()
+        if flag_clean in ("rules", "learned"):
+            self.attributor_flag = flag_clean
+            logger.info("Switched active attribution engine to: %s", self.attributor_flag)
+        else:
+            raise ValueError(f"Invalid attributor flag: {flag}. Must be 'rules' or 'learned'.")
 
     def reset_trackers(self) -> None:
         """Reset internal ADWIN windows and history caches."""
@@ -130,10 +149,16 @@ class AttributionService:
                 drift_detected=drift_detected,
                 detector_output=detector_output,
                 control_slice_window=control_slice_window,
+                attributor_name=self.attributor_flag,
             )
 
+            supp_signals = attribution_dict.setdefault("supporting_signals", {})
+            produced_by = supp_signals.get("attributor_type", self.attributor_flag)
+            fallback_used = supp_signals.get("fallback_used", False)
+            supp_signals["attributor_configured"] = self.attributor_flag
+            supp_signals["produced_by"] = produced_by
+
             if is_entropy_suppressed:
-                supp_signals = attribution_dict.get("supporting_signals", {})
                 supp_signals["ue_entropy_delta"] = None
                 supp_signals["entropy_drop_triggered"] = False
                 supp_signals["entropy_suppressed"] = True
@@ -192,6 +217,9 @@ class AttributionService:
                     "description": "Evaluated Jensen-Shannon divergence, per-UE rates, and threat indicators",
                     "timestamp": now_dt.isoformat(),
                     "details": {
+                        "attributor_configured": self.attributor_flag,
+                        "produced_by": produced_by,
+                        "fallback_used": fallback_used,
                         "jsd_divergence": prop_test_data.get("jsd_divergence", 0.0),
                         "jsd_threshold": prop_test_data.get("jsd_null_threshold_99th", 0.035),
                         "proportional_passed": prop_test_data.get("passed", False),
