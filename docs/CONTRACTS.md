@@ -374,6 +374,14 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 - **Behavior**: Selects active attribution engine. When `"learned"` is selected, sequential evidence accumulation over $N=3$ windows is enforced, and the engine automatically falls back to `"rules"` if feature anomalies or cold-start thresholds occur.
 - **Decision Trace Exposure**: The active configuration and executing model are recorded in the `evidence_evaluated` step of the decision trace via `attributor_configured` (`"rules"` | `"learned"`), `produced_by` (`"rules"` | `"learned"`), and `fallback_used` (`true` | `false`).
 
+#### Split Conformal Calibration Flag
+- **Flag Name**: `conformal_calibration` (`COMMSHIELD_CONFORMAL` environment variable)
+- **Allowed Values**: `true` | `false` (Default: `false` initially, toggled to `true` post-experiment)
+- **Behavior**: Computes split-conformal p-values ($p_{\text{IF}}, p_{\text{AE}}, p_{\text{attr}}$) with $(n+1)$ correction against dedicated benign calibration sets. Enforces principled abstention:
+  1. `"conformal gray band"`: p-value falls in $[\alpha_{\text{low}}, \alpha_{\text{high}}] = [0.05, 0.20]$.
+  2. `"detector p-value disagreement"`: $|p_{\text{IF}} - p_{\text{AE}}| > 0.35$.
+- **Decision Trace Exposure**: Recorded under `conformal_calibration` in the `evidence_evaluated` step, exposing p-values, calibration slice size, and fallback status. Supporting signals expose `conformal_calibration_enabled`, `p_value_isolation_forest`, `p_value_autoencoder`, and `p_value_attributor`.
+
 #### Case 1: Likely Benign (Proportional Growth)
 ```json
 {

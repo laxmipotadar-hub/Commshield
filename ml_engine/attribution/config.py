@@ -84,7 +84,7 @@ class AttributionConfig:
     attributor_type: str = "rules"
 
     # 8. Split Conformal Calibration Parameters
-    conformal_enabled: bool = False
+    conformal_enabled: bool = True
     conformal_alpha_low: float = 0.05
     conformal_alpha_high: float = 0.20
     conformal_detector_disagreement_margin: float = 0.35
@@ -145,7 +145,7 @@ class ConformalAttributionConfig:
     - min_calibration_size: 30 -> fallback to pooled calibration if per-slice count is less
     - pooling_fallback: True -> pool calibration scores across slices when slice count is deficient
     """
-    enabled: bool = False
+    enabled: bool = True
     alpha_low: float = 0.05
     alpha_high: float = 0.20
     detector_disagreement_margin: float = 0.35

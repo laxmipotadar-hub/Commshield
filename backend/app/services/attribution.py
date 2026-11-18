@@ -53,7 +53,7 @@ class AttributionService:
         self.conformal_flag = (
             conformal_flag
             if conformal_flag is not None
-            else os.getenv("COMMSHIELD_CONFORMAL", "false").lower() in ("true", "1", "yes")
+            else os.getenv("COMMSHIELD_CONFORMAL", "true").lower() in ("true", "1", "yes")
         )
         self.conformal_config = conformal_config or DEFAULT_CONFORMAL_CONFIG
         self.conformal_manager = ConformalCalibrationManager(config=self.conformal_config)
@@ -188,6 +188,48 @@ class AttributionService:
                 supp_signals["entropy_suppressed"] = True
                 attribution_dict["supporting_signals"] = supp_signals
 
+            # 5b. Split Conformal Calibration & Abstention (if enabled)
+            conformal_details: Dict[str, Any] = {}
+            if self.conformal_flag:
+                if_score = 0.0
+                ae_score = 0.0
+                if detector_output:
+                    if_score = float(detector_output.get("isolation_forest", {}).get("raw_score_negated", 0.0))
+                    ae_score = float(detector_output.get("autoencoder", {}).get("reconstruction_mse", 0.0))
+
+                attr_score = float(supp_signals.get("model_nonconformity_score", 0.0))
+                if attr_score == 0.0 and self.attributor_flag == "rules":
+                    det_agree = supp_signals.get("detector_agreement_state", "NONE")
+                    attr_score = 1.0 if det_agree in ("BOTH_FIRE", "BOTH_FIRED") else (0.5 if "ONLY" in det_agree else 0.05)
+
+                conformal_res = self.conformal_manager.evaluate_scores(
+                    slice_id=slice_id,
+                    test_if_score=if_score,
+                    test_ae_score=ae_score,
+                    test_attr_score=attr_score,
+                )
+                conformal_details = conformal_res["details"]
+                p_if = conformal_res["p_value_isolation_forest"]
+                p_ae = conformal_res["p_value_autoencoder"]
+                p_attr = conformal_res["p_value_attributor"]
+
+                supp_signals["conformal_calibration_enabled"] = True
+                supp_signals["p_value_isolation_forest"] = p_if
+                supp_signals["p_value_autoencoder"] = p_ae
+                supp_signals["p_value_attributor"] = p_attr
+                supp_signals["conformal_gray_band_triggered"] = conformal_details.get("gray_band_triggered", False)
+                supp_signals["detector_disagreement_triggered"] = conformal_details.get("detector_disagreement_triggered", False)
+                supp_signals["calibration_size"] = conformal_details.get("calibration_size", 0)
+                supp_signals["calibration_fallback_used"] = conformal_details.get("is_pooled_calibration", False)
+
+                if conformal_res["should_abstain"]:
+                    attribution_dict["verdict"] = AttributionVerdict.UNCERTAIN.value
+                    attribution_dict["abstain_reason"] = conformal_res["abstain_reason"]
+                    attribution_dict["action"] = RecommendedAction.QUARANTINE.value
+                    attribution_dict["action_recommendation"] = f"Abstain from adaptation; conformal calibration condition triggered ({conformal_res['abstain_reason']})"
+            else:
+                supp_signals["conformal_calibration_enabled"] = False
+
             verdict = attribution_dict["verdict"]
             abstain_reason = attribution_dict.get("abstain_reason")
             action = attribution_dict.get("action", "quarantine")
@@ -247,6 +289,7 @@ class AttributionService:
                         "jsd_divergence": prop_test_data.get("jsd_divergence", 0.0),
                         "jsd_threshold": prop_test_data.get("jsd_null_threshold_99th", 0.035),
                         "proportional_passed": prop_test_data.get("passed", False),
+                        "conformal_calibration": conformal_details if self.conformal_flag else {"enabled": False},
                         "supporting_signals": attribution_dict.get("supporting_signals", {}),
                     },
                 },
