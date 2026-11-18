@@ -32,7 +32,7 @@ class TelemetryAdapter(ABC):
         self,
         records: Iterable[Any],
         slice_id: str,
-        nf_id: str,
+        nf_id: str = "UPF-01",
         window_duration_sec: int = 60,
     ) -> List[Dict[str, Any]]:
         """Convenience method to process an iterable of records into a list of canonical windows."""

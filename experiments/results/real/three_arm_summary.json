@@ -1,0 +1,199 @@
+{
+  "config_version": "v1.0.0-real-eval",
+  "scenarios": [
+    "real_benign",
+    "real_attacks",
+    "scaled_benign_growth",
+    "attack_in_scaled_growth"
+  ],
+  "summaries": {
+    "real_benign": {
+      "label": "real",
+      "total_windows": 40,
+      "attack_windows": 0,
+      "seeds_evaluated": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.0,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 2.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 2.0,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "real_attacks": {
+      "label": "real",
+      "total_windows": 21,
+      "attack_windows": 1,
+      "seeds_evaluated": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": 0.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.0,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 1.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 1.0,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "scaled_benign_growth": {
+      "label": "semi-synthetic",
+      "total_windows": 40,
+      "attack_windows": 0,
+      "seeds_evaluated": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 2.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": null,
+          "recall_std": null,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 2.0,
+          "recovery_time_mean": 0.0
+        }
+      }
+    },
+    "attack_in_scaled_growth": {
+      "label": "semi-synthetic",
+      "total_windows": 21,
+      "attack_windows": 1,
+      "seeds_evaluated": [
+        42,
+        101,
+        2024,
+        777,
+        999
+      ],
+      "arms": {
+        "arm_a_static": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_b_naive": {
+          "recall_mean": 0.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.0,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 1.0,
+          "quarantined_mean": 0.0,
+          "recovery_time_mean": 0.0
+        },
+        "arm_c_commshield": {
+          "recall_mean": 1.0,
+          "recall_std": 0.0,
+          "fpr_mean": 0.05,
+          "fpr_std": 0.0,
+          "contamination_mean": 0.0,
+          "contamination_std": 0.0,
+          "adaptations_mean": 0.0,
+          "quarantined_mean": 1.0,
+          "recovery_time_mean": 0.0
+        }
+      }
+    }
+  }
+}

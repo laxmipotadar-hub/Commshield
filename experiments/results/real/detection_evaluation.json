@@ -1,0 +1,230 @@
+{
+  "config_version": "v1.0.0-real-eval",
+  "slice_id": "sst-1-sd-010203",
+  "training_windows_count": 34,
+  "validation_windows_count": 23,
+  "validation_fpr": {
+    "commshield": 0.1304,
+    "isolation_forest": 0.1304,
+    "autoencoder": 0.1304,
+    "fixed_zscore": 0.1304
+  },
+  "attack_evaluations": {
+    "UDPFlood": {
+      "total_windows": 9,
+      "attack_windows": 1,
+      "benign_windows": 8,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.25,
+          "detection_delay_windows": 0
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.125,
+          "detection_delay_windows": 0
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.125,
+          "detection_delay_windows": 0
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.75,
+          "detection_delay_windows": 0
+        }
+      }
+    },
+    "HTTPFlood": {
+      "total_windows": 8,
+      "attack_windows": 3,
+      "benign_windows": 5,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.4,
+          "detection_delay_windows": 0
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        }
+      }
+    },
+    "SlowrateDoS": {
+      "total_windows": 29,
+      "attack_windows": 11,
+      "benign_windows": 18,
+      "detectors": {
+        "commshield": {
+          "recall": 0.7273,
+          "fpr": 0.6667,
+          "detection_delay_windows": 4
+        },
+        "isolation_forest": {
+          "recall": 0.7273,
+          "fpr": 0.5556,
+          "detection_delay_windows": 4
+        },
+        "autoencoder": {
+          "recall": 0.7273,
+          "fpr": 0.6667,
+          "detection_delay_windows": 4
+        },
+        "fixed_zscore": {
+          "recall": 0.7273,
+          "fpr": 0.7222,
+          "detection_delay_windows": 4
+        }
+      }
+    },
+    "SYNFlood": {
+      "total_windows": 16,
+      "attack_windows": 9,
+      "benign_windows": 7,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.1429,
+          "detection_delay_windows": 0
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.1429,
+          "detection_delay_windows": 0
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.1429,
+          "detection_delay_windows": 0
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.2857,
+          "detection_delay_windows": 0
+        }
+      }
+    },
+    "ICMPFlood": {
+      "total_windows": 30,
+      "attack_windows": 10,
+      "benign_windows": 20,
+      "detectors": {
+        "commshield": {
+          "recall": 0.0,
+          "fpr": 0.35,
+          "detection_delay_windows": 10
+        },
+        "isolation_forest": {
+          "recall": 0.0,
+          "fpr": 0.3,
+          "detection_delay_windows": 10
+        },
+        "autoencoder": {
+          "recall": 0.0,
+          "fpr": 0.35,
+          "detection_delay_windows": 10
+        },
+        "fixed_zscore": {
+          "recall": 0.0,
+          "fpr": 0.3,
+          "detection_delay_windows": 10
+        }
+      }
+    },
+    "TCPConnectScan": {
+      "total_windows": 10,
+      "attack_windows": 5,
+      "benign_windows": 5,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.2,
+          "detection_delay_windows": 0
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.2,
+          "detection_delay_windows": 0
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        }
+      }
+    },
+    "SYNScan": {
+      "total_windows": 9,
+      "attack_windows": 4,
+      "benign_windows": 5,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        }
+      }
+    },
+    "UDPScan": {
+      "total_windows": 10,
+      "attack_windows": 7,
+      "benign_windows": 3,
+      "detectors": {
+        "commshield": {
+          "recall": 0.8571,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "isolation_forest": {
+          "recall": 0.8571,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "autoencoder": {
+          "recall": 0.8571,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0
+        }
+      }
+    }
+  }
+}

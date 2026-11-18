@@ -1,0 +1,171 @@
+{
+  "clean_candidate": {
+    "version": "v1.1.0-real-clean",
+    "all_mandatory_passed": false,
+    "checks": [
+      {
+        "name": "normal_holdout_backtest",
+        "passed": true,
+        "explanation": "Normal-holdout backtest: candidate FPR is 0.00% (0/20 windows) (limit: <= 5.00%). Status: PASSED.",
+        "metrics": {
+          "fpr": 0.0,
+          "total_windows": 20,
+          "flagged": 0,
+          "limit": 0.05
+        }
+      },
+      {
+        "name": "proportional_growth",
+        "passed": true,
+        "explanation": "Proportional-growth test: JSD divergence is 0.0034 (limit: <= 0.0350), per-UE session rate deviation is 0.167 (limit: <= 0.250). Status: PASSED.",
+        "metrics": {
+          "jsd": 0.00342,
+          "jsd_limit": 0.035,
+          "per_ue_deviation": 0.1673,
+          "per_ue_limit": 0.25
+        }
+      },
+      {
+        "name": "canary_retention_test",
+        "passed": false,
+        "explanation": "Canary retention test: active recall 100.0%, candidate recall 25.0%, recall delta 75.0% (limit: <= 5.0%). Status: FAILED (canary attack detection degraded beyond allowed margin).",
+        "metrics": {
+          "passed": false,
+          "active_recall": 1.0,
+          "candidate_recall": 0.25,
+          "recall_delta": 0.75,
+          "delta_canary": 10.0,
+          "category_recalls": {
+            "attack_in_growth": {
+              "active_recall": 1.0,
+              "candidate_recall": 0.1111,
+              "recall_delta": 0.8889,
+              "passed": false,
+              "count": 18
+            },
+            "mimicry_attack": {
+              "active_recall": 1.0,
+              "candidate_recall": 1.0,
+              "recall_delta": 0.0,
+              "passed": true,
+              "count": 1
+            },
+            "slow_attack_ramp": {
+              "active_recall": 1.0,
+              "candidate_recall": 0.3333,
+              "recall_delta": 0.6667,
+              "passed": false,
+              "count": 21
+            }
+          },
+          "canary_count": 40
+        }
+      },
+      {
+        "name": "drift_budget",
+        "passed": false,
+        "explanation": "Drift budget: D_rms(cand, active)=6.65 (<= 1.5), D_rms(cand, anchor)=6.65 (<= 2.5), D_max=16.90 (<= 3.0), Delta_can=10.00 (<= 10.0). Status: FAILED (budget or step limits exceeded).",
+        "metrics": {
+          "d_rms_active": 6.6496,
+          "step_limit_b_step": 1.5,
+          "step_passed": false,
+          "d_rms_anchor": 6.6496,
+          "cumulative_budget_b_rms": 2.5,
+          "cumul_passed": false,
+          "d_max_anchor": 16.898,
+          "max_feature_budget_b_max": 3.0,
+          "dmax_passed": false,
+          "delta_canary": 10.0,
+          "canary_shift_budget_b_can": 10.0,
+          "dcan_passed": true
+        }
+      }
+    ]
+  },
+  "poisoned_candidate": {
+    "version": "v1.1.0-naive-poisoned",
+    "all_mandatory_passed": false,
+    "rejected_by_gates": [
+      "normal_holdout_backtest"
+    ],
+    "checks": [
+      {
+        "name": "normal_holdout_backtest",
+        "passed": false,
+        "explanation": "Normal-holdout backtest: candidate FPR is 100.00% (20/20 windows) (limit: <= 5.00%). Status: FAILED (excessive false alarms on benign holdout).",
+        "metrics": {
+          "fpr": 1.0,
+          "total_windows": 20,
+          "flagged": 20,
+          "limit": 0.05
+        }
+      },
+      {
+        "name": "proportional_growth",
+        "passed": true,
+        "explanation": "Proportional-growth test: JSD divergence is 0.0003 (limit: <= 0.0350), per-UE session rate deviation is 0.211 (limit: <= 0.250). Status: PASSED.",
+        "metrics": {
+          "jsd": 0.00031,
+          "jsd_limit": 0.035,
+          "per_ue_deviation": 0.211,
+          "per_ue_limit": 0.25
+        }
+      },
+      {
+        "name": "canary_retention_test",
+        "passed": true,
+        "explanation": "Canary retention test: active recall 100.0%, candidate recall 100.0%, recall delta 0.0% (limit: <= 5.0%). Status: PASSED.",
+        "metrics": {
+          "passed": true,
+          "active_recall": 1.0,
+          "candidate_recall": 1.0,
+          "recall_delta": 0.0,
+          "delta_canary": 0.0,
+          "category_recalls": {
+            "attack_in_growth": {
+              "active_recall": 1.0,
+              "candidate_recall": 1.0,
+              "recall_delta": 0.0,
+              "passed": true,
+              "count": 18
+            },
+            "mimicry_attack": {
+              "active_recall": 1.0,
+              "candidate_recall": 1.0,
+              "recall_delta": 0.0,
+              "passed": true,
+              "count": 1
+            },
+            "slow_attack_ramp": {
+              "active_recall": 1.0,
+              "candidate_recall": 1.0,
+              "recall_delta": 0.0,
+              "passed": true,
+              "count": 21
+            }
+          },
+          "canary_count": 40
+        }
+      },
+      {
+        "name": "drift_budget",
+        "passed": true,
+        "explanation": "Drift budget: D_rms(cand, active)=0.61 (<= 1.5), D_rms(cand, anchor)=0.61 (<= 2.5), D_max=1.08 (<= 3.0), Delta_can=0.00 (<= 10.0). Status: PASSED.",
+        "metrics": {
+          "d_rms_active": 0.6114,
+          "step_limit_b_step": 1.5,
+          "step_passed": true,
+          "d_rms_anchor": 0.6114,
+          "cumulative_budget_b_rms": 2.5,
+          "cumul_passed": true,
+          "d_max_anchor": 1.0761,
+          "max_feature_budget_b_max": 3.0,
+          "dmax_passed": true,
+          "delta_canary": 0.0,
+          "canary_shift_budget_b_can": 10.0,
+          "dcan_passed": true
+        }
+      }
+    ]
+  }
+}

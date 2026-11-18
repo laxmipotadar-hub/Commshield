@@ -91,6 +91,9 @@ class FiveGNIDDAdapter(TelemetryAdapter):
 
     def _parse_dict_stream(self, records: Iterable[Any]) -> Iterator[Dict[str, Any]]:
         """Parse dictionary or raw record objects into normalized flow events."""
+        prev_sec: Optional[float] = None
+        hour_offset: float = 0.0
+
         for rec in records:
             if not isinstance(rec, dict):
                 continue
@@ -109,24 +112,35 @@ class FiveGNIDDAdapter(TelemetryAdapter):
                     except Exception:
                         pass
 
-            if ts is None and "IdleTime" in rec:
-                try:
-                    idle_epoch = float(rec["IdleTime"])
-                    ts = datetime.fromtimestamp(idle_epoch, tz=timezone.utc)
-                except Exception:
-                    pass
-
-            if ts is None and "StartTime" in rec:
+            if ts is None and "StartTime" in rec and rec.get("StartTime"):
                 start_val = str(rec["StartTime"]).strip()
                 try:
                     if ":" in start_val:
                         parts = start_val.split(":")
                         if len(parts) == 2:
-                            sec_offset = float(parts[0]) * 60.0 + float(parts[1])
-                            # Arbitrary reference base epoch if only MM:SS is present
-                            ts = datetime.fromtimestamp(1663055000 + sec_offset, tz=timezone.utc)
+                            sec = float(parts[0]) * 60.0 + float(parts[1])
+                        elif len(parts) == 3:
+                            sec = float(parts[0]) * 3600.0 + float(parts[1]) * 60.0 + float(parts[2])
+                        else:
+                            sec = float(parts[0])
+
+                        if prev_sec is not None and sec < prev_sec - 1800:
+                            hour_offset += 3600.0
+                        prev_sec = sec
+
+                        base_epoch = float(rec.get("IdleTime") or 1663055000)
+                        ts = datetime.fromtimestamp(base_epoch + hour_offset + sec, tz=timezone.utc)
                     else:
-                        ts = datetime.fromtimestamp(float(start_val), tz=timezone.utc)
+                        sec = float(start_val)
+                        base_epoch = float(rec.get("IdleTime") or 1663055000)
+                        ts = datetime.fromtimestamp(base_epoch + sec, tz=timezone.utc)
+                except Exception:
+                    pass
+
+            if ts is None and "IdleTime" in rec:
+                try:
+                    idle_epoch = float(rec["IdleTime"])
+                    ts = datetime.fromtimestamp(idle_epoch, tz=timezone.utc)
                 except Exception:
                     pass
 

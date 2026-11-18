@@ -1,0 +1,27 @@
+{
+  "evaluated_at": "2026-11-18T12:11:58.593863+00:00",
+  "config_version": "v1.0.0-real-eval",
+  "dataset_source": "5g_nidd",
+  "dataset_files_used": [
+    "data/raw/5g-nidd/BTS1_BTS2_fields_preserved.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/UDPFlood1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/Goldeneye1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/Slowloris1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/SYNFlood1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/ICMPFlood1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/TCPConnect1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/SYNScan1.csv",
+    "data/raw/5g-nidd/BS1_each_attack_csv/UDPScan1.csv"
+  ],
+  "split_boundaries": {
+    "training_windows_count": 34,
+    "validation_windows_count": 23,
+    "test_attacks_count": 8,
+    "temporal_discipline": "Fit scalers and detector baselines strictly on benign training period; zero test period threshold tuning."
+  },
+  "slice_mapping": {
+    "BS1": "sst-1-sd-010203 (eMBB - Assigned Slice)",
+    "BS2": "sst-2-sd-010203 (URLLC - Assigned Slice)",
+    "disclaimer": "Assigned slice based on base station topology; not real 3GPP slice tags."
+  }
+}
