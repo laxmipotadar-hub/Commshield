@@ -7,10 +7,18 @@ from .config import (
     AttributionConfig,
     AttributionVerdict,
     DEFAULT_ATTRIBUTION_CONFIG,
+    DEFAULT_CONFORMAL_CONFIG,
     DEFAULT_LEARNED_ATTRIBUTION_CONFIG,
     LEARNED_ATTRIBUTION_FEATURES,
     LearnedAttributionConfig,
+    ConformalAttributionConfig,
     RecommendedAction,
+)
+from .conformal import (
+    CalibrationSliceBundle,
+    ConformalCalibrationManager,
+    compute_conformal_pvalue,
+    evaluate_conformal_abstention,
 )
 from .learned import (
     LearnedAttributor,
@@ -48,4 +56,10 @@ __all__ = [
     "evaluate_proportional_growth",
     "evaluate_threat_indicators",
     "RuleBasedAttributor",
+    "ConformalAttributionConfig",
+    "DEFAULT_CONFORMAL_CONFIG",
+    "CalibrationSliceBundle",
+    "ConformalCalibrationManager",
+    "compute_conformal_pvalue",
+    "evaluate_conformal_abstention",
 ]

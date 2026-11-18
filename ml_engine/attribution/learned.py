@@ -441,6 +441,7 @@ class LearnedAttributor(BaseAttributor):
                 "supporting_signals": {
                     "attributor_type": "learned",
                     "model_type": self.config.model_type,
+                    "model_nonconformity_score": round(float(raw_attack_prob), 4),
                     "sequential_horizon": n_target,
                     "accumulated_windows": n_history,
                     "ue_entropy_delta": feat_dict["ue_entropy_delta"],

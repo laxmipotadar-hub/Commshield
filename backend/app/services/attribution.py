@@ -21,9 +21,15 @@ from ..models import (
 from ..schemas import AttributionOutput, ProportionalGrowthTest
 from .detection import detection_service
 from ml_engine.attribution import (
+    AbstainReason,
     AdwinSliceTracker,
     AttributionEngine,
+    AttributionVerdict,
+    ConformalAttributionConfig,
+    ConformalCalibrationManager,
+    DEFAULT_CONFORMAL_CONFIG,
     LearnedAttributor,
+    RecommendedAction,
     RuleBasedAttributor,
 )
 
@@ -33,11 +39,24 @@ logger = logging.getLogger("commshield.attribution")
 class AttributionService:
     """Manages drift detection and evidence-based attribution workflows."""
 
-    def __init__(self, attributor_flag: Optional[str] = None):
+    def __init__(
+        self,
+        attributor_flag: Optional[str] = None,
+        conformal_flag: Optional[bool] = None,
+        conformal_config: Optional[ConformalAttributionConfig] = None,
+    ):
         self.adwin_tracker = AdwinSliceTracker()
         self.attributor_flag = (attributor_flag or os.getenv("COMMSHIELD_ATTRIBUTOR", "rules")).lower().strip()
         if self.attributor_flag not in ("rules", "learned"):
             self.attributor_flag = "rules"
+
+        self.conformal_flag = (
+            conformal_flag
+            if conformal_flag is not None
+            else os.getenv("COMMSHIELD_CONFORMAL", "false").lower() in ("true", "1", "yes")
+        )
+        self.conformal_config = conformal_config or DEFAULT_CONFORMAL_CONFIG
+        self.conformal_manager = ConformalCalibrationManager(config=self.conformal_config)
 
         self.rule_attributor = RuleBasedAttributor()
         self.learned_attributor = LearnedAttributor(fallback_attributor=self.rule_attributor)
@@ -54,6 +73,11 @@ class AttributionService:
             logger.info("Switched active attribution engine to: %s", self.attributor_flag)
         else:
             raise ValueError(f"Invalid attributor flag: {flag}. Must be 'rules' or 'learned'.")
+
+    def set_conformal(self, enabled: bool) -> None:
+        """Enable or disable split conformal calibration and abstention."""
+        self.conformal_flag = bool(enabled)
+        logger.info("Split conformal calibration toggled to: %s", self.conformal_flag)
 
     def reset_trackers(self) -> None:
         """Reset internal ADWIN windows and history caches."""

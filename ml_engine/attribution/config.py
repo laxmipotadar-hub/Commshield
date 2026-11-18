@@ -18,6 +18,8 @@ class AbstainReason(str, Enum):
     DETECTORS_DISAGREE = "detectors_disagree"
     INCONCLUSIVE_GROWTH_PATTERN = "inconclusive_growth_pattern"
     UNCERTAIN_CONFIDENCE = "uncertain_confidence"
+    CONFORMAL_GRAY_BAND = "conformal gray band"
+    DETECTOR_PVALUE_DISAGREEMENT = "detector p-value disagreement"
 
 
 class AttributionVerdict(str, Enum):
@@ -81,6 +83,14 @@ class AttributionConfig:
     # 7. Attributor Selection Flag ("rules" | "learned")
     attributor_type: str = "rules"
 
+    # 8. Split Conformal Calibration Parameters
+    conformal_enabled: bool = False
+    conformal_alpha_low: float = 0.05
+    conformal_alpha_high: float = 0.20
+    conformal_detector_disagreement_margin: float = 0.35
+    conformal_min_calibration_size: int = 30
+    conformal_pooling_fallback: bool = True
+
 
 DEFAULT_ATTRIBUTION_CONFIG = AttributionConfig()
 
@@ -121,4 +131,28 @@ class LearnedAttributionConfig:
 
 
 DEFAULT_LEARNED_ATTRIBUTION_CONFIG = LearnedAttributionConfig()
+
+
+@dataclass
+class ConformalAttributionConfig:
+    """Pre-registered, frozen parameters for split conformal calibration and abstention.
+
+    Tuned on tuning streams and frozen:
+    - alpha_low: 0.05 (rejection of null / benign hypothesis -> likely attack)
+    - alpha_high: 0.20 (acceptance of null / benign hypothesis -> likely benign)
+    - gray band: [alpha_low, alpha_high] -> abstain as uncertain
+    - detector_disagreement_margin: 0.35 -> abstain if |p_IF - p_AE| > margin
+    - min_calibration_size: 30 -> fallback to pooled calibration if per-slice count is less
+    - pooling_fallback: True -> pool calibration scores across slices when slice count is deficient
+    """
+    enabled: bool = False
+    alpha_low: float = 0.05
+    alpha_high: float = 0.20
+    detector_disagreement_margin: float = 0.35
+    min_calibration_size: int = 30
+    pooling_fallback: bool = True
+
+
+DEFAULT_CONFORMAL_CONFIG = ConformalAttributionConfig()
+
 
