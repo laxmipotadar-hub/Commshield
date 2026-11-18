@@ -4,8 +4,9 @@ All thresholds, limits, and tolerances are centralized here with documented rati
 No attribution thresholds should be hard-coded inline.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import List
 
 
 class AbstainReason(str, Enum):
@@ -16,6 +17,7 @@ class AbstainReason(str, Enum):
     MIMICRY_SUSPECTED = "mimicry_suspected"
     DETECTORS_DISAGREE = "detectors_disagree"
     INCONCLUSIVE_GROWTH_PATTERN = "inconclusive_growth_pattern"
+    UNCERTAIN_CONFIDENCE = "uncertain_confidence"
 
 
 class AttributionVerdict(str, Enum):
@@ -76,5 +78,47 @@ class AttributionConfig:
     # Minimum number of recent observed windows required for confident attribution
     min_windows_required: int = 3
 
+    # 7. Attributor Selection Flag ("rules" | "learned")
+    attributor_type: str = "rules"
+
 
 DEFAULT_ATTRIBUTION_CONFIG = AttributionConfig()
+
+# Canonical ordered feature list matching attribution signals from docs/AI_FEASIBILITY.md
+# No raw identifiers, no labels of any kind
+LEARNED_ATTRIBUTION_FEATURES: List[str] = [
+    "scaling_factor_k",
+    "jsd_divergence",
+    "ue_entropy_delta",
+    "new_ue_rate",
+    "nas_failure_ratio",
+    "pfcp_failure_ratio",
+    "detector_agreement_numeric",
+    "control_slice_concordant",
+    "per_ue_rate_deviation",
+]
+
+
+@dataclass
+class LearnedAttributionConfig:
+    """Pre-registered configuration for the learned attributor with sequential evidence accumulation.
+    
+    Documented Rationale:
+    Model is regularized and intentionally small (linear/logistic, 9 weights + 1 intercept)
+    because, as proven in docs/AI_FEASIBILITY.md, network drift telemetry provides very few
+    distinct episodes of growth and stealth attacks. A high-parameter model would easily overfit
+    to transient noise or diurnal patterns in the single synthetic growth episode. Fixed seed ensures determinism.
+    """
+    model_type: str = "logistic_regression"
+    regularization_l2: float = 0.5
+    random_seed: int = 42
+    # Accumulate evidence over N windows chosen on tuning streams before issuing verdict
+    sequential_window_length: int = 3
+    # Calibrated decision cutoffs for binary classification (0 = benign_growth, 1 = attack)
+    attack_decision_threshold: float = 0.60
+    benign_decision_threshold: float = 0.40
+    feature_names: List[str] = field(default_factory=lambda: list(LEARNED_ATTRIBUTION_FEATURES))
+
+
+DEFAULT_LEARNED_ATTRIBUTION_CONFIG = LearnedAttributionConfig()
+
