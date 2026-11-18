@@ -279,3 +279,4 @@ class ConformalCalibrationManager:
             "abstain_reason": abstain_reason,
             "details": details,
         }
+
