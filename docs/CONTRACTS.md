@@ -52,7 +52,7 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | | `abstain_reason` | `String(64)` | Nullable | Named reason if verdict is `uncertain` |
 | | `jsd_divergence` | `Float` | NOT NULL | Jensen-Shannon Divergence score |
 | | `scaling_factor_k` | `Float` | NOT NULL | Estimated volume scale factor |
-| | `evidence_signals` | `JSON` | NOT NULL | Supporting signals (entropy, cross-slice, etc.) |
+| | `evidence_signals` | `JSON` | NOT NULL | Supporting signals (entropy, cross-slice, attributor_type, produced_by) |
 | | `created_at` | `DateTime(timezone=True)` | NOT NULL | Creation timestamp |
 | **`candidate_baselines`** | `id` | `String(36)` | PK, UUID | Unique candidate ID |
 | | `slice_id` | `String(64)` | Indexed, NOT NULL | Target slice ID |
@@ -368,6 +368,20 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 
 ### C. Attribution Output with Abstention (`AttributionOutput`)
 
+#### Attribution Configuration Flag
+- **Flag Name**: `attributor` (`COMMSHIELD_ATTRIBUTOR` environment variable)
+- **Allowed Values**: `"rules"` | `"learned"` (Default: `"rules"`)
+- **Behavior**: Selects active attribution engine. When `"learned"` is selected, sequential evidence accumulation over $N=3$ windows is enforced, and the engine automatically falls back to `"rules"` if feature anomalies or cold-start thresholds occur.
+- **Decision Trace Exposure**: The active configuration and executing model are recorded in the `evidence_evaluated` step of the decision trace via `attributor_configured` (`"rules"` | `"learned"`), `produced_by` (`"rules"` | `"learned"`), and `fallback_used` (`true` | `false`).
+
+#### Split Conformal Calibration Flag
+- **Flag Name**: `conformal_calibration` (`COMMSHIELD_CONFORMAL` environment variable)
+- **Allowed Values**: `true` | `false` (Default: `false` initially, toggled to `true` post-experiment)
+- **Behavior**: Computes split-conformal p-values ($p_{\text{IF}}, p_{\text{AE}}, p_{\text{attr}}$) with $(n+1)$ correction against dedicated benign calibration sets. Enforces principled abstention:
+  1. `"conformal gray band"`: p-value falls in $[\alpha_{\text{low}}, \alpha_{\text{high}}] = [0.05, 0.20]$.
+  2. `"detector p-value disagreement"`: $|p_{\text{IF}} - p_{\text{AE}}| > 0.35$.
+- **Decision Trace Exposure**: Recorded under `conformal_calibration` in the `evidence_evaluated` step, exposing p-values, calibration slice size, and fallback status. Supporting signals expose `conformal_calibration_enabled`, `p_value_isolation_forest`, `p_value_autoencoder`, and `p_value_attributor`.
+
 #### Case 1: Likely Benign (Proportional Growth)
 ```json
 {
@@ -376,6 +390,7 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
   "drift_detected": true,
   "verdict": "likely_benign",
   "abstain_reason": null,
+  "attributor_type": "rules",
   "proportional_growth_test": {
     "scaling_factor_k": 2.85,
     "jsd_divergence": 0.0124,
@@ -383,6 +398,9 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
     "passed": true
   },
   "supporting_signals": {
+    "attributor_type": "rules",
+    "attributor_configured": "rules",
+    "produced_by": "rules",
     "ue_entropy_delta": 0.12,
     "new_ue_rate": 0.042,
     "nas_failure_ratio": 0.003,
@@ -401,6 +419,7 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
   "drift_detected": true,
   "verdict": "uncertain",
   "abstain_reason": "volume_composition_disagree",
+  "attributor_type": "learned",
   "proportional_growth_test": {
     "scaling_factor_k": 1.25,
     "jsd_divergence": 0.145,
@@ -408,6 +427,11 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
     "passed": false
   },
   "supporting_signals": {
+    "attributor_type": "learned",
+    "attributor_configured": "learned",
+    "produced_by": "learned",
+    "sequential_horizon": 3,
+    "accumulated_windows": 3,
     "ue_entropy_delta": -1.85,
     "new_ue_rate": 0.008,
     "nas_failure_ratio": 0.082,

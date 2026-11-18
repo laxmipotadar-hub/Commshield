@@ -134,3 +134,47 @@ Detection models were calibrated strictly on the 34-window benign training split
 ### Threshold Discipline
 - All baseline models, scalers, and reference distributions were calibrated **strictly on the benign training period** (the first 34 windows).
 - **Zero test-period threshold tuning**: Detection thresholds ($p \ge 0.98$ for fusion, percentile = 95.0, Z-score = 3.0) were held completely fixed across all attack evaluations. If any operational threshold needs adjustment, it must be performed exclusively on the 23-window validation split.
+
+---
+
+## Conformal Calibration Findings and Limitations
+
+A split-conformal calibration engine was implemented to replace ad-hoc heuristic thresholds with principled, finite-sample statistical guarantees for the "uncertain" attribution outcome.
+
+### Architectural Setup
+- **Finite-Sample p-Values**: Evaluated using the standard split-conformal rule with $(n+1)$ correction:
+  $$p = \frac{1 + \sum_{i=1}^n \mathbb{I}(s_i \ge s_{\text{test}})}{n + 1}$$
+- **Frozen Abstention Rules**:
+  1. **Conformal Gray Band**: Abstain when $p_{\text{attr}} \in [\alpha_{\text{low}}, \alpha_{\text{high}}] = [0.05, 0.20]$.
+  2. **Detector p-Value Disagreement**: Abstain when $|p_{\text{IF}} - p_{\text{AE}}| > 0.35$.
+- **Disjoint Partitioning & Slice Pooling**:
+  - Benign windows were strictly partitioned into training (30w), threshold-setting (15w), and calibration (15w) with guaranteed non-overlapping window IDs.
+  - Because 15 windows yields $p_{\min} = 1/16 = 0.0625$ (insufficient for $\alpha = 0.05$), slices were pooled across eMBB, URLLC, and mMTC to form a 45-window calibration bundle ($p_{\min} = 1/46 \approx 0.0217$).
+
+### Empirical Findings: Coverage & Exchangeability Breakdown
+Evaluation across test streams and 5 random seeds ([42, 101, 2024, 777, 999]) revealed a critical theoretical and practical limitation of conformal inference under distribution shift:
+
+| Traffic Regime | Target Coverage | Empirical Detector Coverage | Mean $p_{\text{IF}}$ | Mean $p_{\text{AE}}$ | Exchangeability Status | Conformal Diagnosis |
+| :--- | :---: | :---: | :---: | :---: | :--- | :--- |
+| **Stable Traffic (1x)** | 95.0% | **95.0%** | 0.7511 | 0.7663 | **HOLDS** | Valid coverage; null hypothesis correctly preserved. |
+| **Scaled Growth (2x)** | 95.0% | **0.0%** | 0.0217 | 0.0217 | **BROKEN** | Severe covariate shift; scores explode into extreme tail. |
+| **Scaled Growth (3x)** | 95.0% | **0.0%** | 0.0217 | 0.0217 | **BROKEN** | Total distribution collapse; $p \le 0.0217$ for 100% of windows. |
+| **Dynamic Legitimate Growth** | 95.0% | **1.7%** | 0.0381 | 0.0345 | **BROKEN** | Gradual volume scaling systematically drives p-values below $\alpha$. |
+
+**Failure Analysis**: Conformal prediction requires that calibration instances and test instances be exchangeable. Under 2x and 3x volume growth, detector anomaly scores systematically shift into the extreme upper tail of the 1x calibration distribution. As a result, conformal p-values collapse to $1/(n+1) \le 0.0217 < 0.05$, causing 100% of legitimate benign growth windows to be falsely rejected as non-benign anomalies. Pre-growth conformal calibration cannot distinguish between benign volume expansion and malicious volumetric attacks.
+
+### 4-Way Ablation Analysis (Averaged Over 5 Seeds)
+
+| Scenario | Rules w/o Conformal | Rules w/ Conformal | Learned w/o Conformal | Learned w/ Conformal | Key Conformal Impact |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **stable_benign** | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Abstains appropriately on un-drifted stream. |
+| **legitimate_growth** | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rules abstain on growth; learned abstains on gray band. |
+| **slow_attack_ramp** | Rec: 83.8% / Abs: 41.3% | Rec: 83.8% / Abs: 44.0% | Rec: 74.3% / Abs: 48.0% | Rec: 71.4% / Abs: 50.0% | Slight increase in abstention (+2.7% / +2.0%) on ambiguous ramp windows. |
+| **attack_in_growth** | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 63.3% / Abs: 62.0% | Rec: 60.0% / Abs: 64.7% | Growth dilutes attack signal; gray band converts borderline hits to UNCERTAIN. |
+| **mimicry_attack** | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Rec: 0.0% / Abs: 100.0% | Both engines abstain on suspicious volumetric surge without signaling failures. |
+
+### Honest Limitations
+1. **Exchangeability Collapse Under Growth**: Pre-trained conformal calibration sets cannot be deployed across changing traffic scales without adaptive rescaling; otherwise, normal growth causes 0.0% empirical coverage and 100% false alarms.
+2. **Discretization Bottleneck**: Achieving fine-grained confidence levels ($\alpha = 0.01$) requires at least 99 pure calibration windows per slice, which does not exist in standard 5G Core deployment baselines without cross-slice pooling.
+3. **Recall vs. Precision Trade-off**: The gray band filter $[0.05, 0.20]$ prevents noisy false alarms on borderline windows, but reduces raw attack recall on stealth attacks that occur concurrently with traffic growth.
+

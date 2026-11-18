@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional
 import uuid
 
@@ -20,8 +21,15 @@ from ..models import (
 from ..schemas import AttributionOutput, ProportionalGrowthTest
 from .detection import detection_service
 from ml_engine.attribution import (
+    AbstainReason,
     AdwinSliceTracker,
     AttributionEngine,
+    AttributionVerdict,
+    ConformalAttributionConfig,
+    ConformalCalibrationManager,
+    DEFAULT_CONFORMAL_CONFIG,
+    LearnedAttributor,
+    RecommendedAction,
     RuleBasedAttributor,
 )
 
@@ -31,10 +39,45 @@ logger = logging.getLogger("commshield.attribution")
 class AttributionService:
     """Manages drift detection and evidence-based attribution workflows."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        attributor_flag: Optional[str] = None,
+        conformal_flag: Optional[bool] = None,
+        conformal_config: Optional[ConformalAttributionConfig] = None,
+    ):
         self.adwin_tracker = AdwinSliceTracker()
-        self.engine = AttributionEngine(default_attributor=RuleBasedAttributor())
+        self.attributor_flag = (attributor_flag or os.getenv("COMMSHIELD_ATTRIBUTOR", "rules")).lower().strip()
+        if self.attributor_flag not in ("rules", "learned"):
+            self.attributor_flag = "rules"
+
+        self.conformal_flag = (
+            conformal_flag
+            if conformal_flag is not None
+            else os.getenv("COMMSHIELD_CONFORMAL", "true").lower() in ("true", "1", "yes")
+        )
+        self.conformal_config = conformal_config or DEFAULT_CONFORMAL_CONFIG
+        self.conformal_manager = ConformalCalibrationManager(config=self.conformal_config)
+
+        self.rule_attributor = RuleBasedAttributor()
+        self.learned_attributor = LearnedAttributor(fallback_attributor=self.rule_attributor)
+        self.engine = AttributionEngine(default_attributor=self.rule_attributor)
+        self.engine.register_attributor("rules", self.rule_attributor)
+        self.engine.register_attributor("learned", self.learned_attributor)
         self.recent_windows_by_slice: Dict[str, List[Dict[str, Any]]] = {}
+
+    def set_attributor(self, flag: str) -> None:
+        """Switch active attributor between 'rules' and 'learned'."""
+        flag_clean = flag.lower().strip()
+        if flag_clean in ("rules", "learned"):
+            self.attributor_flag = flag_clean
+            logger.info("Switched active attribution engine to: %s", self.attributor_flag)
+        else:
+            raise ValueError(f"Invalid attributor flag: {flag}. Must be 'rules' or 'learned'.")
+
+    def set_conformal(self, enabled: bool) -> None:
+        """Enable or disable split conformal calibration and abstention."""
+        self.conformal_flag = bool(enabled)
+        logger.info("Split conformal calibration toggled to: %s", self.conformal_flag)
 
     def reset_trackers(self) -> None:
         """Reset internal ADWIN windows and history caches."""
@@ -130,14 +173,62 @@ class AttributionService:
                 drift_detected=drift_detected,
                 detector_output=detector_output,
                 control_slice_window=control_slice_window,
+                attributor_name=self.attributor_flag,
             )
 
+            supp_signals = attribution_dict.setdefault("supporting_signals", {})
+            produced_by = supp_signals.get("attributor_type", self.attributor_flag)
+            fallback_used = supp_signals.get("fallback_used", False)
+            supp_signals["attributor_configured"] = self.attributor_flag
+            supp_signals["produced_by"] = produced_by
+
             if is_entropy_suppressed:
-                supp_signals = attribution_dict.get("supporting_signals", {})
                 supp_signals["ue_entropy_delta"] = None
                 supp_signals["entropy_drop_triggered"] = False
                 supp_signals["entropy_suppressed"] = True
                 attribution_dict["supporting_signals"] = supp_signals
+
+            # 5b. Split Conformal Calibration & Abstention (if enabled)
+            conformal_details: Dict[str, Any] = {}
+            if self.conformal_flag:
+                if_score = 0.0
+                ae_score = 0.0
+                if detector_output:
+                    if_score = float(detector_output.get("isolation_forest", {}).get("raw_score_negated", 0.0))
+                    ae_score = float(detector_output.get("autoencoder", {}).get("reconstruction_mse", 0.0))
+
+                attr_score = float(supp_signals.get("model_nonconformity_score", 0.0))
+                if attr_score == 0.0 and self.attributor_flag == "rules":
+                    det_agree = supp_signals.get("detector_agreement_state", "NONE")
+                    attr_score = 1.0 if det_agree in ("BOTH_FIRE", "BOTH_FIRED") else (0.5 if "ONLY" in det_agree else 0.05)
+
+                conformal_res = self.conformal_manager.evaluate_scores(
+                    slice_id=slice_id,
+                    test_if_score=if_score,
+                    test_ae_score=ae_score,
+                    test_attr_score=attr_score,
+                )
+                conformal_details = conformal_res["details"]
+                p_if = conformal_res["p_value_isolation_forest"]
+                p_ae = conformal_res["p_value_autoencoder"]
+                p_attr = conformal_res["p_value_attributor"]
+
+                supp_signals["conformal_calibration_enabled"] = True
+                supp_signals["p_value_isolation_forest"] = p_if
+                supp_signals["p_value_autoencoder"] = p_ae
+                supp_signals["p_value_attributor"] = p_attr
+                supp_signals["conformal_gray_band_triggered"] = conformal_details.get("gray_band_triggered", False)
+                supp_signals["detector_disagreement_triggered"] = conformal_details.get("detector_disagreement_triggered", False)
+                supp_signals["calibration_size"] = conformal_details.get("calibration_size", 0)
+                supp_signals["calibration_fallback_used"] = conformal_details.get("is_pooled_calibration", False)
+
+                if conformal_res["should_abstain"]:
+                    attribution_dict["verdict"] = AttributionVerdict.UNCERTAIN.value
+                    attribution_dict["abstain_reason"] = conformal_res["abstain_reason"]
+                    attribution_dict["action"] = RecommendedAction.QUARANTINE.value
+                    attribution_dict["action_recommendation"] = f"Abstain from adaptation; conformal calibration condition triggered ({conformal_res['abstain_reason']})"
+            else:
+                supp_signals["conformal_calibration_enabled"] = False
 
             verdict = attribution_dict["verdict"]
             abstain_reason = attribution_dict.get("abstain_reason")
@@ -192,9 +283,13 @@ class AttributionService:
                     "description": "Evaluated Jensen-Shannon divergence, per-UE rates, and threat indicators",
                     "timestamp": now_dt.isoformat(),
                     "details": {
+                        "attributor_configured": self.attributor_flag,
+                        "produced_by": produced_by,
+                        "fallback_used": fallback_used,
                         "jsd_divergence": prop_test_data.get("jsd_divergence", 0.0),
                         "jsd_threshold": prop_test_data.get("jsd_null_threshold_99th", 0.035),
                         "proportional_passed": prop_test_data.get("passed", False),
+                        "conformal_calibration": conformal_details if self.conformal_flag else {"enabled": False},
                         "supporting_signals": attribution_dict.get("supporting_signals", {}),
                     },
                 },
