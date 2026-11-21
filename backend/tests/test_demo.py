@@ -169,5 +169,30 @@ class TestDemoMode(unittest.TestCase):
             self.assertEqual(scene_3.source_badge, "Simulated twin")
 
 
+    def test_demo_endpoint_returns_four_scenarios_and_toggle_renders(self):
+        """Verify that demo endpoint returns exactly 4 scenarios and frontend toggle renders."""
+        # 1. API endpoint returns exactly 4 scenarios
+        resp = get_demo_scenarios()
+        self.assertEqual(len(resp.scenarios), 4)
+        expected_ids = ["baseline", "approved_onboarding", "unprovisioned_device", "hidden_ramp"]
+        self.assertEqual([s.id for s in resp.scenarios], expected_ids)
+
+        # 2. Frontend toggle component exists and is rendered in App.tsx
+        control_bar_path = PROJECT_ROOT / "frontend" / "src" / "components" / "DemoControlBar.tsx"
+        self.assertTrue(control_bar_path.is_file(), "DemoControlBar.tsx component must exist")
+        with open(control_bar_path, "r", encoding="utf-8") as f:
+            bar_content = f.read()
+        self.assertIn("Demo Mode", bar_content)
+        self.assertIn("setIsDemoMode", bar_content)
+        self.assertIn("Presentation", bar_content)
+
+        app_path = PROJECT_ROOT / "frontend" / "src" / "App.tsx"
+        self.assertTrue(app_path.is_file(), "App.tsx must exist")
+        with open(app_path, "r", encoding="utf-8") as f:
+            app_content = f.read()
+        self.assertIn("<DemoControlBar />", app_content)
+        self.assertIn("<DemoProvider>", app_content)
+
+
 if __name__ == "__main__":
     unittest.main()
