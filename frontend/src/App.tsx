@@ -200,7 +200,7 @@ const AppLayout: React.FC = () => {
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-mono tracking-wide truncate">ONLINE • ENCLAVE 04</span>
+                <span className="text-[10px] text-emerald-400 font-mono tracking-wide truncate">ONLINE • ACTIVE SESSION</span>
               </div>
             </div>
             <button
@@ -239,7 +239,7 @@ const AppLayout: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
               </span>
-              <span className="font-mono text-[11px] font-semibold">UPF-EDGE-09</span>
+              <span className="font-mono text-[11px] font-semibold">5G-CORE-UPF</span>
             </div>
           </div>
 

@@ -788,7 +788,7 @@ export const GovernanceView: React.FC = () => {
                 <TrendingUp className="w-5 h-5 text-primary" />
                 <h2 className="font-semibold text-sm text-on-surface">Cumulative Drift Budget</h2>
               </div>
-              <span className="font-mono text-xs text-muted">UPF-EDGE-09</span>
+              <span className="font-mono text-xs text-muted">5G-CORE-UPF</span>
             </div>
 
             {/* Drift Gauges List */}

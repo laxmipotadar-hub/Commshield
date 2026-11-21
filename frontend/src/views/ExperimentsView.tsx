@@ -815,7 +815,7 @@ export const ExperimentsView: React.FC = () => {
               Rigorous Statistical Harness
             </span>
             <span className="font-mono text-xs text-on-surface-variant">
-              N = 4,829,140 Flow Vectors
+              N = 11,870 Benchmark Windows
             </span>
             <span className="text-outline">•</span>
             <span className="font-mono text-xs text-emerald-600 font-medium">

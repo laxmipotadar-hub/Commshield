@@ -310,7 +310,7 @@ export const OverviewPage: React.FC = () => {
             <span className="text-outline">•</span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              eBPF Probe: UPF-EDGE-09 Synced
+              eBPF Probe: 5G UPF Core Synced
             </span>
           </div>
         </div>
