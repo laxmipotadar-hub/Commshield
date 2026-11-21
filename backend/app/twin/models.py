@@ -303,6 +303,60 @@ class HistoricalNetworkEvent(BaseModel):
 
 
 # ---------------------------------------------------------
+# Cyber Defence Operations: Traffic Breakdown, Recommendations & Incidents
+# ---------------------------------------------------------
+
+class TrafficBreakdown(BaseModel):
+    """Real-time split of legitimate versus malicious packet volume."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    normal_traffic_mbps: float = 75.0
+    current_traffic_mbps: float = 75.0
+    malicious_traffic_mbps: float = 0.0
+    legitimate_traffic_mbps: float = 75.0
+    packet_rate_pps: float = 1200.0
+    malicious_blocked_mbps: float = 0.0
+    collateral_dropped_mbps: float = 0.0
+    legitimate_preserved_pct: float = 100.0
+
+
+class MitigationRecommendation(BaseModel):
+    """Actionable defence recommendation produced by policy decision engine."""
+    recommendation_id: str
+    attack_type: str
+    proposed_action: MitigationActionType
+    reason: str
+    target_component: str
+    target_slice: Optional[str] = None
+    expected_effect: str
+    potential_side_effects: str
+    collateral_risk: str = "LOW"  # "LOW", "MEDIUM", "HIGH"
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    approved: bool = False
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class IncidentRecord(BaseModel):
+    """Complete forensic incident record generated post-attack."""
+    incident_id: str
+    attack_type: str
+    severity: str
+    target_component: str
+    start_time: str
+    detection_time: Optional[str] = None
+    mitigation_time: Optional[str] = None
+    verification_time: Optional[str] = None
+    recovery_time: Optional[str] = None
+    affected_nodes: List[str] = Field(default_factory=list)
+    applied_policies: List[str] = Field(default_factory=list)
+    peak_malicious_traffic_mbps: float = 0.0
+    blocked_packets_count: int = 0
+    legitimate_preserved_pct: float = 100.0
+    verification_status: str = "CONTAINMENT_VERIFIED"  # "CONTAINMENT_VERIFIED", "PARTIAL_MITIGATION", "MITIGATION_FAILED"
+    final_outcome: str = "Recovered nominal operations"
+    evidence: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------
 # Global Digital Twin State Snapshot
 # ---------------------------------------------------------
 
@@ -324,5 +378,8 @@ class DigitalTwinStateSnapshot(BaseModel):
     slices: Dict[str, NetworkSliceInfo]
     active_threats: List[ThreatDetectionResult] = Field(default_factory=list)
     active_mitigations: List[MitigationActionRecord] = Field(default_factory=list)
+    active_recommendations: List[MitigationRecommendation] = Field(default_factory=list)
+    active_incidents: List[IncidentRecord] = Field(default_factory=list)
+    traffic_breakdown: Optional[TrafficBreakdown] = None
     recent_events: List[HistoricalNetworkEvent] = Field(default_factory=list)
     resilience: Optional[ResilienceMetrics] = None

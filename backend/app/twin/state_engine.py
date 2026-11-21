@@ -25,8 +25,10 @@ from .models import (
     DataClassification,
     DigitalTwinStateSnapshot,
     HistoricalNetworkEvent,
+    IncidentRecord,
     MitigationActionRecord,
     MitigationActionType,
+    MitigationRecommendation,
     MitigationStatus,
     NetworkComponent,
     NetworkConnection,
@@ -37,6 +39,7 @@ from .models import (
     SecurityStatus,
     TelemetryMetric,
     ThreatDetectionResult,
+    TrafficBreakdown,
 )
 from .topology import (
     build_canonical_components,
@@ -68,7 +71,17 @@ class CentralDigitalTwinStateEngine:
         # Incident, threat, mitigation, and historical logs
         self._active_threats: List[ThreatDetectionResult] = []
         self._active_mitigations: List[MitigationActionRecord] = []
+        self._recommendations: List[MitigationRecommendation] = []
+        self._incidents: List[IncidentRecord] = []
+        self._traffic_breakdown: TrafficBreakdown = TrafficBreakdown()
         self._events: List[HistoricalNetworkEvent] = []
+
+        # Cyber Defence Operation Configurations
+        self._detection_sensitivity: str = "MEDIUM"  # "LOW", "MEDIUM", "HIGH"
+        self._anomaly_threshold: float = 0.75
+        self._ai_detection_enabled: bool = True
+        self._defence_mode: str = "MANUAL"  # "AUTOMATIC", "MANUAL"
+        self._simulation_speed: float = 1.0  # 0.5, 1.0, 2.0, 5.0
 
         # Current attack propagation & blast radius analysis
         self._current_propagation: Optional[AttackPropagationResult] = None
@@ -184,6 +197,9 @@ class CentralDigitalTwinStateEngine:
                 slices=deepcopy(self._slices),
                 active_threats=list(self._active_threats),
                 active_mitigations=list(self._active_mitigations),
+                active_recommendations=list(self._recommendations),
+                active_incidents=list(self._incidents),
+                traffic_breakdown=deepcopy(self._traffic_breakdown),
                 recent_events=list(self._events[-20:]),
                 resilience=deepcopy(self._resilience),
             )
@@ -411,6 +427,160 @@ class CentralDigitalTwinStateEngine:
             return [deepcopy(e) for e in reversed(evs[-limit:])]
 
     # -----------------------------------------------------
+    # Cyber Defence Operations: Traffic, Recommendations & Incidents
+    # -----------------------------------------------------
+
+    def get_traffic_breakdown(self) -> TrafficBreakdown:
+        with self._lock:
+            return deepcopy(self._traffic_breakdown)
+
+    def update_traffic_breakdown(self, **kwargs) -> TrafficBreakdown:
+        with self._lock:
+            for k, v in kwargs.items():
+                if hasattr(self._traffic_breakdown, k):
+                    setattr(self._traffic_breakdown, k, v)
+            self._traffic_breakdown.timestamp = datetime.now(timezone.utc).isoformat()
+            self._state_version += 1
+            self._notify_subscribers("TRAFFIC_BREAKDOWN_UPDATED", self._traffic_breakdown.model_dump())
+            return deepcopy(self._traffic_breakdown)
+
+    def get_recommendations(self) -> List[MitigationRecommendation]:
+        with self._lock:
+            return deepcopy(self._recommendations)
+
+    def add_recommendation(self, rec: MitigationRecommendation) -> None:
+        with self._lock:
+            self._recommendations.append(rec)
+            self._state_version += 1
+            self.record_event(
+                event_type="RECOMMENDATION_GENERATED",
+                source="policy_decision_engine",
+                component_id=rec.target_component,
+                severity="INFO",
+                status="PROPOSED",
+                description=f"Policy engine recommended {rec.proposed_action.value}: {rec.reason}",
+                payload=rec.model_dump(),
+            )
+            self._notify_subscribers("RECOMMENDATION_ADDED", rec.model_dump())
+
+    def approve_recommendation(self, rec_id: str) -> Optional[MitigationRecommendation]:
+        with self._lock:
+            for rec in self._recommendations:
+                if rec.recommendation_id == rec_id:
+                    rec.approved = True
+                    self._state_version += 1
+                    self.record_event(
+                        event_type="RECOMMENDATION_APPROVED",
+                        source="operator_interface",
+                        component_id=rec.target_component,
+                        severity="INFO",
+                        status="APPROVED",
+                        description=f"Operator approved mitigation recommendation {rec_id}.",
+                        payload=rec.model_dump(),
+                    )
+                    self._notify_subscribers("RECOMMENDATION_APPROVED", rec.model_dump())
+                    return deepcopy(rec)
+            return None
+
+    def clear_recommendations(self) -> None:
+        with self._lock:
+            self._recommendations.clear()
+            self._state_version += 1
+
+    def get_incidents(self) -> List[IncidentRecord]:
+        with self._lock:
+            return deepcopy(self._incidents)
+
+    def get_incident(self, incident_id: str) -> Optional[IncidentRecord]:
+        with self._lock:
+            for inc in self._incidents:
+                if inc.incident_id == incident_id:
+                    return deepcopy(inc)
+            return None
+
+    def record_incident(self, incident: IncidentRecord) -> None:
+        with self._lock:
+            for idx, existing in enumerate(self._incidents):
+                if existing.incident_id == incident.incident_id:
+                    self._incidents[idx] = incident
+                    self._state_version += 1
+                    return
+            self._incidents.append(incident)
+            self._state_version += 1
+            self.record_event(
+                event_type="INCIDENT_RECORDED",
+                source="incident_manager",
+                component_id=incident.target_component,
+                severity="INFO",
+                status=incident.verification_status,
+                description=f"Incident {incident.incident_id} ({incident.attack_type}) archived into forensic ledger.",
+                payload=incident.model_dump(),
+            )
+            self._notify_subscribers("INCIDENT_RECORDED", incident.model_dump())
+
+    def get_detection_config(self) -> Dict[str, Any]:
+        with self._lock:
+            return {
+                "sensitivity": self._detection_sensitivity,
+                "threshold": self._anomaly_threshold,
+                "ai_detection_enabled": self._ai_detection_enabled,
+                "active_methods": ["ISOLATION_FOREST", "AUTOENCODER", "CUSUM_ADWIN", "RULE_3GPP"],
+            }
+
+    def set_detection_config(
+        self,
+        sensitivity: Optional[str] = None,
+        threshold: Optional[float] = None,
+        ai_detection_enabled: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        with self._lock:
+            if sensitivity in ("LOW", "MEDIUM", "HIGH"):
+                self._detection_sensitivity = sensitivity
+                if sensitivity == "LOW":
+                    self._anomaly_threshold = 0.88
+                elif sensitivity == "MEDIUM":
+                    self._anomaly_threshold = 0.75
+                elif sensitivity == "HIGH":
+                    self._anomaly_threshold = 0.60
+            if threshold is not None:
+                self._anomaly_threshold = threshold
+            if ai_detection_enabled is not None:
+                self._ai_detection_enabled = ai_detection_enabled
+            self._state_version += 1
+            return self.get_detection_config()
+
+    def get_defence_mode(self) -> str:
+        with self._lock:
+            return self._defence_mode
+
+    def set_defence_mode(self, mode: str) -> str:
+        with self._lock:
+            if mode.upper() in ("AUTOMATIC", "MANUAL"):
+                self._defence_mode = mode.upper()
+                self._state_version += 1
+                self.record_event(
+                    event_type="DEFENCE_MODE_CHANGED",
+                    source="operator_interface",
+                    severity="INFO",
+                    status=self._defence_mode,
+                    description=f"CommShield operating mode changed to {self._defence_mode} DEFENCE.",
+                )
+                self._notify_subscribers("DEFENCE_MODE_CHANGED", {"mode": self._defence_mode})
+            return self._defence_mode
+
+    def get_simulation_speed(self) -> float:
+        with self._lock:
+            return self._simulation_speed
+
+    def set_simulation_speed(self, speed: float) -> float:
+        with self._lock:
+            if speed in (0.5, 1.0, 2.0, 5.0):
+                self._simulation_speed = speed
+                self._state_version += 1
+                self._notify_subscribers("SIMULATION_SPEED_CHANGED", {"speed": self._simulation_speed})
+            return self._simulation_speed
+
+    # -----------------------------------------------------
     # Reset to Clean Baseline
     # -----------------------------------------------------
 
@@ -422,6 +592,8 @@ class CentralDigitalTwinStateEngine:
             self._slices = build_canonical_slices()
             self._active_threats.clear()
             self._active_mitigations.clear()
+            self._recommendations.clear()
+            self._traffic_breakdown = TrafficBreakdown()
             self._current_propagation = None
             self._active_scenario_id = None
             self._active_scenario_metadata = {}

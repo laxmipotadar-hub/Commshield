@@ -22,6 +22,8 @@ from .models import (
     AttackPropagationResult,
     ConnectionStatus,
     DataClassification,
+    MitigationActionType,
+    MitigationRecommendation,
     MitigationStatus,
     OperationalStatus,
     ScenarioLifecycleState,
@@ -29,11 +31,29 @@ from .models import (
     SecurityStatus,
     TelemetryMetric,
     ThreatDetectionResult,
+    TrafficBreakdown,
 )
 from .propagation import AttackPropagationEngine
 from .state_engine import CentralDigitalTwinStateEngine, twin_state_engine
 
 logger = logging.getLogger("commshield.twin.scenarios")
+
+
+SCENARIO_ALIASES: Dict[str, str] = {
+    "volumetric ddos": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "ddos": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "ddos volumetric traffic flood": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "signalling storm": ScenarioType.AUTH_ANOMALY.value,
+    "signaling storm": ScenarioType.AUTH_ANOMALY.value,
+    "auth anomaly": ScenarioType.AUTH_ANOMALY.value,
+    "slow onboarding": ScenarioType.AUTH_ANOMALY.value,
+    "network congestion": ScenarioType.SLICE_RESOURCE_ABUSE.value,
+    "congestion": ScenarioType.SLICE_RESOURCE_ABUSE.value,
+    "slice abuse": ScenarioType.SLICE_RESOURCE_ABUSE.value,
+    "suspicious ue": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
+    "suspicious ue behaviour": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
+    "gateway compromise": ScenarioType.GATEWAY_COMPROMISE.value,
+}
 
 
 SCENARIO_CATALOG: Dict[str, Dict[str, Any]] = {
@@ -212,16 +232,32 @@ class ScenarioSimulationEngine:
                     "message": "A scenario is currently executing. Stop or reset before starting another.",
                 }
 
-            # Lookup catalog definition
-            scen_info = SCENARIO_CATALOG.get(scenario_type)
+            # Lookup catalog definition with alias support
+            lookup_key = SCENARIO_ALIASES.get(scenario_type.strip().lower(), scenario_type)
+            scen_info = SCENARIO_CATALOG.get(lookup_key)
             if not scen_info:
                 # Fallback to DDOS
                 scenario_type = ScenarioType.DDOS_TRAFFIC_FLOOD.value
                 scen_info = SCENARIO_CATALOG[scenario_type]
+            else:
+                scenario_type = lookup_key
 
             target = target_component or scen_info["default_target"]
             entry = entry_point or scen_info["default_entry"]
             scen_id = f"scen-{scenario_type.lower()}-{int(time.time())}"
+
+            # Initialize initial elevated traffic breakdown
+            init_mal = round(45.0 * intensity, 1)
+            self._state_engine.update_traffic_breakdown(
+                normal_traffic_mbps=75.0,
+                current_traffic_mbps=round(75.0 + init_mal, 1),
+                malicious_traffic_mbps=init_mal,
+                legitimate_traffic_mbps=75.0,
+                packet_rate_pps=round(1200.0 + (2800.0 * intensity), 0),
+                malicious_blocked_mbps=0.0,
+                collateral_dropped_mbps=0.0,
+                legitimate_preserved_pct=100.0,
+            )
 
             self._stop_event.clear()
             self._pause_event.clear()
@@ -393,6 +429,16 @@ class ScenarioSimulationEngine:
             )
         )
 
+        # Update real-time traffic breakdown
+        mal_rate = round(110.0 * intensity, 1)
+        self._state_engine.update_traffic_breakdown(
+            normal_traffic_mbps=75.0,
+            current_traffic_mbps=round(75.0 + mal_rate, 1),
+            malicious_traffic_mbps=mal_rate,
+            legitimate_traffic_mbps=74.5,
+            packet_rate_pps=round(1200.0 + (5500.0 * intensity), 0),
+        )
+
     def _apply_analysing_effects(self, entry: str, target: str, intensity: float) -> None:
         """Deepening impact reaching target component and adjacent nodes."""
         self._state_engine.update_component(
@@ -492,6 +538,78 @@ class ScenarioSimulationEngine:
             },
         )
         self._state_engine.record_threat(threat)
+
+        # Update peak malicious traffic breakdown
+        peak_mal = round(175.0 * intensity, 1)
+        self._state_engine.update_traffic_breakdown(
+            normal_traffic_mbps=75.0,
+            current_traffic_mbps=round(75.0 + peak_mal, 1),
+            malicious_traffic_mbps=peak_mal,
+            legitimate_traffic_mbps=71.8,
+            packet_rate_pps=round(1200.0 + (14500.0 * intensity), 0),
+            legitimate_preserved_pct=95.7,
+        )
+
+        # Policy Decision Engine: Generate actionable mitigation recommendation
+        rec_id = f"rec-{int(time.time())}"
+        scen_type = catalog_entry.get("scenario_type")
+        if scen_type == ScenarioType.DDOS_TRAFFIC_FLOOD:
+            prop_action = MitigationActionType.RATE_LIMITING
+            reason = "High-volume UDP/GTP-U flood saturating UPF user-plane ingress interface."
+            exp_effect = "Enforce token-bucket bandwidth throttle to cap malicious packet rate while preserving legitimate PDU sessions."
+            side_eff = "Minor buffer queuing latency during peak burst traffic."
+            risk = "LOW"
+        elif scen_type == ScenarioType.AUTH_ANOMALY:
+            prop_action = MitigationActionType.RATE_LIMITING
+            reason = "Anomalous N2/NGAP signaling request flood targeting AMF/AUSF."
+            exp_effect = "Throttle unauthenticated 5G-AKA registration bursts."
+            side_eff = "New device initial registration delay up to 1.5 seconds."
+            risk = "MEDIUM"
+        elif scen_type == ScenarioType.SLICE_RESOURCE_ABUSE:
+            prop_action = MitigationActionType.SLICE_PROTECTION
+            reason = "Bandwidth hogging on eMBB slice starving URLLC mission-critical allocation."
+            exp_effect = "Enforce PCF S-NSSAI bandwidth quotas and prioritize URLLC slices."
+            side_eff = "eMBB non-critical video streaming reduced to standard definition."
+            risk = "LOW"
+        elif scen_type == ScenarioType.SUSPICIOUS_UE_ACTIVITY:
+            prop_action = MitigationActionType.SUSPICIOUS_SOURCE_ISOLATION
+            reason = "Compromised UE conducting internal subnet scanning and unauthorized lateral probing."
+            exp_effect = "Immediately revoke radio access and isolate rogue device from 5G core."
+            side_eff = "Device loses all 5G network connectivity."
+            risk = "LOW"
+        else:
+            prop_action = MitigationActionType.TRAFFIC_RESTRICTION
+            reason = f"Security anomaly detected on {target} exceeding safety envelope."
+            exp_effect = "Filter and drop malformed packets matching anomaly vector."
+            side_eff = "Zero impact on conforming legitimate flows."
+            risk = "LOW"
+
+        rec = MitigationRecommendation(
+            recommendation_id=rec_id,
+            attack_type=catalog_entry.get("name", "Unknown Threat"),
+            proposed_action=prop_action,
+            reason=reason,
+            target_component=target,
+            target_slice=aff_slice if aff_slice != "ALL" else None,
+            expected_effect=exp_effect,
+            potential_side_effects=side_eff,
+            collateral_risk=risk,
+            parameters={"intensity": intensity, "rate_limit_mbps": 100.0},
+            approved=False,
+        )
+        self._state_engine.add_recommendation(rec)
+
+        # In AUTOMATIC DEFENCE mode, immediately approve and execute
+        if self._state_engine.get_defence_mode() == "AUTOMATIC":
+            from .mitigation import mitigation_engine
+            self._state_engine.approve_recommendation(rec_id)
+            mitigation_engine.apply_mitigation(
+                action_type=prop_action.value,
+                target_component=target,
+                target_slice=aff_slice if aff_slice != "ALL" else None,
+                parameters={"auto_defence": True, "intensity": intensity},
+                auto_verify=True,
+            )
 
     def pause_scenario(self) -> Dict[str, Any]:
         """Pause active scenario progression."""

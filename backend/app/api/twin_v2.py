@@ -26,14 +26,17 @@ from ..twin.models import (
     AttackPropagationResult,
     DigitalTwinStateSnapshot,
     HistoricalNetworkEvent,
+    IncidentRecord,
     MitigationActionRecord,
     MitigationActionType,
+    MitigationRecommendation,
     NetworkComponent,
     NetworkConnection,
     NetworkSliceInfo,
     ResilienceMetrics,
     ScenarioType,
     TelemetryMetric,
+    TrafficBreakdown,
     WhatIfExperimentRecord,
 )
 from ..twin.propagation import AttackPropagationEngine
@@ -79,6 +82,32 @@ class WhatIfRequest(BaseModel):
     scenario_type: str = Field("UPF_OUTAGE", description="Hypothetical scenario type")
     target_component: str = Field("upf-01", description="Target component ID")
     parameters: Dict[str, Any] = Field(default_factory=dict, description="Custom parameters")
+
+
+class ApproveRecommendationRequest(BaseModel):
+    recommendation_id: str = Field(..., description="Recommendation ID to approve")
+
+
+class SetDefenceModeRequest(BaseModel):
+    mode: str = Field(..., description="Operating mode: AUTOMATIC or MANUAL")
+
+
+class SetDetectionConfigRequest(BaseModel):
+    sensitivity: Optional[str] = Field(None, description="Sensitivity: LOW, MEDIUM, or HIGH")
+    threshold: Optional[float] = Field(None, description="Anomaly threshold between 0.0 and 1.0")
+    ai_detection_enabled: Optional[bool] = Field(None, description="Toggle AI detection engine")
+
+
+class SetSpeedRequest(BaseModel):
+    speed: float = Field(..., description="Simulation speed: 0.5, 1.0, 2.0, or 5.0")
+
+
+class VerifyMitigationRequest(BaseModel):
+    action_id: Optional[str] = Field(None, description="Specific mitigation action ID or omit for latest")
+
+
+class RollbackPolicyRequest(BaseModel):
+    action_id: str = Field(..., description="Action ID to roll back")
 
 
 # -------------------------------------------------------------
@@ -281,6 +310,178 @@ def get_mitigation_status():
         "history": [m.model_dump() for m in mitigation_engine.get_action_history()],
         "lifecycle_state": twin_state_engine.get_lifecycle_state().value,
     }
+
+
+# -------------------------------------------------------------
+# Cyber Defence Operations & Intelligent Defence Operations Centre
+# -------------------------------------------------------------
+
+@router.get("/traffic/breakdown", response_model=TrafficBreakdown)
+def get_traffic_breakdown():
+    """Retrieve real-time split of normal, legitimate, malicious, and blocked traffic."""
+    return twin_state_engine.get_traffic_breakdown()
+
+
+@router.get("/defence/recommendations")
+def get_defence_recommendations():
+    """Retrieve active mitigation recommendations proposed by policy decision engine."""
+    recs = twin_state_engine.get_recommendations()
+    return {"recommendations": [r.model_dump() for r in recs], "count": len(recs)}
+
+
+@router.post("/defence/approve")
+def approve_recommendation(req: ApproveRecommendationRequest):
+    """Operator explicitly approves a recommended mitigation action."""
+    rec = twin_state_engine.approve_recommendation(req.recommendation_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail=f"Recommendation '{req.recommendation_id}' not found.")
+    
+    # Automatically apply approved action
+    apply_result = mitigation_engine.apply_mitigation(
+        action_type=rec.proposed_action.value,
+        target_component=rec.target_component,
+        target_slice=rec.target_slice,
+        parameters=rec.parameters,
+        auto_verify=True,
+    )
+    return {
+        "status": "APPROVED_AND_EXECUTED",
+        "recommendation": rec.model_dump(),
+        "execution": apply_result,
+    }
+
+
+@router.post("/defence/execute")
+def execute_defence_action(req: ApplyMitigationRequest):
+    """Manually execute specific mitigation defence action."""
+    return mitigation_engine.apply_mitigation(
+        action_type=req.action_type,
+        target_component=req.target_component,
+        target_slice=req.target_slice,
+        parameters=req.parameters,
+        auto_verify=req.auto_verify,
+    )
+
+
+@router.post("/defence/verify")
+def verify_defence_containment(req: VerifyMitigationRequest):
+    """Trigger verification engine audit to assess containment efficacy and legitimate traffic safety."""
+    return mitigation_engine.verify_mitigation(req.action_id)
+
+
+@router.post("/defence/recover")
+def initiate_network_recovery():
+    """Initiate complete network recovery returning metrics and components to nominal state."""
+    return mitigation_engine.initiate_recovery()
+
+
+@router.post("/defence/rollback")
+def rollback_defence_policy(req: RollbackPolicyRequest):
+    """Roll back an applied mitigation action and restore baseline parameters."""
+    return mitigation_engine.rollback_policy(req.action_id)
+
+
+@router.get("/defence/mode")
+def get_defence_mode():
+    """Retrieve current defence operating mode: AUTOMATIC or MANUAL."""
+    return {"mode": twin_state_engine.get_defence_mode()}
+
+
+@router.post("/defence/mode")
+def set_defence_mode(req: SetDefenceModeRequest):
+    """Switch operating mode between AUTOMATIC and MANUAL defence."""
+    new_mode = twin_state_engine.set_defence_mode(req.mode)
+    return {"mode": new_mode, "status": "MODE_UPDATED"}
+
+
+@router.get("/detection/config")
+def get_detection_config():
+    """Retrieve active detection configuration, sensitivity, and thresholds."""
+    return twin_state_engine.get_detection_config()
+
+
+@router.post("/detection/config")
+def set_detection_config(req: SetDetectionConfigRequest):
+    """Update detection sensitivity (LOW, MEDIUM, HIGH) and threshold."""
+    return twin_state_engine.set_detection_config(
+        sensitivity=req.sensitivity,
+        threshold=req.threshold,
+        ai_detection_enabled=req.ai_detection_enabled,
+    )
+
+
+@router.get("/speed")
+def get_simulation_speed():
+    """Retrieve active simulation speed multiplier."""
+    return {"speed": twin_state_engine.get_simulation_speed()}
+
+
+@router.post("/speed")
+def set_simulation_speed(req: SetSpeedRequest):
+    """Set simulation speed multiplier (0.5x, 1x, 2x, 5x)."""
+    speed = twin_state_engine.set_simulation_speed(req.speed)
+    return {"speed": speed, "status": "SPEED_UPDATED"}
+
+
+@router.get("/incidents")
+def list_incidents():
+    """Retrieve immutable forensic ledger of historical attack incidents."""
+    incidents = twin_state_engine.get_incidents()
+    return {"incidents": [inc.model_dump() for inc in incidents], "count": len(incidents)}
+
+
+@router.get("/incidents/{incident_id}")
+def get_incident_detail(incident_id: str):
+    """Retrieve full forensic detail for a single incident."""
+    inc = twin_state_engine.get_incident(incident_id)
+    if not inc:
+        raise HTTPException(status_code=404, detail=f"Incident '{incident_id}' not found.")
+    return inc.model_dump()
+
+
+@router.get("/incidents/{incident_id}/report")
+def export_incident_report(incident_id: str, format: str = Query("markdown", description="markdown or json")):
+    """Export formatted incident forensic report in Markdown or JSON format."""
+    inc = twin_state_engine.get_incident(incident_id)
+    if not inc:
+        raise HTTPException(status_code=404, detail=f"Incident '{incident_id}' not found.")
+    
+    if format.lower() == "json":
+        return inc.model_dump()
+
+    md_report = f"""# COMMSHIELD CYBER DEFENCE INCIDENT REPORT
+## Incident Reference: `{inc.incident_id}`
+
+- **Attack Classification:** {inc.attack_type}
+- **Severity Rating:** {inc.severity}
+- **Target Infrastructure:** `{inc.target_component}`
+- **Containment Verdict:** `{inc.verification_status}`
+- **Legitimate Traffic Preserved:** {inc.legitimate_preserved_pct}%
+- **Peak Malicious Ingress:** {inc.peak_malicious_traffic_mbps} Mbps
+- **Packets Blocked:** {inc.blocked_packets_count:,}
+
+### Forensic Timeline
+- **Attack Initiated:** {inc.start_time}
+- **Threat Detected:** {inc.detection_time or 'N/A'}
+- **Policy Applied:** {inc.mitigation_time or 'N/A'}
+- **Mitigation Verified:** {inc.verification_time or 'N/A'}
+- **Full Recovery:** {inc.recovery_time or 'N/A'}
+
+### Impacted Infrastructure Nodes
+{chr(10).join(f"- `{n}`" for n in inc.affected_nodes)}
+
+### Enacted Mitigation Policies
+{chr(10).join(f"- **{p}**" for p in inc.applied_policies)}
+
+### Telemetry Evidence & Verification Checklist
+```json
+{json.dumps(inc.evidence, indent=2)}
+```
+
+### Outcome Summary
+> {inc.final_outcome}
+"""
+    return {"incident_id": inc.incident_id, "format": "markdown", "report": md_report}
 
 
 # -------------------------------------------------------------

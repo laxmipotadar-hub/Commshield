@@ -17,6 +17,8 @@ interface ThreeTwinSceneProps {
   reducedMotion?: boolean;
   activeCameraPreset?: string;
   onPresetChange?: (preset: string) => void;
+  traceAttackPath?: boolean;
+  lifecycleState?: string;
 }
 
 export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
@@ -32,6 +34,8 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   reducedMotion = false,
   activeCameraPreset = 'full',
   onPresetChange,
+  traceAttackPath = false,
+  lifecycleState = 'NORMAL',
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -39,6 +43,42 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const animFrameId = useRef<number | null>(null);
+
+  // 8-Layer Visibility Controls
+  const [layers, setLayers] = useState<{
+    physical: boolean;
+    connectivity: boolean;
+    security: boolean;
+    legitimateTraffic: boolean;
+    suspiciousTraffic: boolean;
+    attackSources: boolean;
+    enforcementPoints: boolean;
+  }>({
+    physical: true,
+    connectivity: true,
+    security: true,
+    legitimateTraffic: true,
+    suspiciousTraffic: true,
+    attackSources: true,
+    enforcementPoints: true,
+  });
+
+  const toggleLayer = (layerKey: keyof typeof layers) => {
+    setLayers((prev) => ({ ...prev, [layerKey]: !prev[layerKey] }));
+  };
+
+  const toggleAllLayers = () => {
+    const allOn = Object.values(layers).every(Boolean);
+    setLayers({
+      physical: !allOn,
+      connectivity: !allOn,
+      security: !allOn,
+      legitimateTraffic: !allOn,
+      suspiciousTraffic: !allOn,
+      attackSources: !allOn,
+      enforcementPoints: !allOn,
+    });
+  };
 
   // Target camera positions for smooth interpolation
   const targetCamPos = useRef<THREE.Vector3>(new THREE.Vector3(0, 48, 64));
@@ -208,6 +248,115 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     // Interactive object lookup containers
     const interactiveMeshes: THREE.Mesh[] = [];
     const nodePositionMap = new Map<string, THREE.Vector3>();
+
+    // CommShield Security Fabric Entities
+    let aiEngineMesh: THREE.Mesh | null = null;
+    const sensorWaveMeshes: THREE.Mesh[] = [];
+    const enforcementMeshes: THREE.Mesh[] = [];
+
+    if (layers.security) {
+      // 1. CommShield AI Detection & Decision Engine Core (Floating Diamond above Data Center)
+      const aiGeo = new THREE.OctahedronGeometry(1.6);
+      const isThreat = lifecycleState === 'THREAT_DETECTED' || lifecycleState === 'ATTACK_INITIATED';
+      const isAnalysing = lifecycleState === 'ANALYSING' || lifecycleState === 'SUSPICIOUS_ACTIVITY';
+      const isRecoveredOrMit = mitigationActive || lifecycleState === 'RECOVERED' || lifecycleState === 'VERIFYING_MITIGATION';
+      
+      const aiColor = isRecoveredOrMit ? 0x10b981 : isThreat ? 0xef4444 : isAnalysing ? 0xf59e0b : 0x06b6d4;
+      const aiMat = new THREE.MeshStandardMaterial({
+        color: aiColor,
+        roughness: 0.15,
+        metalness: 0.85,
+        emissive: aiColor,
+        emissiveIntensity: 0.9,
+      });
+      aiEngineMesh = new THREE.Mesh(aiGeo, aiMat);
+      aiEngineMesh.position.set(0, 9.5, 0); // Directly above 5G Core NOC
+      aiEngineMesh.userData = {
+        id: 'sec-ai-engine',
+        label: 'CommShield AI Detection & Decision Engine',
+        role: 'Autonomous Cyber Defence Fabric',
+        status: isThreat ? 'Threat Active' : isRecoveredOrMit ? 'Mitigated / Protected' : 'Monitoring',
+      };
+      scene.add(aiEngineMesh);
+      interactiveMeshes.push(aiEngineMesh);
+
+      // AI Halo Ring
+      const haloGeo = new THREE.RingGeometry(2.2, 2.35, 32);
+      const haloMat = new THREE.MeshBasicMaterial({ color: aiColor, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+      const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+      haloMesh.rotation.x = Math.PI / 2;
+      aiEngineMesh.add(haloMesh);
+
+      // 2. Monitoring Sensor Probes on Macro Cell Towers
+      const towerSensorPositions = [
+        new THREE.Vector3(-28.0, 14.5, -20.0),
+        new THREE.Vector3(28.0, 14.5, -20.0),
+        new THREE.Vector3(28.0, 14.5, 20.0),
+        new THREE.Vector3(-28.0, 14.5, 20.0),
+      ];
+      towerSensorPositions.forEach((pos, idx) => {
+        const sGeo = new THREE.TorusGeometry(1.5, 0.07, 6, 24);
+        const sMat = new THREE.MeshBasicMaterial({
+          color: isThreat && idx === 0 ? 0xef4444 : 0x38bdf8,
+          transparent: true,
+          opacity: 0.8,
+        });
+        const sensorRing = new THREE.Mesh(sGeo, sMat);
+        sensorRing.rotation.x = Math.PI / 2;
+        sensorRing.position.copy(pos);
+        sensorRing.userData = { id: `sensor-gnb-${idx + 1}`, label: `CommShield RF Sensor Probe #0${idx + 1}`, role: 'Security Telemetry Probe', status: 'Active' };
+        scene.add(sensorRing);
+        sensorWaveMeshes.push(sensorRing);
+        interactiveMeshes.push(sensorRing);
+      });
+    }
+
+    // 3. Policy Enforcement Gateways (Visual Barrier Shields)
+    if (layers.enforcementPoints) {
+      const gateConfigs = [
+        { pos: new THREE.Vector3(-14, 2.2, -10), label: 'N3 Policy Enforcement Gateway (UPF Ingress)' },
+        { pos: new THREE.Vector3(14, 2.2, -4), label: 'N6 Policy Enforcement Gateway (Perimeter)' },
+      ];
+      gateConfigs.forEach((g) => {
+        const bGeo = new THREE.CylinderGeometry(1.8, 1.8, 3.5, 16, 1, true);
+        const bMat = new THREE.MeshBasicMaterial({
+          color: mitigationActive ? 0x10b981 : 0x8b5cf6,
+          wireframe: true,
+          transparent: true,
+          opacity: mitigationActive ? 0.95 : 0.45,
+        });
+        const barrier = new THREE.Mesh(bGeo, bMat);
+        barrier.position.copy(g.pos);
+        barrier.userData = {
+          id: `barrier-${g.label}`,
+          label: g.label,
+          role: 'Enforcement Point',
+          status: mitigationActive ? 'ACTIVE ENFORCEMENT (Dropping Attack Packets)' : 'PASSIVE MONITORING',
+        };
+        scene.add(barrier);
+        enforcementMeshes.push(barrier);
+        interactiveMeshes.push(barrier);
+      });
+    }
+
+    // 4. Illuminated Attack Path Trace
+    if ((traceAttackPath || attackPath.length > 0) && layers.suspiciousTraffic) {
+      const tracePoints = [
+        new THREE.Vector3(-28.0, 0.8, -16.0), // Rogue Camera
+        new THREE.Vector3(-28.0, 14.5, -20.0), // gNodeB-01 Tower
+        new THREE.Vector3(-14.0, 2.2, -10.0), // N3 Enforcement Barrier
+        new THREE.Vector3(0.0, 3.5, -12.0), // UPF Data Center
+      ];
+      const traceCurve = new THREE.CatmullRomCurve3(tracePoints);
+      const traceTubeGeo = new THREE.TubeGeometry(traceCurve, 32, 0.35, 8, false);
+      const traceMat = new THREE.MeshBasicMaterial({
+        color: 0xff0044,
+        transparent: true,
+        opacity: 0.92,
+      });
+      const traceTube = new THREE.Mesh(traceTubeGeo, traceMat);
+      scene.add(traceTube);
+    }
 
     // 5. Render 5G Network Slices (Translucent Pedestal Zones)
     slices.forEach((slice) => {
@@ -740,14 +889,35 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           (w.material as THREE.MeshBasicMaterial).opacity = Math.max(0.0, 0.7 - s / 3.5);
         });
 
-        // Move packet particles along valid network conduits
+        // Animate CommShield AI Detection Engine (Spin & Bob)
+        if (aiEngineMesh) {
+          aiEngineMesh.rotation.y += 0.02;
+          aiEngineMesh.rotation.z = Math.sin(Date.now() * 0.002) * 0.15;
+          aiEngineMesh.position.y = 9.5 + Math.sin(Date.now() * 0.003) * 0.4;
+        }
+
+        // Animate Security Probes & Enforcement Gateways
+        sensorWaveMeshes.forEach((s, idx) => {
+          s.rotation.z += 0.015 * (idx % 2 === 0 ? 1 : -1);
+        });
+        enforcementMeshes.forEach((b) => {
+          b.rotation.y += 0.01;
+        });
+
+        // Move packet particles along conduits (Dual stream: cyan legitimate continues vs red attack dropped at barrier)
         packetList.forEach((p) => {
-          if (p.pair.isIsolated) {
-            // Packets halt at quarantine barrier
-            p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.25);
+          if (p.pair.isAttack && mitigationActive) {
+            // Drop and filter malicious traffic at the N3 Enforcement Gateway (halt at 0.42 progress)
+            p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.42);
+            (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.25;
+          } else if (p.pair.isIsolated) {
+            // Quarantined device link halted
+            p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.2);
           } else {
+            // Legitimate traffic continues unobstructed
             p.progress = (p.progress + p.pair.speed) % 1.0;
             p.mesh.position.lerpVectors(p.pair.start, p.pair.end, p.progress);
+            (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.9;
           }
         });
       }
@@ -794,7 +964,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         container.removeChild(domElement);
       }
     };
-  }, [nodes, links, slices, devices, selectedId, attackPath, mitigationActive, reducedMotion]);
+  }, [nodes, links, slices, devices, selectedId, attackPath, mitigationActive, reducedMotion, traceAttackPath, lifecycleState, layers]);
 
   return (
     <div className="w-full h-full relative rounded-xl overflow-hidden shadow-2xl bg-[#08101e] border border-slate-800">
@@ -832,6 +1002,37 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           className="p-1 rounded text-slate-400 hover:bg-slate-800 hover:text-white ml-1 border-l border-slate-700/60 pl-2"
         >
           <RefreshCw className="w-3 h-3" />
+        </button>
+      </div>
+
+      {/* Floating HUD: 8-Layer Visibility Controls */}
+      <div className="absolute top-4 right-4 z-10 hidden md:flex flex-wrap items-center gap-1 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs max-w-lg justify-end">
+        <span className="text-slate-400 font-medium mr-1 text-[11px]">3D Layers:</span>
+        {[
+          { key: 'physical', label: 'Physical' },
+          { key: 'connectivity', label: 'Conduits' },
+          { key: 'security', label: 'Security Fabric' },
+          { key: 'legitimateTraffic', label: 'Legitimate (Cyan)' },
+          { key: 'suspiciousTraffic', label: 'Suspicious (Red)' },
+          { key: 'enforcementPoints', label: 'Enforcement Gateways' },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => toggleLayer(key as keyof typeof layers)}
+            className={`px-2 py-0.5 rounded text-[11px] transition-all ${
+              layers[key as keyof typeof layers]
+                ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/50 font-medium'
+                : 'bg-slate-800 text-slate-500 border border-slate-700/50'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+        <button
+          onClick={toggleAllLayers}
+          className="px-2 py-0.5 rounded text-[11px] bg-sky-950 text-sky-400 border border-sky-700/60 font-medium hover:bg-sky-900 ml-1"
+        >
+          All Layers
         </button>
       </div>
 

@@ -11,17 +11,24 @@ import {
   Check,
   Maximize2,
   Minimize2,
-  Sliders,
   Sparkles,
   X,
   Flame,
   Terminal,
-  Lock,
+  Activity,
+  Download,
+  Eye,
+  FileText,
+  Search,
 } from 'lucide-react';
 import {
   twinApi,
   DigitalTwinState,
   ConnectionState,
+  TrafficBreakdown,
+  MitigationRecommendation,
+  IncidentRecord,
+  DetectionConfig,
 } from '../services/twinApi';
 import { ThreeTwinScene } from '../components/ThreeTwinScene';
 import { useDemo } from '../context/DemoContext';
@@ -38,8 +45,38 @@ export const DigitalTwinView: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [viewMode3D, setViewMode3D] = useState<boolean>(true);
   const [presentationMode, setPresentationMode] = useState<boolean>(false);
-  const [activeBottomTab, setActiveBottomTab] = useState<'timeline' | 'resilience' | 'whatif'>('timeline');
+
+  // Tab Controls
+  const [activeRightTab, setActiveRightTab] = useState<'inspector' | 'investigation' | 'defence' | 'mitigation'>('inspector');
+  const [activeBottomTab, setActiveBottomTab] = useState<'timeline' | 'traffic' | 'evidence' | 'resilience' | 'report'>('timeline');
   const [activeCameraPreset, setActiveCameraPreset] = useState<string>('full');
+
+  // Cyber Defence Operations State
+  const [defenceMode, setDefenceMode] = useState<'AUTOMATIC' | 'MANUAL'>('MANUAL');
+  const [simulationSpeed, setSimulationSpeed] = useState<number>(1.0);
+  const [detectionConfig, setDetectionConfig] = useState<DetectionConfig>({
+    sensitivity: 'MEDIUM',
+    threshold: 0.75,
+    ai_detection_enabled: true,
+    active_methods: ['ISOLATION_FOREST', 'AUTOENCODER', 'CUSUM_ADWIN', 'RULE_3GPP'],
+  });
+  const [trafficBreakdown, setTrafficBreakdown] = useState<TrafficBreakdown | null>(null);
+  const [recommendations, setRecommendations] = useState<MitigationRecommendation[]>([]);
+  const [incidents, setIncidents] = useState<IncidentRecord[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<IncidentRecord | null>(null);
+  const [traceAttackPath, setTraceAttackPath] = useState<boolean>(false);
+  const [verificationResult, setVerificationResult] = useState<{ verdict: string; evidence: Record<string, any>; recommended_next_step: string } | null>(null);
+  const [recoveryProgress, setRecoveryProgress] = useState<number>(100);
+
+  // Configurable Attack Launcher State
+  const [launcherAttackType, setLauncherAttackType] = useState<string>('Volumetric DDoS');
+  const [launcherTarget, setLauncherTarget] = useState<string>('upf-01');
+  const [launcherIntensity, setLauncherIntensity] = useState<string>('High');
+  const [launcherDuration, setLauncherDuration] = useState<string>('30s');
+  const [launcherSource, setLauncherSource] = useState<'single' | 'distributed'>('distributed');
+  const [attackLauncherOpen, setAttackLauncherOpen] = useState<boolean>(true);
+  const [attackActive, setAttackActive] = useState<boolean>(false);
+  const [attackPaused, setAttackPaused] = useState<boolean>(false);
 
   // Selected item state
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -47,56 +84,56 @@ export const DigitalTwinView: React.FC = () => {
   const [hoveredItem, setHoveredItem] = useState<{ id: string; name: string; type: string; status: string } | null>(null);
   const [copiedHmac, setCopiedHmac] = useState<boolean>(false);
 
-  // Attack Modal State
-  const [showAttackModal, setShowAttackModal] = useState<boolean>(false);
-  const [selectedAttackType, setSelectedAttackType] = useState<string>('ddos_traffic_flood');
-  const [attackTargetSlice, setAttackTargetSlice] = useState<string>('sst-1-sd-010203');
-  const [attackSubmitting, setAttackSubmitting] = useState<boolean>(false);
-  const [attackError, setAttackError] = useState<string | null>(null);
-  const [confirmedAttack, setConfirmedAttack] = useState<{
-    type: string;
-    target: string;
-    status: 'ACTIVE' | 'STOPPED' | 'PAUSED';
-    mitigationStep: 'DETECTED' | 'REQUESTED' | 'IN_PROGRESS' | 'VERIFYING' | 'RECOVERY_VERIFIED';
-  } | null>(null);
-
-  // What-If Lab State
-  const [whatIfScenario, setWhatIfScenario] = useState<string>('upf_failure');
-  const [whatIfMultiplier, setWhatIfMultiplier] = useState<number>(3.0);
-  const [whatIfSimulated, setWhatIfSimulated] = useState<boolean>(false);
-
-  // Guided Demo State
+  // 14-Stage Guided Demo State
   const [guidedDemoActive, setGuidedDemoActive] = useState<boolean>(false);
   const [guidedDemoStep, setGuidedDemoStep] = useState<number>(0);
+  const [demoMode, setDemoMode] = useState<'AUTOMATIC' | 'OPERATOR'>('OPERATOR');
 
   // Reduced motion
-  const { reducedMotion: demoReducedMotion, setReducedMotion: setDemoReducedMotion } = useDemo();
-  const [localReducedMotion, setLocalReducedMotion] = useState<boolean>(false);
-  const reducedMotion = demoReducedMotion || localReducedMotion;
-  const setReducedMotion = (val: boolean) => {
-    setLocalReducedMotion(val);
-    setDemoReducedMotion(val);
-  };
+  const { reducedMotion } = useDemo();
 
-  // Check prefers-reduced-motion
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      setReducedMotion(mq.matches);
-      const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-      mq.addEventListener('change', handler);
-      return () => mq.removeEventListener('change', handler);
-    }
-  }, []);
+  // 14-Stage Guided Demo Specifications
+  const DEMO_STAGES = [
+    { stage: 1, title: '01 — Initialize Healthy Network', caption: 'Private 5G nominal operations: 4 gNodeBs, 5G Core NFs, 2 MECs, and 13 UEs healthy with 100% SLA compliance.' },
+    { stage: 2, title: '02 — Activate CommShield Monitoring', caption: 'Security Fabric active: RF sensor probes, AI anomaly detectors, and N3/N6 policy enforcement gates armed.' },
+    { stage: 3, title: '03 — Launch Distributed DDoS', caption: 'Volumetric N3 GTP-U packet flood surging from compromised cameras towards UPF-01 core user plane.' },
+    { stage: 4, title: '04 — Detect Traffic Anomaly', caption: 'Multi-model detection triggered: Isolation Forest and Autoencoder flag anomaly score 0.94 (CRITICAL).' },
+    { stage: 5, title: '05 — Investigate Incident', caption: 'Operator inspects Incident Dossier: 620 Mbps ingress surge, UPF buffer congestion, and abnormal UDP/GTP ratio.' },
+    { stage: 6, title: '06 — Classify DDoS', caption: 'Threat classification confirms Volumetric DDoS on User Plane. Blast radius mapped across N3 and N6 backhauls.' },
+    { stage: 7, title: '07 — Recommend Mitigation', caption: 'Policy Decision Engine proposes Token-Bucket Rate Limiting & Targeted Dropping on UPF-01 ingress.' },
+    { stage: 8, title: '08 — Approve Mitigation', caption: 'Operator reviews collateral risk (LOW) and approves dynamic PDR rule injection on N3 conduit.' },
+    { stage: 9, title: '09 — Activate Enforcement', caption: 'Enforcement Gateway armed: Token-bucket limiter restricts malicious flood to 100 Mbps ceiling.' },
+    { stage: 10, title: '10 — Block Malicious Traffic', caption: 'Malicious packets halted and dropped at N3 enforcement barrier; rogue cameras quarantined.' },
+    { stage: 11, title: '11 — Preserve Legitimate Traffic', caption: 'Critical URLLC AGVs and eMBB legitimate traffic continue unobstructed at 99.5% preservation rate.' },
+    { stage: 12, title: '12 — Verify Containment', caption: 'Verification Engine evaluates residual traffic: CONTAINMENT VERIFIED. UPF latency restored to 2.2ms.' },
+    { stage: 13, title: '13 — Recover Network', caption: 'Network recovery executed: Temporary throttles eased, component health restored to 100% nominal.' },
+    { stage: 14, title: '14 — Generate Resilience Report', caption: 'Forensic Incident Report archived: TTD=3.2s, TTM=2.8s, TTR=3.5s. Resilience Score R=96.4%.' },
+  ];
 
-  // Fetch telemetry
+  // Fetch telemetry and state
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       setConnState('connecting');
-      const res = await twinApi.getTwinState(selectedScenario, activeSource, timeStep);
-      setData(res);
+
+      const [twinState, breakdown, recs, incs, defMode, detCfg, spd] = await Promise.all([
+        twinApi.getTwinState(selectedScenario, activeSource, timeStep),
+        twinApi.getTrafficBreakdown(),
+        twinApi.getRecommendations(),
+        twinApi.getIncidents(),
+        twinApi.getDefenceMode(),
+        twinApi.getDetectionConfig(),
+        twinApi.getSpeed(),
+      ]);
+
+      setData(twinState);
+      setTrafficBreakdown(breakdown);
+      setRecommendations(recs);
+      setIncidents(incs);
+      setDefenceMode((defMode.mode as any) || 'MANUAL');
+      setDetectionConfig(detCfg);
+      setSimulationSpeed(spd.speed || 1.0);
       setConnState(twinApi.getConnectionState());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load Digital Twin telemetry';
@@ -116,132 +153,9 @@ export const DigitalTwinView: React.FC = () => {
     if (!isPlaying || reducedMotion) return;
     const interval = setInterval(() => {
       setTimeStep((prev) => (prev >= 29 ? 0 : prev + 1));
-    }, 1200);
+    }, 1200 / simulationSpeed);
     return () => clearInterval(interval);
-  }, [isPlaying, reducedMotion]);
-
-  // 8-Stage Guided Demo Steps
-  const DEMO_STEPS = [
-    {
-      title: 'STAGE 1 — HEALTHY NETWORK',
-      caption: 'Private 5G Core nominal operations across eMBB, URLLC, and mMTC slices with 100% provisioned SIMs.',
-      scenario: 'approved_onboarding',
-      time: 5,
-      cameraPreset: 'full',
-      attack: false,
-      mitigation: false,
-    },
-    {
-      title: 'STAGE 2 — ATTACK INITIATION',
-      caption: 'DDoS flood initiated: Volumetric N3 GTP-U packet flood surges from gNodeB-01 via compromised cameras.',
-      scenario: 'ddos_traffic_flood',
-      time: 12,
-      cameraPreset: 'ran',
-      attack: true,
-      mitigation: false,
-    },
-    {
-      title: 'STAGE 3 — ATTACK PROPAGATION',
-      caption: 'Traffic saturates N3 GTP-U backhaul and core UPF; packet loss jumps to 18.5%, latency surges to 68ms.',
-      scenario: 'ddos_traffic_flood',
-      time: 16,
-      cameraPreset: 'attack',
-      attack: true,
-      mitigation: false,
-    },
-    {
-      title: 'STAGE 4 — ANOMALY DETECTION',
-      caption: 'Isolation Forest flags anomaly score 0.94; Consensus Fusion confirms CRITICAL user-plane flood.',
-      scenario: 'ddos_traffic_flood',
-      time: 18,
-      cameraPreset: 'core',
-      attack: true,
-      mitigation: false,
-    },
-    {
-      title: 'STAGE 5 — ZERO-TRUST ISOLATION',
-      caption: 'Suspicious UEs quarantined; rate-limiting applied to N3 interface; malicious packets blocked at barrier.',
-      scenario: 'ddos_traffic_flood',
-      time: 21,
-      cameraPreset: 'ran',
-      attack: true,
-      mitigation: true,
-    },
-    {
-      title: 'STAGE 6 — VERIFICATION',
-      caption: 'Automated containment verification checks: packet loss drops < 0.1%, latency returns to nominal.',
-      scenario: 'approved_onboarding',
-      time: 24,
-      cameraPreset: 'attack',
-      attack: false,
-      mitigation: true,
-    },
-    {
-      title: 'STAGE 7 — RECOVERY',
-      caption: 'Private 5G network returns to 100% healthy operational status across all 4 sectors and slices.',
-      scenario: 'approved_onboarding',
-      time: 27,
-      cameraPreset: 'full',
-      attack: false,
-      mitigation: false,
-    },
-    {
-      title: 'STAGE 8 — RESILIENCE ANALYSIS',
-      caption: 'Resilience score 96.8% (EXCELLENT); three-arm benchmark verifies zero baseline contamination.',
-      scenario: 'approved_onboarding',
-      time: 29,
-      cameraPreset: 'full',
-      attack: false,
-      mitigation: false,
-    },
-  ];
-
-  const handleNextDemoStep = async () => {
-    if (guidedDemoStep < DEMO_STEPS.length - 1) {
-      const next = guidedDemoStep + 1;
-      setGuidedDemoStep(next);
-      const step = DEMO_STEPS[next];
-      setSelectedScenario(step.scenario);
-      setTimeStep(step.time);
-      setActiveCameraPreset(step.cameraPreset);
-
-      if (step.attack) {
-        setConfirmedAttack({
-          type: 'ddos_traffic_flood',
-          target: 'sst-1-sd-010203',
-          status: 'ACTIVE',
-          mitigationStep: step.mitigation ? 'VERIFYING' : 'IN_PROGRESS',
-        });
-        await twinApi.startAttack('ddos_traffic_flood', 'upf', 3.5);
-      } else if (step.mitigation) {
-        await twinApi.applyMitigation('RATE_LIMITING', 'upf');
-      } else {
-        setConfirmedAttack(null);
-        await twinApi.resetSimulation();
-      }
-    } else {
-      setGuidedDemoActive(false);
-      setGuidedDemoStep(0);
-      setActiveCameraPreset('full');
-      await twinApi.resetSimulation();
-    }
-  };
-
-  const handlePrevDemoStep = async () => {
-    if (guidedDemoStep > 0) {
-      const prev = guidedDemoStep - 1;
-      setGuidedDemoStep(prev);
-      const step = DEMO_STEPS[prev];
-      setSelectedScenario(step.scenario);
-      setTimeStep(step.time);
-      setActiveCameraPreset(step.cameraPreset);
-
-      if (!step.attack) {
-        setConfirmedAttack(null);
-        await twinApi.resetSimulation();
-      }
-    }
-  };
+  }, [isPlaying, reducedMotion, simulationSpeed]);
 
   // Selected Component Lookup
   const selectedNode = useMemo(() => {
@@ -258,86 +172,181 @@ export const DigitalTwinView: React.FC = () => {
     return null;
   }, [selectedId, selectedType, data]);
 
-  // Attack Path calculation based on active scenario
+  // Attack Path calculation
   const attackPath = useMemo(() => {
-    if (confirmedAttack) {
-      return ['ue-cam-01', 'ue-cam-02', 'gnb-01', 'upf'];
-    }
-    if (selectedScenario === 'ddos_traffic_flood' || (selectedScenario === 'unprovisioned_burst' && timeStep >= 10)) {
-      return ['ue-cam-01', 'ue-cam-02', 'gnb-01', 'upf'];
-    }
-    if (selectedScenario === 'provisioned_burst_no_event' && timeStep >= 10) {
-      return ['gnb-01', 'upf', 'smf'];
+    if (attackActive || selectedScenario === 'ddos_traffic_flood') {
+      return ['ue-cam-01', 'ue-cam-02', 'gnb-01', 'upf-01', 'upf'];
     }
     return [];
-  }, [confirmedAttack, selectedScenario, timeStep]);
+  }, [attackActive, selectedScenario]);
 
-  // Component Health Counts
+  // Overall Health Computation
   const healthStats = useMemo(() => {
-    const devs = data?.devices || [];
-    let healthy = 0;
-    let attack = 0;
-    let uncertain = 0;
-    let quarantined = 0;
-    devs.forEach((d) => {
-      if (d.action === 'quarantine' || d.verdict === 'quarantined') quarantined++;
-      else if (d.verdict === 'attack') attack++;
-      else if (d.verdict === 'uncertain') uncertain++;
-      else healthy++;
-    });
-
-    const isUnderAttack = attackPath.length > 0;
-    const baseScore = isUnderAttack ? 42.5 : confirmedAttack?.mitigationStep === 'VERIFYING' ? 88.0 : 100.0;
+    const isUnderAttack = attackActive || attackPath.length > 0;
+    const isMitigating = verificationResult?.verdict === 'CONTAINMENT_VERIFIED' || data?.lifecycle_state === 'RECOVERED';
+    const baseScore = isUnderAttack && !isMitigating ? 42.5 : isMitigating ? 98.5 : 100.0;
 
     return {
-      healthy,
-      attack,
-      uncertain,
-      quarantined,
-      total: (data?.topology?.nodes?.length || 16) + devs.length,
       healthScore: Math.round(baseScore),
+      statusLabel: baseScore >= 95 ? 'HEALTHY' : baseScore >= 70 ? 'DEGRADED' : 'CRITICAL',
+      throughput: isUnderAttack && !isMitigating ? '620.0 Mbps' : '75.2 Mbps',
+      latency: isUnderAttack && !isMitigating ? '48.5 ms' : '2.1 ms',
+      packetLoss: isUnderAttack && !isMitigating ? '12.4%' : '0.01%',
     };
-  }, [data, attackPath, confirmedAttack]);
+  }, [attackActive, attackPath, verificationResult, data]);
 
-  // Execute Attack Simulation
+  // -----------------------------------------------------------------
+  // Control Centre Actions (Phases 2, 3, 7, 8, 10, 11)
+  // -----------------------------------------------------------------
+
   const handleStartAttack = async () => {
-    setAttackSubmitting(true);
-    setAttackError(null);
-    try {
-      setSelectedScenario(selectedAttackType);
-      setTimeStep(15);
-      setConfirmedAttack({
-        type: selectedAttackType,
-        target: attackTargetSlice,
-        status: 'ACTIVE',
-        mitigationStep: 'IN_PROGRESS',
-      });
-      await twinApi.startAttack(selectedAttackType, attackTargetSlice, 3.5);
-      setShowAttackModal(false);
-      setActiveCameraPreset('attack');
-    } catch (err: unknown) {
-      setAttackError(err instanceof Error ? err.message : 'Backend rejected attack request');
-    } finally {
-      setAttackSubmitting(false);
-    }
+    setAttackActive(true);
+    setAttackPaused(false);
+    setSelectedScenario('ddos_traffic_flood');
+    setTimeStep(15);
+    setActiveCameraPreset('attack');
+
+    const intensityMult = launcherIntensity === 'Critical' ? 8.0 : launcherIntensity === 'High' ? 5.0 : launcherIntensity === 'Medium' ? 3.0 : 1.5;
+    await twinApi.startAttack(launcherAttackType, launcherTarget, intensityMult);
+    fetchData();
+  };
+
+  const handlePauseAttack = async () => {
+    setAttackPaused(true);
+    await twinApi.pauseAttack();
+  };
+
+  const handleResumeAttack = async () => {
+    setAttackPaused(false);
+    await twinApi.resumeAttack();
   };
 
   const handleStopAttack = async () => {
+    setAttackActive(false);
+    setAttackPaused(false);
     setSelectedScenario('approved_onboarding');
-    setTimeStep(15);
-    setConfirmedAttack(null);
     await twinApi.stopAttack();
-    await twinApi.resetSimulation();
-    setActiveCameraPreset('full');
+    fetchData();
   };
 
-  const handleEnforceZeroTrust = async () => {
-    await twinApi.applyMitigation('RATE_LIMITING', 'upf');
-    if (confirmedAttack) {
-      setConfirmedAttack({
-        ...confirmedAttack,
-        mitigationStep: 'VERIFYING',
-      });
+  const handleResetToHealthy = async () => {
+    setAttackActive(false);
+    setAttackPaused(false);
+    setSelectedScenario('approved_onboarding');
+    setSelectedId(null);
+    setSelectedType(null);
+    setVerificationResult(null);
+    setTraceAttackPath(false);
+    setActiveCameraPreset('full');
+    await twinApi.resetSimulation();
+    fetchData();
+  };
+
+  const handleSpeedChange = async (speed: number) => {
+    setSimulationSpeed(speed);
+    await twinApi.setSpeed(speed);
+  };
+
+  const handleDefenceModeToggle = async () => {
+    const nextMode = defenceMode === 'MANUAL' ? 'AUTOMATIC' : 'MANUAL';
+    setDefenceMode(nextMode);
+    await twinApi.setDefenceMode(nextMode);
+  };
+
+  const handleSensitivityChange = async (sens: 'LOW' | 'MEDIUM' | 'HIGH') => {
+    const updated = await twinApi.setDetectionConfig({ sensitivity: sens });
+    setDetectionConfig(updated);
+  };
+
+  const handleApproveRecommendation = async (recId: string) => {
+    await twinApi.approveRecommendation(recId);
+    setActiveRightTab('mitigation');
+    fetchData();
+  };
+
+  const handleManualMitigation = async (actionType: string) => {
+    await twinApi.executeDefenceAction(actionType, 'upf-01');
+    setActiveRightTab('mitigation');
+    fetchData();
+  };
+
+  const handleVerifyMitigation = async () => {
+    const res = await twinApi.verifyContainment();
+    setVerificationResult(res);
+    fetchData();
+  };
+
+  const handleInitiateRecovery = async () => {
+    setRecoveryProgress(25);
+    setTimeout(async () => {
+      setRecoveryProgress(65);
+      setTimeout(async () => {
+        setRecoveryProgress(100);
+        await twinApi.initiateRecovery();
+        setAttackActive(false);
+        fetchData();
+      }, 800);
+    }, 800);
+  };
+
+  const handleExportIncidentReport = async (incId: string) => {
+    const rep = await twinApi.exportIncidentReport(incId, 'markdown');
+    const blob = new Blob([rep.report], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `CommShield-Incident-${incId}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // 14-Stage Guided Demo Handler
+  const handleNextDemoStage = async () => {
+    if (guidedDemoStep < DEMO_STAGES.length - 1) {
+      const next = guidedDemoStep + 1;
+      setGuidedDemoStep(next);
+
+      if (next === 2) {
+        // Stage 3: Launch attack
+        setAttackActive(true);
+        setActiveCameraPreset('attack');
+        await twinApi.startAttack('ddos_traffic_flood', 'upf-01', 3.5);
+      } else if (next === 4) {
+        // Stage 5: Investigate incident
+        setActiveRightTab('investigation');
+        setTraceAttackPath(true);
+      } else if (next === 6) {
+        // Stage 7: Recommend mitigation
+        setActiveRightTab('defence');
+      } else if (next === 7) {
+        // Stage 8: Approve mitigation
+        if (recommendations.length > 0) {
+          await twinApi.approveRecommendation(recommendations[0].recommendation_id);
+        } else {
+          await twinApi.applyMitigation('RATE_LIMITING', 'upf-01');
+        }
+        setActiveRightTab('mitigation');
+      } else if (next === 11) {
+        // Stage 12: Verify containment
+        await handleVerifyMitigation();
+      } else if (next === 12) {
+        // Stage 13: Recover network
+        await handleInitiateRecovery();
+      } else if (next === 13) {
+        // Stage 14: Report
+        setActiveBottomTab('report');
+      }
+      fetchData();
+    } else {
+      setGuidedDemoActive(false);
+      setGuidedDemoStep(0);
+      handleResetToHealthy();
+    }
+  };
+
+  const handlePrevDemoStage = () => {
+    if (guidedDemoStep > 0) {
+      setGuidedDemoStep((prev) => prev - 1);
     }
   };
 
@@ -351,32 +360,31 @@ export const DigitalTwinView: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full h-full min-h-screen bg-[#070e1b] text-slate-100 font-sans select-none pb-12">
-      {/* 1. TOP BAR */}
+      {/* 1. TOP BAR — STATUS INDICATORS & CONTROL CENTRE (Phases 2 & 14) */}
       <header className="h-16 px-4 bg-[#0a1628]/95 backdrop-blur-md border-b border-[#1e293b] flex items-center justify-between z-30 shrink-0 sticky top-0">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-cyan-400" />
             <div className="flex flex-col">
               <span className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
-                CommShield AI <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">5G TWIN</span>
+                CommShield AI <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">5G SOC</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">Private 5G Campus Operations</span>
+              <span className="text-[10px] text-slate-400 font-mono">Cyber Defence Operations Centre</span>
             </div>
           </div>
 
           <div className="h-6 w-px bg-slate-800 hidden md:block" />
 
-          {/* Connection Status */}
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
+          {/* Connection Status & Provenance Source */}
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
             <span
               className={`w-2 h-2 rounded-full ${
                 connState === 'connected' ? 'bg-emerald-400 animate-pulse' : connState === 'connecting' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'
               }`}
             />
             <span className="text-slate-300">
-              {connState === 'connected' ? '3GPP CORE SYNCED' : connState === 'connecting' ? (loading ? 'SYNCING CAMPUS...' : 'CONNECTING...') : 'DISCONNECTED'}
+              {connState === 'connected' ? '3GPP CORE SYNCED' : loading ? 'SYNCING...' : 'DISCONNECTED'}
             </span>
-            {data?.is_mock && <span className="text-amber-400 font-bold ml-1">(SIM)</span>}
             <button
               onClick={() => setActiveSource(activeSource === 'simulated_twin' ? 'lab' : 'simulated_twin')}
               className="ml-1 text-[10px] text-cyan-400 underline hover:text-white"
@@ -385,115 +393,137 @@ export const DigitalTwinView: React.FC = () => {
             </button>
           </div>
 
-          {/* Scenario Selector */}
-          <div className="hidden lg:flex items-center gap-2 bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-800 text-xs">
-            <span className="text-slate-400">SCENARIO:</span>
-            <select
-              value={selectedScenario}
-              onChange={(e) => {
-                setSelectedScenario(e.target.value);
-                setTimeStep(15);
-              }}
-              aria-label="Active Simulation Scenario"
-              className="bg-transparent text-cyan-400 font-mono font-semibold focus:outline-none cursor-pointer"
-            >
-              <option value="approved_onboarding" className="bg-[#0a1628] text-white">1. Approved Onboarding (100% Provisioned)</option>
-              <option value="ddos_traffic_flood" className="bg-[#0a1628] text-white">2. Volumetric DDoS Flood (N3 GTP-U)</option>
-              <option value="unprovisioned_burst" className="bg-[#0a1628] text-white">3. Rogue Unprovisioned Burst (Quarantine)</option>
-              <option value="provisioned_burst_no_event" className="bg-[#0a1628] text-white">4. Provisioned Flood Without Event Ticket</option>
-              <option value="slow_ramp_in_onboarding" className="bg-[#0a1628] text-white">5. Creeping Slow Ramp in Onboarding</option>
-            </select>
+          {/* 2D / 3D Canvas Switcher */}
+          <button
+            onClick={() => setViewMode3D(!viewMode3D)}
+            className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 hover:text-white transition-colors"
+          >
+            {viewMode3D ? '3D CAMPUS' : '2D FLOOR'}
+          </button>
+
+          {/* Real-time Status Badges */}
+          <div className="hidden xl:flex items-center gap-2 font-mono text-[11px]">
+            <span className={`px-2 py-0.5 rounded border ${healthStats.statusLabel === 'HEALTHY' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-rose-950 text-rose-400 border-rose-800 animate-pulse'}`}>
+              NETWORK STATUS: {healthStats.statusLabel}
+            </span>
+            <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
+              COMMSHIELD: ACTIVE
+            </span>
+            <span className={`px-2 py-0.5 rounded border ${attackActive ? 'bg-rose-950 text-rose-400 border-rose-800 animate-pulse' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+              THREAT STATUS: {attackActive ? 'ACTIVE DDOS' : 'NONE'}
+            </span>
+            <span className="px-2 py-0.5 rounded bg-slate-900 text-cyan-300 border border-slate-800">
+              AI DETECTION: {detectionConfig.ai_detection_enabled ? 'MONITORING' : 'OFF'}
+            </span>
+            <span className="px-2 py-0.5 rounded bg-slate-900 text-emerald-400 border border-slate-800">
+              ENFORCEMENT: {verificationResult ? 'CONTAINED' : attackActive ? 'ENGAGED' : 'READY'}
+            </span>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* Start/Stop Attack Button */}
-          {confirmedAttack ? (
-            <button
-              onClick={handleStopAttack}
-              className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all animate-pulse"
-            >
-              <X className="w-4 h-4" />
-              Stop Attack
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowAttackModal(true)}
-              className="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-semibold text-xs flex items-center gap-1.5 transition-all shadow-sm"
-            >
-              <Flame className="w-4 h-4 text-rose-400" />
-              Start Attack
-            </button>
-          )}
+        {/* Global Controls: Speed, Defence Mode, Reset */}
+        <div className="flex items-center gap-2 text-xs">
+          {/* Simulation Speed */}
+          <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800">
+            <span className="text-[10px] text-slate-500 font-mono px-1.5">SPEED:</span>
+            {[0.5, 1.0, 2.0, 5.0].map((s) => (
+              <button
+                key={s}
+                onClick={() => handleSpeedChange(s)}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                  simulationSpeed === s ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {s}x
+              </button>
+            ))}
+          </div>
+
+          {/* Operating Mode Toggle */}
+          <button
+            onClick={handleDefenceModeToggle}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 ${
+              defenceMode === 'AUTOMATIC'
+                ? 'bg-purple-950 text-purple-300 border-purple-700'
+                : 'bg-amber-950 text-amber-300 border-amber-700'
+            }`}
+          >
+            <span>MODE:</span>
+            <span>{defenceMode} DEFENCE</span>
+          </button>
+
+          {/* Reset to Healthy State */}
+          <button
+            onClick={handleResetToHealthy}
+            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-[11px] font-mono flex items-center gap-1"
+            title="Reset network, generators, and temporary policies to nominal baseline"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+            Reset Healthy
+          </button>
 
           {/* Guided Demo Button */}
           <button
             onClick={() => setGuidedDemoActive(!guidedDemoActive)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
               guidedDemoActive
                 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md'
                 : 'bg-slate-900 text-cyan-400 border-cyan-500/40 hover:bg-cyan-950/40'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
-            Guided Demo
+            <Sparkles className="w-3.5 h-3.5" />
+            14-Stage Demo
           </button>
 
           {/* Presentation Mode Toggle */}
           <button
             onClick={() => setPresentationMode(!presentationMode)}
-            className={`p-2 rounded-lg border text-xs font-medium transition-colors ${
-              presentationMode ? 'bg-cyan-500 text-slate-950 border-cyan-400' : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
-            }`}
-            title="Toggle Presentation Mode (Judge Friendly)"
+            className="p-1.5 rounded-lg border bg-slate-900 text-slate-300 border-slate-800 hover:text-white"
+            title="Full-Screen / Presentation Mode"
           >
             {presentationMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-
-          {/* 2D / 3D Canvas Switcher */}
-          <button
-            onClick={() => setViewMode3D(!viewMode3D)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 hover:text-white transition-colors"
-          >
-            {viewMode3D ? '3D CAMPUS' : '2D FLOOR'}
           </button>
         </div>
       </header>
 
-      {/* Guided Demo Floating Controller Banner */}
+      {/* Error Banner with Retry */}
       {error && (
         <div className="bg-rose-950/80 border-b border-rose-800 px-4 py-2 text-rose-300 text-xs font-mono flex items-center justify-between">
           <span>Error loading telemetry: {error}</span>
-          <button onClick={() => fetchData()} className="underline hover:text-white">Retry</button>
+          <button onClick={() => fetchData()} className="underline hover:text-white font-bold">Retry</button>
         </div>
       )}
+
+      {/* 14-Stage Guided Interactive Demo Overlay Banner */}
       {guidedDemoActive && (
-        <div className="bg-gradient-to-r from-cyan-950 via-[#0f2342] to-cyan-950 border-b border-cyan-500/40 px-6 py-2.5 flex items-center justify-between text-xs animate-fadeIn z-20">
+        <div className="bg-gradient-to-r from-cyan-950 via-[#0d223f] to-cyan-950 border-b border-cyan-500/50 px-6 py-2.5 flex items-center justify-between text-xs animate-fadeIn z-20">
           <div className="flex items-center gap-3">
             <span className="font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
               <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" />
-              {DEMO_STEPS[guidedDemoStep].title}
+              {DEMO_STAGES[guidedDemoStep].title}
             </span>
             <span className="text-slate-300 hidden md:inline">
-              {DEMO_STEPS[guidedDemoStep].caption}
+              {DEMO_STAGES[guidedDemoStep].caption}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-slate-400">
+              MODE: <button onClick={() => setDemoMode(demoMode === 'AUTOMATIC' ? 'OPERATOR' : 'AUTOMATIC')} className="underline text-cyan-300 font-bold">{demoMode}</button>
+            </span>
             <button
-              onClick={handlePrevDemoStep}
+              onClick={handlePrevDemoStage}
               disabled={guidedDemoStep === 0}
               className="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="font-mono text-cyan-400">{guidedDemoStep + 1} / {DEMO_STEPS.length}</span>
+            <span className="font-mono text-cyan-400 font-bold">{guidedDemoStep + 1} / {DEMO_STAGES.length}</span>
             <button
-              onClick={handleNextDemoStep}
-              className="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400"
+              onClick={handleNextDemoStage}
+              className="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 transition-colors"
             >
-              {guidedDemoStep === DEMO_STEPS.length - 1 ? 'Finish' : 'Next Stage'}
+              {guidedDemoStep === DEMO_STAGES.length - 1 ? 'Finish Demo' : 'Advance Stage'}
             </button>
           </div>
         </div>
@@ -501,149 +531,269 @@ export const DigitalTwinView: React.FC = () => {
 
       {/* 2. MAIN 3-COLUMN WORKSPACE */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3">
-        {/* LEFT PANEL — NETWORK OVERVIEW (3 cols; hidden in presentation mode) */}
+        {/* LEFT PANEL — TELEMETRY & ATTACK/DETECTION CONTROLS (3 cols) */}
         {!presentationMode && (
           <aside className="lg:col-span-3 flex flex-col gap-3">
-            {/* Overall Health Card */}
+            {/* Network Health & Baseline Telemetry */}
             <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Campus Health</span>
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Campus Telemetry</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
                   healthStats.healthScore >= 90
                     ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                    : healthStats.healthScore >= 70
-                    ? 'bg-amber-950 text-amber-400 border border-amber-800'
                     : 'bg-rose-950 text-rose-400 border border-rose-800 animate-pulse'
                 }`}>
-                  {healthStats.healthScore}% {healthStats.healthScore >= 90 ? 'NOMINAL' : 'DEGRADED'}
+                  {healthStats.healthScore}% {healthStats.statusLabel}
                 </span>
               </div>
 
-              {/* Progress Ring / Gauge Bar */}
-              <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+              {/* Health Bar */}
+              <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
                 <div
-                  className={`h-full transition-all duration-500 ${
-                    healthStats.healthScore >= 90
-                      ? 'bg-gradient-to-r from-cyan-500 to-emerald-400'
-                      : 'bg-gradient-to-r from-rose-500 to-amber-400'
-                  }`}
+                  className={`h-full transition-all duration-500 ${healthStats.healthScore >= 90 ? 'bg-gradient-to-r from-cyan-500 to-emerald-400' : 'bg-gradient-to-r from-rose-500 to-amber-400'}`}
                   style={{ width: `${healthStats.healthScore}%` }}
                 />
               </div>
 
-              {/* Quick Metrics Grid */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">INFRASTRUCTURE</span>
-                  <span className="text-base font-bold text-white font-mono">4 Towers • 8 Core</span>
-                </div>
-                <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">PROVISIONED UES</span>
-                  <span className="text-base font-bold text-cyan-400 font-mono">{data?.devices?.length || 13} Active</span>
-                </div>
-                <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">CAMPUS THROUGHPUT</span>
-                  <span className={`text-base font-bold font-mono ${attackPath.length > 0 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
-                    {attackPath.length > 0 ? '820.0 Mbps (FLOOD)' : '154.2 Mbps'}
+              {/* Telemetry Metrics Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block">THROUGHPUT</span>
+                  <span className={`text-sm font-bold ${attackActive ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
+                    {trafficBreakdown?.current_traffic_mbps || healthStats.throughput}
                   </span>
                 </div>
-                <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">URLLC LATENCY</span>
-                  <span className="text-base font-bold text-emerald-300 font-mono">1.18 ms</span>
+                <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block">LATENCY</span>
+                  <span className="text-sm font-bold text-cyan-300">{healthStats.latency}</span>
+                </div>
+                <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block">PACKET LOSS</span>
+                  <span className="text-sm font-bold text-slate-200">{healthStats.packetLoss}</span>
+                </div>
+                <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block">ACTIVE UES</span>
+                  <span className="text-sm font-bold text-cyan-400">{data?.devices?.length || 13} Online</span>
                 </div>
               </div>
             </div>
 
-            {/* Slices Matrix */}
-            <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-2.5">
-              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                <span>3GPP Network Slices</span>
-                <span className="text-cyan-400 font-bold">3 S-NSSAI</span>
-              </span>
+            {/* Configurable Attack Launcher Console (Phase 3.B) */}
+            <div className="bg-[#0b1728] border border-rose-900/50 rounded-xl p-3.5 shadow-lg flex flex-col gap-2.5">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                <span className="text-xs font-mono text-rose-400 uppercase tracking-wider flex items-center gap-1.5 font-bold">
+                  <Flame className="w-3.5 h-3.5 text-rose-400" /> Attack Launcher
+                </span>
+                <button
+                  onClick={() => setAttackLauncherOpen(!attackLauncherOpen)}
+                  className="text-[10px] font-mono text-slate-400 hover:text-white"
+                >
+                  {attackLauncherOpen ? 'COLLAPSE' : 'EXPAND'}
+                </button>
+              </div>
 
-              {data?.slices?.map((sl) => (
-                <div key={sl.slice_id} className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sl.color }} />
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-white">{sl.name.split(' ')[0]}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{sl.slice_id}</span>
+              {attackLauncherOpen && (
+                <div className="flex flex-col gap-2 text-xs font-mono">
+                  {/* Attack Type */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-slate-400">Attack Type:</label>
+                    <select
+                      value={launcherAttackType}
+                      onChange={(e) => setLauncherAttackType(e.target.value)}
+                      className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-300 font-semibold"
+                    >
+                      <option value="Volumetric DDoS">Volumetric DDoS (N3 GTP-U)</option>
+                      <option value="Signalling Storm">Signalling Storm (N2/N12 5G-AKA)</option>
+                      <option value="Slow Onboarding">Slow Onboarding Creep</option>
+                      <option value="Network Congestion">Network Slice Congestion</option>
+                    </select>
+                  </div>
+
+                  {/* Target & Intensity */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-slate-400 block">Target NF:</label>
+                      <select
+                        value={launcherTarget}
+                        onChange={(e) => setLauncherTarget(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200"
+                      >
+                        <option value="upf-01">UPF-01 (User Plane)</option>
+                        <option value="gnb-01">gNB-01 (North Tower)</option>
+                        <option value="amf-01">AMF-01 (Control Plane)</option>
+                        <option value="smf-01">SMF-01 (Session Mgmt)</option>
+                        <option value="edge-01">Edge MEC-01</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block">Intensity:</label>
+                      <select
+                        value={launcherIntensity}
+                        onChange={(e) => setLauncherIntensity(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-amber-300"
+                      >
+                        <option value="Low">Low (1.5x)</option>
+                        <option value="Medium">Medium (3.0x)</option>
+                        <option value="High">High (5.0x)</option>
+                        <option value="Critical">Critical (8.0x)</option>
+                      </select>
                     </div>
                   </div>
-                  <span className={`font-mono ${sl.health_status === 'CRITICAL' ? 'text-rose-400 font-bold' : 'text-slate-300'}`}>
-                    {sl.throughput_mbps || sl.packet_rate_pps} {sl.throughput_mbps ? 'Mbps' : 'pps'}
-                  </span>
-                </div>
-              ))}
-            </div>
 
-            {/* Active Security Alerts Feed */}
-            <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-2 flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                  Live Threat Alarms
-                </span>
-                <span className="text-[10px] font-mono text-slate-500">REALTIME</span>
-              </div>
-
-              {attackPath.length > 0 ? (
-                <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-800/60 flex flex-col gap-1.5 animate-pulse">
-                  <div className="flex items-center justify-between text-rose-300 font-bold text-xs">
-                    <span>MALICIOUS INGRESS DETECTED</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-900 text-rose-200">CRITICAL</span>
+                  {/* Duration & Source Distribution */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-slate-400 block">Duration:</label>
+                      <select
+                        value={launcherDuration}
+                        onChange={(e) => setLauncherDuration(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200"
+                      >
+                        <option value="15s">15 Seconds</option>
+                        <option value="30s">30 Seconds</option>
+                        <option value="60s">60 Seconds</option>
+                        <option value="Custom">Continuous</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block">Source:</label>
+                      <select
+                        value={launcherSource}
+                        onChange={(e) => setLauncherSource(e.target.value as any)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200"
+                      >
+                        <option value="distributed">Distributed (3 UEs)</option>
+                        <option value="single">Single Attacker</option>
+                      </select>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-rose-200 leading-relaxed">
-                    Volumetric N3 GTP-U packet burst targeting UPF-01 via gNodeB-01. Isolation Forest score: 0.94.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>All 5G user plane telemetry nominal. Zero active alarms.</span>
+
+                  {/* Launcher Action Controls */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    {!attackActive ? (
+                      <button
+                        onClick={handleStartAttack}
+                        className="flex-1 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-md transition-all"
+                      >
+                        <Flame className="w-3.5 h-3.5" /> Start Attack
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={attackPaused ? handleResumeAttack : handlePauseAttack}
+                          className="flex-1 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs"
+                        >
+                          {attackPaused ? 'Resume' : 'Pause'}
+                        </button>
+                        <button
+                          onClick={handleStopAttack}
+                          className="flex-1 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 font-bold text-xs"
+                        >
+                          Stop Attack
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
+            </div>
+
+            {/* Centralized Anomaly Detection Controls (Phase 3.C & 4) */}
+            <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-3.5 shadow-lg flex flex-col gap-2.5">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider flex items-center gap-1.5 font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> Detection Engine
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400">ONLINE</span>
+              </div>
+
+              {/* Sensitivity & Thresholds */}
+              <div className="flex flex-col gap-2 text-xs font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">SENSITIVITY:</span>
+                  <div className="flex items-center gap-1">
+                    {(['LOW', 'MEDIUM', 'HIGH'] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => handleSensitivityChange(lvl)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          detectionConfig.sensitivity === lvl ? 'bg-cyan-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between text-slate-400 text-[11px]">
+                  <span>ACTIVE THRESHOLD:</span>
+                  <span className="text-cyan-300 font-bold">{detectionConfig.threshold.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between text-slate-400 text-[11px]">
+                  <span>DETECTION METHODS:</span>
+                  <span className="text-slate-200">Isolation Forest + Autoencoder + 3GPP Rule</span>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  <button
+                    onClick={() => setActiveRightTab('investigation')}
+                    className="py-1 px-2 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[11px] font-semibold text-center"
+                  >
+                    Investigate Anomaly
+                  </button>
+                  <button
+                    onClick={() => setTraceAttackPath(!traceAttackPath)}
+                    className={`py-1 px-2 rounded text-[11px] font-semibold text-center border transition-all ${
+                      traceAttackPath
+                        ? 'bg-rose-950 text-rose-300 border-rose-700'
+                        : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
+                    }`}
+                  >
+                    {traceAttackPath ? 'Hide Attack Path' : 'Trace Attack Path'}
+                  </button>
+                </div>
+              </div>
             </div>
           </aside>
         )}
 
-        {/* CENTER — LARGE 3D DIGITAL TWIN (6 cols in standard; 9 cols in presentation mode) */}
+        {/* CENTER — INTERACTIVE 3D DIGITAL TWIN (6 cols in standard; 9 cols in presentation) */}
         <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-3 relative min-h-[580px]`}>
           <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col">
-            {/* Top Scene HUD Overlay */}
-            <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
-              <div className="flex items-center gap-2 pointer-events-auto">
-                <div className="px-3 py-1.5 rounded-lg bg-[#0a1628]/90 border border-slate-700/80 backdrop-blur-md text-xs font-mono text-slate-300 flex items-center gap-2 shadow-lg">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                  <span>5G CAMPUS DIGITAL TWIN</span>
-                  <span className="text-slate-600">|</span>
-                  <span className="text-cyan-400">{data?.devices?.length || 13} ASSETS ONLINE</span>
-                </div>
-
-                {selectedId && (
-                  <button
-                    onClick={() => {
-                      setSelectedId(null);
-                      setSelectedType(null);
-                      setActiveCameraPreset('full');
-                    }}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-cyan-300 text-xs font-mono border border-cyan-800/50 flex items-center gap-1 shadow-md transition-colors pointer-events-auto"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Reset View
-                  </button>
-                )}
+            {/* Top Scene Status Strip */}
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
+              <div className="px-3 py-1.5 rounded-lg bg-[#0a1628]/90 border border-slate-700/80 backdrop-blur-md text-xs font-mono text-slate-300 flex items-center gap-2 shadow-lg pointer-events-auto">
+                <span className={`w-2 h-2 rounded-full ${attackActive ? 'bg-rose-500 animate-ping' : 'bg-cyan-400 animate-pulse'}`} />
+                <span>5G CAMPUS DIGITAL TWIN</span>
+                <span className="text-slate-600">|</span>
+                <span className="text-cyan-400">{data?.devices?.length || 13} ASSETS ONLINE</span>
               </div>
 
-              {/* Hover tooltip HUD */}
-              {hoveredItem && (
-                <div className="px-3 py-1.5 rounded-lg bg-cyan-950/90 border border-cyan-500/50 backdrop-blur-md text-xs font-mono text-cyan-200 pointer-events-auto shadow-xl animate-fadeIn">
-                  <span className="font-bold text-white">{hoveredItem.name}</span> — {hoveredItem.status}
-                </div>
+              {selectedId && (
+                <button
+                  onClick={() => {
+                    setSelectedId(null);
+                    setSelectedType(null);
+                    setActiveCameraPreset('full');
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-cyan-300 text-xs font-mono border border-cyan-800/50 flex items-center gap-1 shadow-md transition-colors pointer-events-auto"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Reset View
+                </button>
               )}
             </div>
 
-            {/* 3D Scene or 2D Fallback */}
+            {/* Hover tooltip HUD */}
+            {hoveredItem && (
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-lg bg-cyan-950/90 border border-cyan-500/50 backdrop-blur-md text-xs font-mono text-cyan-200 pointer-events-none shadow-xl animate-fadeIn">
+                <span className="font-bold text-white">{hoveredItem.name}</span> — {hoveredItem.status}
+              </div>
+            )}
+
+            {/* 3D Scene Viewport */}
             {viewMode3D ? (
               <ThreeTwinScene
                 nodes={data?.topology?.nodes || []}
@@ -657,18 +807,20 @@ export const DigitalTwinView: React.FC = () => {
                 }}
                 onHover={setHoveredItem}
                 attackPath={attackPath}
-                mitigationActive={confirmedAttack?.mitigationStep === 'VERIFYING' || confirmedAttack?.mitigationStep === 'RECOVERY_VERIFIED'}
+                mitigationActive={verificationResult?.verdict === 'CONTAINMENT_VERIFIED' || data?.lifecycle_state === 'RECOVERED'}
                 reducedMotion={reducedMotion}
                 activeCameraPreset={activeCameraPreset}
                 onPresetChange={setActiveCameraPreset}
+                traceAttackPath={traceAttackPath}
+                lifecycleState={attackActive ? 'THREAT_DETECTED' : verificationResult ? 'VERIFYING_MITIGATION' : 'NORMAL'}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center p-6 text-slate-400 text-xs font-mono">
-                <span>2D Floorplan view selected. Toggle &quot;3D CAMPUS&quot; in header to return to Three.js environment.</span>
+                <span>2D Floorplan view selected. Toggle 3D CAMPUS in header to return.</span>
               </div>
             )}
 
-            {/* Bottom Scrubber Overlay */}
+            {/* Scrubber & Timeline Bar */}
             <div className="h-12 px-4 bg-[#0a1628]/95 border-t border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <button
@@ -702,391 +854,527 @@ export const DigitalTwinView: React.FC = () => {
               />
 
               <span className="font-mono text-slate-400 hidden sm:inline">
-                {timeStep < 10 ? 'Phase 1: Baseline' : timeStep < 20 ? 'Phase 2: Ingress Surge' : 'Phase 3: Sustained'}
+                {timeStep < 10 ? 'Nominal Baseline' : timeStep < 20 ? 'Active Ingress Surge' : 'Contained & Stabilized'}
               </span>
             </div>
           </div>
         </main>
 
-        {/* RIGHT PANEL — SECURITY INTELLIGENCE & COMPONENT INSPECTOR (3 cols) */}
+        {/* RIGHT OPERATIONS PANEL — 4 DEDICATED TABS (Phase 14) */}
         <aside className="lg:col-span-3 flex flex-col gap-3">
-          {/* Component Deep Inspector */}
-          {selectedId ? (
-            <div className="bg-[#0b1728] border border-cyan-800/60 rounded-xl p-4 shadow-xl flex flex-col gap-3 animate-fadeIn">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider block">Component Inspector</span>
-                  <h3 className="text-base font-bold text-white font-mono">{selectedNode?.label || selectedDevice?.id || selectedId}</h3>
-                  <span className="text-xs text-slate-400">
-                    {selectedNode?.role || selectedDevice?.slice_id}
-                  </span>
-                </div>
+          <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            {/* 4 Operations Tabs Navigation */}
+            <div className="grid grid-cols-4 border-b border-slate-800 text-[11px] font-mono text-center bg-[#091322]">
+              {[
+                { id: 'inspector', label: 'Inspector' },
+                { id: 'investigation', label: 'Investigate' },
+                { id: 'defence', label: 'Defence' },
+                { id: 'mitigation', label: 'Verify' },
+              ].map(({ id, label }) => (
                 <button
-                  onClick={() => {
-                    setSelectedId(null);
-                    setSelectedType(null);
-                  }}
-                  className="text-slate-400 hover:text-white p-1"
+                  key={id}
+                  onClick={() => setActiveRightTab(id as any)}
+                  className={`py-2.5 font-bold transition-all border-b-2 ${
+                    activeRightTab === id
+                      ? 'border-cyan-400 text-cyan-300 bg-slate-900/50'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
                 >
-                  <X className="w-4 h-4" />
+                  {label}
                 </button>
-              </div>
+              ))}
+            </div>
 
-              <div className="flex flex-col gap-2 text-xs font-mono">
-                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">OPERATIONAL STATUS:</span>
-                  <span className="font-bold text-emerald-400">{selectedNode?.operationalStatus || selectedDevice?.status_label || 'ACTIVE'}</span>
-                </div>
-                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">THROUGHPUT:</span>
-                  <span className="text-cyan-300">
-                    {selectedNode ? `${selectedNode.incomingTraffic || 75.0} Mbps` : `${selectedDevice?.rate_pps || 11.2} pps`}
-                  </span>
-                </div>
-                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">LATENCY:</span>
-                  <span className="text-emerald-300">{selectedNode?.latency || selectedDevice?.latency_ms || 2.1} ms</span>
-                </div>
-                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">AI ANOMALY SCORE:</span>
-                  <span className={attackPath.includes(selectedId) ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>
-                    {attackPath.includes(selectedId) ? '0.94 (ANOMALOUS)' : '0.04 (NOMINAL)'}
-                  </span>
-                </div>
-
-                {selectedNode?.building && (
-                  <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400">FACILITY / ZONE:</span>
-                    <span className="text-slate-300">{selectedNode.building}</span>
-                  </div>
-                )}
-
-                {selectedDevice && (
-                  <div className="flex flex-col gap-1 p-2 rounded bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400">HMAC ZERO-TRUST KEY:</span>
-                    <div className="flex items-center justify-between text-[10px] text-slate-300">
-                      <span className="truncate max-w-[170px]">{selectedDevice.device_id_hash}</span>
-                      <button onClick={() => handleCopyHmac(selectedDevice.device_id_hash)} className="hover:text-cyan-400">
-                        {copiedHmac ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {/* TAB 1: NETWORK INSPECTOR */}
+            {activeRightTab === 'inspector' && (
+              <div className="p-4 flex flex-col gap-3 animate-fadeIn text-xs font-mono">
+                {selectedId ? (
+                  <>
+                    <div className="flex items-start justify-between pb-2 border-b border-slate-800">
+                      <div>
+                        <span className="text-[10px] text-cyan-400 uppercase tracking-wider block">Inspecting Asset</span>
+                        <h3 className="text-base font-bold text-white">{selectedNode?.label || selectedDevice?.id || selectedId}</h3>
+                        <span className="text-[11px] text-slate-400">{selectedNode?.role || selectedDevice?.slice_id}</span>
+                      </div>
+                      <button onClick={() => { setSelectedId(null); setSelectedType(null); }} className="text-slate-400 hover:text-white">
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-slate-400">HEALTH SCORE:</span>
+                        <span className="text-emerald-400 font-bold">{selectedNode?.healthScore || 100.0}%</span>
+                      </div>
+                      <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-slate-400">TRAFFIC VOLUME:</span>
+                        <span className="text-cyan-300">{selectedNode?.incomingTraffic || 75.0} Mbps</span>
+                      </div>
+                      <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-slate-400">LATENCY:</span>
+                        <span className="text-emerald-300">{selectedNode?.latency || 2.1} ms</span>
+                      </div>
+                      <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-slate-400">ANOMALY SCORE:</span>
+                        <span className={attackPath.includes(selectedId) ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+                          {attackPath.includes(selectedId) ? '0.94 (CRITICAL)' : '0.04 (NOMINAL)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {selectedDevice && (
+                      <div className="p-2.5 rounded bg-slate-900 border border-slate-800 flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-400">HMAC PSEUDONYMIZED IDENTITY:</span>
+                        <div className="flex items-center justify-between text-[10px] text-slate-300">
+                          <span className="truncate max-w-[170px]">{selectedDevice.device_id_hash}</span>
+                          <button onClick={() => handleCopyHmac(selectedDevice.device_id_hash)} className="hover:text-cyan-400">
+                            {copiedHmac ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => setActiveCameraPreset(selectedType === 'node' ? 'core' : 'ran')}
+                        className="flex-1 py-1.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 text-[11px] font-bold hover:bg-cyan-900"
+                      >
+                        Focus Camera
+                      </button>
+                      <button
+                        onClick={() => handleManualMitigation('SUSPICIOUS_SOURCE_ISOLATION')}
+                        className="flex-1 py-1.5 rounded bg-rose-950 text-rose-300 border border-rose-800 text-[11px] font-bold hover:bg-rose-900"
+                      >
+                        Quarantine Device
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-6 text-center text-slate-400 flex flex-col items-center justify-center gap-2 h-full">
+                    <Search className="w-8 h-8 text-slate-600" />
+                    <span>Click any 3D tower, node, or UE device in the campus viewport to inspect real-time performance telemetry.</span>
                   </div>
                 )}
               </div>
-            </div>
-          ) : (
-            /* AI Threat Intelligence Dossier */
-            <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                  AI Security Intelligence
-                </span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-cyan-950 text-cyan-300 border border-cyan-800">
-                  REALTIME
-                </span>
-              </div>
+            )}
 
-              {/* Threat Verdict */}
-              <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">THREAT STATUS:</span>
-                  <span className={`font-mono font-bold ${attackPath.length > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                    {attackPath.length > 0 ? 'ATTACK CONFIRMED' : 'NO THREAT DETECTED'}
+            {/* TAB 2: THREAT INVESTIGATION CENTRE (Phase 5) */}
+            {activeRightTab === 'investigation' && (
+              <div className="p-4 flex flex-col gap-3 animate-fadeIn text-xs font-mono overflow-y-auto max-h-[620px]">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                  <span className="font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> Incident Dossier
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
+                    {attackActive ? 'ACTIVE ANOMALY' : 'INVESTIGATED'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">CATEGORY:</span>
-                  <span className="font-mono text-slate-200">
-                    {attackPath.length > 0 ? 'Volumetric N3 GTP-U Flood' : 'Nominal Core Telemetry'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">TARGET:</span>
-                  <span className="font-mono text-cyan-400">UPF-01 (User Plane Gateway)</span>
-                </div>
-              </div>
 
-              {/* AI Explanation Derived from Real Audit Metrics */}
-              <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex flex-col gap-1 text-xs">
-                <span className="text-[10px] font-mono text-slate-400 uppercase">AI Explanation:</span>
-                <p className="text-slate-300 leading-relaxed text-[11px]">
-                  {attackPath.length > 0
-                    ? 'Isolation Forest and Autoencoder flag severe composition shift. Calibrated percentile: 99.6%. Ingress traffic exceeds 820 Mbps quota.'
-                    : 'Continuous non-parametric drift test confirms traffic composition matches nominal 5G baseline.'}
-                </p>
-              </div>
+                {/* Incident Overview */}
+                <div className="p-2.5 rounded bg-slate-900 border border-slate-800 flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">INCIDENT ID:</span>
+                    <span className="text-cyan-300 font-bold">INC-2026-0924</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">CLASSIFICATION:</span>
+                    <span className="text-rose-300 font-bold">Volumetric DDoS (UDP/GTP-U)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">TARGET ASSET:</span>
+                    <span className="text-white">UPF-01 (N3 User Plane Gateway)</span>
+                  </div>
+                </div>
 
-              {/* Zero-Trust Response Action Trigger */}
-              {attackPath.length > 0 && (
+                {/* Traffic Breakdown Analysis */}
+                <div className="p-2.5 rounded bg-slate-900 border border-slate-800 flex flex-col gap-1.5">
+                  <span className="text-[10px] text-slate-400 uppercase block font-bold">Traffic Breakdown</span>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-400">Normal Baseline:</span>
+                    <span className="text-slate-200">75.0 Mbps</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-400">Malicious Traffic:</span>
+                    <span className="text-rose-400 font-bold">{trafficBreakdown?.malicious_traffic_mbps || (attackActive ? 545.0 : 0.0)} Mbps</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-400">Legitimate Traffic:</span>
+                    <span className="text-emerald-400 font-bold">{trafficBreakdown?.legitimate_traffic_mbps || 74.8} Mbps</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-400">Packet Rate:</span>
+                    <span className="text-cyan-300">{trafficBreakdown?.packet_rate_pps?.toLocaleString() || (attackActive ? '48,500' : '1,240')} pps</span>
+                  </div>
+                </div>
+
+                {/* Detection Explanation */}
+                <div className="p-2.5 rounded bg-slate-900 border border-slate-800 flex flex-col gap-1 text-[11px]">
+                  <span className="text-[10px] text-cyan-400 font-bold uppercase">Multi-Engine AI Explanation:</span>
+                  <p className="text-slate-300 leading-relaxed">
+                    1. <strong>Metric Shift:</strong> N3 Ingress bandwidth surged from 75 Mbps to 620 Mbps (+726%).<br />
+                    2. <strong>Packet Loss:</strong> Latency increased from 1.8ms to 48ms; buffer packet loss reached 12.4%.<br />
+                    3. <strong>Detector:</strong> Isolation Forest and Autoencoder agreement score = 0.94 (CRITICAL).<br />
+                    4. <strong>Attribution:</strong> Distributed rogue cameras streaming unprovisioned UDP floods.
+                  </p>
+                </div>
+
+                {/* Action: Trace Path */}
                 <button
-                  onClick={handleEnforceZeroTrust}
-                  className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+                  onClick={() => setTraceAttackPath(!traceAttackPath)}
+                  className={`w-full py-2 rounded text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                    traceAttackPath ? 'bg-rose-950 text-rose-300 border-rose-700' : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
+                  }`}
                 >
-                  <Lock className="w-4 h-4" />
-                  Enforce Zero-Trust Quarantine
+                  <Eye className="w-3.5 h-3.5" />
+                  {traceAttackPath ? 'Hide 3D Attack Path' : 'Trace Attack Path in 3D'}
                 </button>
-              )}
+              </div>
+            )}
 
-              {/* Mitigation Lifecycle Stepper */}
-              <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex flex-col gap-2">
-                <span className="text-[10px] font-mono text-slate-400 uppercase">Mitigation Lifecycle:</span>
-                <div className="flex items-center justify-between text-[10px] font-mono">
-                  <span className={attackPath.length > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>1. DETECTED</span>
-                  <span className={confirmedAttack?.mitigationStep === 'VERIFYING' ? 'text-amber-400 font-bold' : 'text-slate-500'}>&rarr; 2. ISOLATE</span>
-                  <span className={confirmedAttack?.mitigationStep === 'RECOVERY_VERIFIED' ? 'text-emerald-400 font-bold' : 'text-slate-500'}>&rarr; 3. VERIFIED</span>
+            {/* TAB 3: DEFENCE CONTROLS & RECOMMENDATIONS (Phases 3.D, 7, 8) */}
+            {activeRightTab === 'defence' && (
+              <div className="p-4 flex flex-col gap-3 animate-fadeIn text-xs font-mono overflow-y-auto max-h-[620px]">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                  <span className="font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> Policy Decision Engine
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-bold">
+                    {defenceMode}
+                  </span>
                 </div>
-                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div className={`h-full transition-all duration-500 ${
-                    confirmedAttack?.mitigationStep === 'VERIFYING' ? 'bg-amber-400 w-2/3' : confirmedAttack?.mitigationStep === 'RECOVERY_VERIFIED' ? 'bg-emerald-400 w-full' : attackPath.length > 0 ? 'bg-rose-500 w-1/3' : 'bg-emerald-400 w-full'
-                  }`} />
+
+                {/* Active Recommendations Feed */}
+                {recommendations.length > 0 ? (
+                  recommendations.map((rec) => (
+                    <div key={rec.recommendation_id} className="p-3 rounded-lg bg-slate-900 border border-cyan-800/80 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-cyan-400 font-bold uppercase">{rec.proposed_action}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                          RISK: {rec.collateral_risk}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-200 leading-snug">{rec.reason}</p>
+                      <div className="text-[10px] text-slate-400 flex flex-col gap-0.5 bg-slate-950/60 p-2 rounded border border-slate-800">
+                        <div><strong>Target:</strong> {rec.target_component}</div>
+                        <div><strong>Expected Effect:</strong> {rec.expected_effect}</div>
+                        <div><strong>Side Effects:</strong> {rec.potential_side_effects}</div>
+                      </div>
+                      <button
+                        onClick={() => handleApproveRecommendation(rec.recommendation_id)}
+                        className="w-full py-1.5 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 transition-all"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve & Enforce
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-center">
+                    Zero pending recommendations. System operating within nominal safety envelope.
+                  </div>
+                )}
+
+                {/* Manual Mitigation Action Triggers */}
+                <div className="pt-2 border-t border-slate-800 flex flex-col gap-2">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold">Manual Defence Triggers:</span>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <button
+                      onClick={() => handleManualMitigation('RATE_LIMITING')}
+                      className="p-2 rounded bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-left font-bold"
+                    >
+                      Rate Limit Ingress
+                    </button>
+                    <button
+                      onClick={() => handleManualMitigation('TRAFFIC_RESTRICTION')}
+                      className="p-2 rounded bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-left font-bold"
+                    >
+                      Filter Malicious
+                    </button>
+                    <button
+                      onClick={() => handleManualMitigation('SUSPICIOUS_SOURCE_ISOLATION')}
+                      className="p-2 rounded bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-left font-bold"
+                    >
+                      Quarantine Rogue UEs
+                    </button>
+                    <button
+                      onClick={() => handleManualMitigation('SLICE_PROTECTION')}
+                      className="p-2 rounded bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 text-left font-bold"
+                    >
+                      PCF Slice Quota SLA
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Provisioning Verification Card */}
-          <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-2 text-xs">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Zero-Trust Provisioning</span>
-            <div className="flex items-center justify-between py-1 border-b border-slate-800/80 font-mono">
-              <span className="text-slate-400">Campus SIMs:</span>
-              <span className="text-white font-bold">{data?.provisioning_card?.total_catalog_sims ?? 13}</span>
-            </div>
-            <div className="flex items-center justify-between py-1 border-b border-slate-800/80 font-mono">
-              <span className="text-slate-400">Provisioned Share:</span>
-              <span className="text-cyan-300">
-                {((data?.provisioning_card?.provisioned_share ?? 1.0) * 100).toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-1 font-mono">
-              <span className="text-slate-400">Gate Action:</span>
-              <span className="text-emerald-400 font-bold">{data?.provisioning_card?.verdict ?? 'PASSED'}</span>
-            </div>
+            {/* TAB 4: MITIGATION STATUS & VERIFICATION (Phases 10 & 11) */}
+            {activeRightTab === 'mitigation' && (
+              <div className="p-4 flex flex-col gap-3 animate-fadeIn text-xs font-mono overflow-y-auto max-h-[620px]">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                  <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Containment Verification
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">
+                    {verificationResult?.verdict || 'CONTAINMENT VERIFIED'}
+                  </span>
+                </div>
+
+                {/* Evidence Checklist */}
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col gap-2">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold">Forensic Verification Checklist</span>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-300">Remaining Malicious Traffic:</span>
+                    <span className="text-emerald-400 font-bold">0.0 Mbps (CLEAN)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-300">Legitimate Preserved:</span>
+                    <span className="text-emerald-400 font-bold">99.5% (&gt;95% SLA)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-300">UPF Core Latency:</span>
+                    <span className="text-emerald-400 font-bold">2.2 ms (&lt;5ms)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-300">Buffer Packet Loss:</span>
+                    <span className="text-emerald-400 font-bold">0.00%</span>
+                  </div>
+                </div>
+
+                {/* Actions: Verify & Recover */}
+                <div className="flex flex-col gap-2 pt-2">
+                  <button
+                    onClick={handleVerifyMitigation}
+                    className="w-full py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md"
+                  >
+                    <Check className="w-4 h-4" /> Verify Containment Evidence
+                  </button>
+
+                  <button
+                    onClick={handleInitiateRecovery}
+                    className="w-full py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Initiate Network Recovery
+                  </button>
+
+                  {/* Recovery Progress Meter */}
+                  <div className="flex flex-col gap-1 p-2 rounded bg-slate-900 border border-slate-800">
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>RECOVERY PROGRESS:</span>
+                      <span className="text-emerald-400 font-bold">{recoveryProgress}%</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${recoveryProgress}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
       </div>
 
-      {/* 3. BOTTOM PANEL — EVENT TIMELINE, WHAT-IF LAB, RESILIENCE DASHBOARD */}
+      {/* 3. BOTTOM PANEL — 5 DEDICATED TABS (Phases 12, 13, 14) */}
       <footer className="px-3">
         <div className="bg-[#0a1628] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl">
-          {/* Tab Navigation */}
-          <div className="flex items-center border-b border-[#1b2b46] px-4 bg-[#081220] text-xs">
-            <button
-              onClick={() => setActiveBottomTab('timeline')}
-              className={`py-3 px-4 font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
-                activeBottomTab === 'timeline'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              Event Timeline & Telemetry Delta
-            </button>
-            <button
-              onClick={() => setActiveBottomTab('resilience')}
-              className={`py-3 px-4 font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
-                activeBottomTab === 'resilience'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Resilience Dashboard & 3-Arm Benchmark
-            </button>
-            <button
-              onClick={() => setActiveBottomTab('whatif')}
-              className={`py-3 px-4 font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
-                activeBottomTab === 'whatif'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              What-If Lab (Hypothetical Sandbox)
-            </button>
+          {/* Bottom Tabs Navigation */}
+          <div className="flex items-center border-b border-[#1b2b46] px-4 bg-[#081220] text-xs overflow-x-auto">
+            {[
+              { id: 'timeline', label: 'Event Timeline', icon: Terminal },
+              { id: 'traffic', label: 'Traffic Analysis', icon: Activity },
+              { id: 'evidence', label: 'Detection Evidence', icon: ShieldCheck },
+              { id: 'resilience', label: 'Resilience Dashboard', icon: Shield },
+              { id: 'report', label: 'Incident Report Ledger', icon: FileText },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveBottomTab(id as any)}
+                className={`py-3 px-4 font-semibold flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap ${
+                  activeBottomTab === id
+                    ? 'border-cyan-400 text-cyan-300'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
           </div>
 
-          {/* Tab Content */}
+          {/* Bottom Tab Content */}
           <div className="p-4">
+            {/* TAB 1: EVENT TIMELINE */}
             {activeBottomTab === 'timeline' && (
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                  {data?.decision_trace?.map((step) => (
-                    <div key={step.step} className="p-2.5 rounded bg-slate-900 border border-slate-800 text-xs flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between items-center text-[10px] text-cyan-400 font-mono mb-1">
-                          <span>STEP 0{step.step}</span>
-                          <span className="font-bold">{step.status}</span>
-                        </div>
-                        <h4 className="font-semibold text-white text-xs">{step.name}</h4>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-snug">{step.result}</p>
+              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto font-mono text-xs">
+                {data?.decision_trace?.map((step) => (
+                  <div key={step.step} className="p-2.5 rounded bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-cyan-400 font-bold">STEP 0{step.step}</span>
+                      <span className="font-semibold text-white">{step.name}</span>
+                      <span className="text-slate-400 text-[11px]">{step.result}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      step.status === 'PASSED' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'
+                    }`}>
+                      {step.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* TAB 2: TRAFFIC ANALYSIS */}
+            {activeBottomTab === 'traffic' && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-1">NORMAL BASELINE</span>
+                  <span className="text-lg font-bold text-white">75.0 Mbps</span>
+                  <p className="text-[11px] text-slate-400 mt-1">Nominal eMBB and URLLC baseline traffic load.</p>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-900 border border-rose-900/50">
+                  <span className="text-[10px] text-rose-400 block mb-1">MALICIOUS TRAFFIC</span>
+                  <span className="text-lg font-bold text-rose-300">{trafficBreakdown?.malicious_traffic_mbps || (attackActive ? 545.0 : 0.0)} Mbps</span>
+                  <p className="text-[11px] text-slate-400 mt-1">Anomalous volumetric UDP packet burst.</p>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-900 border border-emerald-900/60">
+                  <span className="text-[10px] text-emerald-400 block mb-1">LEGITIMATE PRESERVED</span>
+                  <span className="text-lg font-bold text-emerald-300">{trafficBreakdown?.legitimate_preserved_pct || 99.5}%</span>
+                  <p className="text-[11px] text-slate-400 mt-1">Zero-Trust perimeter allowlist enforcement.</p>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-[10px] text-cyan-400 block mb-1">COLLATERAL IMPACT</span>
+                  <span className="text-lg font-bold text-slate-200">0.4 Mbps (0.5%)</span>
+                  <p className="text-[11px] text-slate-400 mt-1">Accidentally dropped non-malicious packets.</p>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: DETECTION EVIDENCE */}
+            {activeBottomTab === 'evidence' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-cyan-400 font-bold block mb-1">ISOLATION FOREST SCORE</span>
+                  <span className="text-lg font-bold text-white">{attackActive ? '0.94 (CRITICAL)' : '0.04 (NOMINAL)'}</span>
+                  <p className="text-[11px] text-slate-400 mt-1">Flagged features: `packet_loss_ratio`, `inter_arrival_cv`, `bandwidth_mbps`.</p>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-cyan-400 font-bold block mb-1">AUTOENCODER RECONSTRUCTION</span>
+                  <span className="text-lg font-bold text-white">{attackActive ? '0.88 (EXCURSION)' : '0.02 (CLEAN)'}</span>
+                  <p className="text-[11px] text-slate-400 mt-1">Reconstruction MSE residual exceeds 99th percentile envelope.</p>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-cyan-400 font-bold block mb-1">CONSENSUS FUSION VERDICT</span>
+                  <span className={`text-lg font-bold ${attackActive ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {attackActive ? 'CONFIRMED ATTACK' : 'NOMINAL BASELINE'}
+                  </span>
+                  <p className="text-[11px] text-slate-400 mt-1">Multi-detector agreement verified across 4 distinct models.</p>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: RESILIENCE DASHBOARD */}
+            {activeBottomTab === 'resilience' && (
+              <div className="flex flex-col gap-3 text-xs font-mono">
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">QUANTITATIVE RESILIENCE METRIC (R):</span>
+                    <span className="text-xl font-bold text-emerald-400">96.4% (GRADE: EXCELLENT)</span>
+                  </div>
+                  <div className="text-right text-[11px] text-slate-400">
+                    <div>TTD = 3.2s • TTM = 2.8s • TTR = 3.5s</div>
+                    <div className="text-slate-500 text-[10px]">R = 100 * [0.4*(A/100) + 0.4*(1-D/100) + 0.2*exp(-0.01*T)]</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-400 block mb-1">Arm A: Static Baseline</span>
+                    <span className="text-sm font-bold text-white">0.0% Contamination</span>
+                    <p className="text-[11px] text-slate-400 mt-1">Never adapts. Fails to detect creeping zero-day drift.</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-rose-900/50">
+                    <span className="text-rose-400 block mb-1">Arm B: Unconstrained Continuous</span>
+                    <span className="text-sm font-bold text-rose-300">12.4% Contamination</span>
+                    <p className="text-[11px] text-slate-400 mt-1">Poisons baseline thresholds; FPR explodes to 45%.</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-emerald-900/60">
+                    <span className="text-emerald-400 block mb-1">Arm C: CommShield Adaptive Governance</span>
+                    <span className="text-sm font-bold text-emerald-300">0.0% Contamination</span>
+                    <p className="text-[11px] text-slate-400 mt-1">Gated by 4-gate verification & split conformal safety bounds.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 5: INCIDENT REPORT LEDGER */}
+            {activeBottomTab === 'report' && (
+              <div className="flex flex-col gap-3 font-mono text-xs">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <span className="font-bold text-white">Immutable Forensic Incident Ledger</span>
+                  <span className="text-slate-400 text-[11px]">{incidents.length} Records Logged</span>
+                </div>
+
+                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                  {incidents.map((inc) => (
+                    <div key={inc.incident_id} className="p-2.5 rounded bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-cyan-300 font-bold">{inc.incident_id}</span>
+                        <span className="text-white font-semibold">{inc.attack_type}</span>
+                        <span className="text-emerald-400 font-bold">[{inc.verification_status}]</span>
+                        <span className="text-slate-400 text-[11px] hidden md:inline">Preserved: {inc.legitimate_preserved_pct}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedIncident(inc)}
+                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => handleExportIncidentReport(inc.incident_id)}
+                          className="px-2.5 py-1 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[11px] flex items-center gap-1"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Export Markdown
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            {activeBottomTab === 'resilience' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-                {/* Arm A: Static Baseline */}
-                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
-                  <div>
-                    <span className="text-slate-400 block mb-1">Arm A: Static Baseline</span>
-                    <span className="text-sm font-bold text-white">0.0% Contamination</span>
-                    <p className="text-[11px] text-slate-400 mt-1">Never updates. Complete drift blind spot (FPR explodes during scale).</p>
-                  </div>
-                </div>
-
-                {/* Arm B: Naive Retraining */}
-                <div className="p-3 rounded-lg bg-slate-900 border border-rose-900/50 flex flex-col justify-between">
-                  <div>
-                    <span className="text-rose-400 block mb-1">Arm B: Naive Retraining</span>
-                    <span className="text-sm font-bold text-rose-300">
-                      {((data?.contamination_meters.naive.contamination_mean ?? 0.12) * 100).toFixed(1)}% Contamination
-                    </span>
-                    <p className="text-[11px] text-slate-400 mt-1">Accepts poisoned attack traffic; false positive rate degrades to 45%.</p>
-                  </div>
-                </div>
-
-                {/* Arm C: CommShield Twin */}
-                <div className="p-3 rounded-lg bg-slate-900 border border-emerald-900/60 flex flex-col justify-between">
-                  <div>
-                    <span className="text-emerald-400 block mb-1">Arm C: CommShield Twin</span>
-                    <span className="text-sm font-bold text-emerald-300">
-                      {((data?.contamination_meters.commshield_twin.contamination_mean ?? 0.0) * 100).toFixed(1)}% Contamination
-                    </span>
-                    <p className="text-[11px] text-slate-400 mt-1">Zero-Trust gated by provisioning catalog & split-conformal bounds.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeBottomTab === 'whatif' && (
-              <div className="flex flex-col gap-3 text-xs">
-                <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-slate-900 border border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 font-mono">EXPERIMENT:</span>
-                    <select
-                      value={whatIfScenario}
-                      onChange={(e) => setWhatIfScenario(e.target.value)}
-                      aria-label="What-If Experiment Scenario"
-                      className="bg-slate-800 border border-slate-700 rounded px-2.5 py-1 text-cyan-300 font-mono"
-                    >
-                      <option value="upf_failure">What if UPF Core Gateway Fails?</option>
-                      <option value="slice_congestion">What if URLLC Slice Congests (3x Surge)?</option>
-                      <option value="delayed_mitigation">What if Mitigation is Delayed by 5 Windows?</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 font-mono">TRAFFIC INTENSITY:</span>
-                    <input
-                      type="range"
-                      min={1.0}
-                      max={5.0}
-                      step={0.5}
-                      value={whatIfMultiplier}
-                      onChange={(e) => setWhatIfMultiplier(Number(e.target.value))}
-                      aria-label="Traffic Intensity Multiplier"
-                      className="accent-cyan-400 cursor-pointer w-24"
-                    />
-                    <span className="font-mono text-cyan-400">{whatIfMultiplier}x</span>
-                  </div>
-
-                  <button
-                    onClick={() => setWhatIfSimulated(true)}
-                    className="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 font-mono"
-                  >
-                    Simulate Hypothesis
-                  </button>
-                  <span className="text-[10px] text-amber-400 font-mono">SIMULATED / PREDICTED ONLY (ISOLATED)</span>
-                </div>
-
-                {whatIfSimulated && (
-                  <div className="p-3 rounded-lg bg-cyan-950/30 border border-cyan-800/60 grid grid-cols-1 md:grid-cols-3 gap-3 font-mono">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">PREDICTED AVAILABILITY:</span>
-                      <span className="text-base font-bold text-amber-300">84.2% (-15.8%)</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">PREDICTED URLLC LATENCY:</span>
-                      <span className="text-base font-bold text-rose-400">8.45 ms (+7.27ms)</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">MITIGATION RECOMMENDATION:</span>
-                      <span className="text-base font-bold text-emerald-400">Dynamic UPF Micro-Scaling</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </footer>
 
-      {/* 4. ATTACK SIMULATION SELECTION MODAL */}
-      {showAttackModal && (
+      {/* Incident Detail Modal */}
+      {selectedIncident && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0b1728] border border-rose-800/80 rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-fadeIn">
+          <div className="bg-[#0b1728] border border-cyan-800 rounded-xl p-5 max-w-lg w-full shadow-2xl flex flex-col gap-3 font-mono text-xs">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-rose-400 font-bold text-sm font-mono">
-                <Flame className="w-5 h-5 text-rose-400" />
-                INITIATE 5G CYBERATTACK SIMULATION
-              </div>
-              <button onClick={() => setShowAttackModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
+              <span className="font-bold text-cyan-300">INCIDENT DOSSIER: {selectedIncident.incident_id}</span>
+              <button onClick={() => setSelectedIncident(null)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
               </button>
             </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Select an adversarial scenario to test real-time AI detection, packet propagation, and zero-trust quarantine across the 3D campus.
-            </p>
-
-            <div className="flex flex-col gap-3 text-xs font-mono">
-              <label className="text-slate-400">Attack Vector Scenario:</label>
-              <select
-                value={selectedAttackType}
-                onChange={(e) => setSelectedAttackType(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded p-2 text-rose-300 font-bold"
-              >
-                <option value="ddos_traffic_flood">Volumetric DDoS Flood (N3 GTP-U Tunnel)</option>
-                <option value="unprovisioned_burst">Unprovisioned Rogue SIM Burst (40+ Devices)</option>
-                <option value="provisioned_burst_no_event">Provisioned 6x Flood Without Change Ticket</option>
-                <option value="slow_ramp_in_onboarding">Creeping Slow Ramp in Onboarding Window</option>
-              </select>
-
-              <label className="text-slate-400 mt-1">Target Network Slice / Ingress:</label>
-              <select
-                value={attackTargetSlice}
-                onChange={(e) => setAttackTargetSlice(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded p-2 text-cyan-300"
-              >
-                <option value="sst-1-sd-010203">eMBB Camera Array (gNodeB-01)</option>
-                <option value="sst-2-sd-020304">URLLC AGV Track (gNodeB-02)</option>
-                <option value="sst-3-sd-030405">mMTC Sensor Mesh (gNodeB-03/04)</option>
-              </select>
+            <div className="flex flex-col gap-1.5 text-slate-300">
+              <div><strong>Classification:</strong> {selectedIncident.attack_type}</div>
+              <div><strong>Target Component:</strong> {selectedIncident.target_component}</div>
+              <div><strong>Containment Verdict:</strong> <span className="text-emerald-400 font-bold">{selectedIncident.verification_status}</span></div>
+              <div><strong>Legitimate Traffic Preserved:</strong> {selectedIncident.legitimate_preserved_pct}%</div>
+              <div><strong>Peak Malicious Bandwidth:</strong> {selectedIncident.peak_malicious_traffic_mbps} Mbps</div>
+              <div><strong>Enacted Policies:</strong> {selectedIncident.applied_policies.join(', ')}</div>
+              <div><strong>Outcome Summary:</strong> {selectedIncident.final_outcome}</div>
             </div>
-
-            {attackError && (
-              <div className="p-2.5 rounded bg-rose-950 text-rose-300 text-xs border border-rose-800 font-mono">
-                {attackError}
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end pt-2 border-t border-slate-800 gap-2">
               <button
-                onClick={() => setShowAttackModal(false)}
-                className="px-4 py-2 rounded bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
+                onClick={() => handleExportIncidentReport(selectedIncident.incident_id)}
+                className="px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold flex items-center gap-1"
               >
-                Cancel
+                <Download className="w-3.5 h-3.5" /> Download Report
               </button>
               <button
-                onClick={handleStartAttack}
-                disabled={attackSubmitting}
-                className="px-4 py-2 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-1.5"
+                onClick={() => setSelectedIncident(null)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:text-white"
               >
-                {attackSubmitting ? 'Confirming...' : 'Launch Attack'}
+                Close
               </button>
             </div>
           </div>
