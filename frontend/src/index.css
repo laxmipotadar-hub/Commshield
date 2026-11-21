@@ -3,9 +3,76 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-bg text-text font-sans;
+  :root {
+    --bg-surface: #f8f9ff;
+    --bg-surface-lowest: #ffffff;
+    --bg-surface-low: #eff4ff;
+    --bg-surface-container: #e5eeff;
+    --bg-surface-high: #dce9ff;
+    --text-on-surface: #0b1c30;
+    --text-on-surface-variant: #434655;
+    --border-color: #e2e8f0;
   }
+
+  .dark {
+    --bg-surface: #0b1329;
+    --bg-surface-lowest: #0f1d33;
+    --bg-surface-low: #152542;
+    --bg-surface-container: #192b4c;
+    --bg-surface-high: #1e335a;
+    --text-on-surface: #f1f5f9;
+    --text-on-surface-variant: #94a3b8;
+    --border-color: #1e293b;
+  }
+
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased;
+    overscroll-behavior: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* Dark mode utility overrides for dual-shell integration */
+.dark body {
+  background-color: #0b1329;
+  color: #f1f5f9;
+}
+.dark .bg-surface {
+  background-color: #0b1329 !important;
+}
+.dark .bg-surface-container-lowest {
+  background-color: #0f1d33 !important;
+}
+.dark .bg-surface-container-low {
+  background-color: #152542 !important;
+}
+.dark .bg-surface-container {
+  background-color: #192b4c !important;
+}
+.dark .bg-surface-container-high {
+  background-color: #1e335a !important;
+}
+.dark .bg-card {
+  background-color: #0f1d33 !important;
+}
+.dark .bg-bg {
+  background-color: #0b1329 !important;
+}
+.dark .text-on-surface {
+  color: #f1f5f9 !important;
+}
+.dark .text-on-surface-variant {
+  color: #94a3b8 !important;
+}
+.dark .text-text {
+  color: #f1f5f9 !important;
+}
+.dark .text-muted {
+  color: #94a3b8 !important;
+}
+.dark .border-border,
+.dark .border-outline-variant {
+  border-color: #1e293b !important;
 }
 
 /* Custom scrollbars */
@@ -17,9 +84,31 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Accessibility: respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Manual low-motion class */
+.low-motion *, .low-motion ::before, .low-motion ::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
