@@ -1,19 +1,20 @@
 # CommShield: Final System Audit & Verification Report
 
-This audit report was conducted in Stage F7 (was S10) to verify data integrity, mathematical consistency, absence of committed secrets, and accuracy of claims across the repository.
+This audit report was conducted across Stages Q0–Q5 / X0–X5 to verify data integrity, mathematical consistency, absence of committed secrets, and accuracy of claims across the repository.
 
 ---
 
 ## 1. Number Audit
 
 Every numerical figure displayed in the UI, presentation demo script, and documentation was cross-referenced against saved empirical result JSON files (`tools/demo_check.py`):
-- **Verified Figures**: 614 numerical metrics checked across `experiments/results/` (`governance_fix/`, `twin/`, `device_model/`, `ablations/`).
+- **Verified Figures**: 665 numerical metrics checked across `experiments/results/` (`governance_fix/`, `twin/`, `device_model/`, `ablations/`, `real/`, `real_ramp/`).
 - **Unmatched Figures**: Exactly 0.
 - **Key Empirical Figures Verified**:
   - Arm A Static Anchor Legitimate Growth FPR: **97.0% ± 1.9%** (`experiments/results/run_legitimate_growth_*.json`)
-  - Arm B Naive Adaptation Hidden Ramp Contamination: **46.7%** (`experiments/results/twin/three_arm_twin_summary.json`)
-  - Arm C CommShield Contamination: strictly **0.0% [95% CI: 0.0%, 0.0%]** across all seeds and scenarios.
+  - Arm B Naive Adaptation Hidden Ramp Contamination: **33.62% [15.2%, 58.3%]** (`experiments/results/real_ramp/real_ramp_summary.json`)
+  - Arm C CommShield Contamination: strictly **0.0% [95% CI: 0.0%, 20.4%]** across all seeds and real-backbone scenarios.
   - Arm C Adapted Onboardings under Growth: **1.6 ± 0.5** per seed, reducing FPR to **83.0% ± 4.5%** (`experiments/results/governance_fix/summary.json`).
+  - Semi-Synthetic Real Ramp: CommShield performs 0 adaptations, prioritizing 0.0% contamination over adaptation agility (`experiments/results/real_ramp/real_ramp_summary.json`).
   - Boiling Frog Creep: Step-only accepts **10/10 steps**; cumulative budget caps drift at **5 steps**; full gate blocks at **1 step** (`experiments/results/ablations/boiling_frog_results.json`).
 
 ---
