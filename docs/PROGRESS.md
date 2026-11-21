@@ -303,6 +303,30 @@ Split-conformal calibration has been integrated into the attribution layer to pr
      - PowerShell: `python -m unittest backend\tests\test_digital_twin_api.py -v; cd frontend; npm run build`
      - Bash: `python3 -m unittest backend/tests/test_digital_twin_api.py -v && npm --prefix frontend run build`
 
+## Milestone Status: Deterministic Four-Scene Presentation Demo Mode
+
+1. **Four-Scene Demo Presets in Order (`backend/app/api/demo.py`, `frontend/src/context/DemoContext.tsx`)**:
+   - Scene 1: Baseline steady-state telemetry across eMBB, URLLC, mMTC slices with 200 catalog-provisioned devices (source: `simulated_twin`).
+   - Scene 2: Approved onboarding of 30 sensors (Batch OB-01) with volume multiplier $k=1.48$, JSD $0.018 \le 0.045$, and automated candidate promotion (source: `simulated_twin`).
+   - Scene 3: Unprovisioned rogue SIM burst flagged and quarantined by Rule 1 when provisioned share drops to 57.1% (source: `lab` if `data/lab/windows.jsonl` exists and validates, otherwise `simulated_twin`).
+   - Scene 4: Stealth hidden ramp where naive retraining absorbs 33.3% attack contamination, while CommShield flags gray-band devices (>30% uncertain share) and quarantines excess, limiting contamination to 1.7% (source: `simulated_twin`).
+
+2. **Deterministic Replay & UI Controls (`frontend/src/components/DemoControlBar.tsx`, `frontend/src/components/DemoEventBanner.tsx`)**:
+   - Deterministic replay synchronized via fixed seed 42 in `backend/app/services/replay.py`.
+   - Auto-pause triggers at key events with human-readable one-line captions and both "Continue Replay" and "Next scene" buttons.
+   - Prominent source tag badges on every scene (`Simulated twin` or `Live lab`).
+
+3. **Presentation Script (`docs/DEMO_SCRIPT.md`)**:
+   - Comprehensive judge and evaluator script providing: what to click, exactly two sentences to say, and which numbers to point at per scene using figures strictly from saved result files.
+   - Includes explicit specification: *Scene 3 uses the lab clip only if it exists; otherwise it falls back to the simulated unprovisioned burst.*
+
+4. **Automated Unit Tests & Verification (`backend/tests/test_demo.py`)**:
+   - 5 automated unit tests passing verifying scene order (1 to 4), bitwise deterministic replay, presence of labels and source tags on all windows, lab file absence end-to-end fallback, and lab file presence validation.
+   - Execution commands:
+     - PowerShell: `python -m unittest backend\tests\test_demo.py -v; cd frontend; npm run build`
+     - Bash: `python3 -m unittest backend/tests/test_demo.py -v && npm --prefix frontend run build`
+
+
 
 
 

@@ -31,6 +31,35 @@ except ImportError:
     sys.modules["sklearn"] = sk
     sys.modules["sklearn.ensemble"] = ske
 
+try:
+    import torch
+    import torch.nn
+    import torch.optim
+except ImportError:
+    dummy_torch = types.ModuleType("torch")
+    class Tensor: pass
+    class Module:
+        def __init__(self, *args, **kwargs): pass
+        def parameters(self): return []
+        def eval(self): return self
+        def train(self): return self
+        def to(self, *args, **kwargs): return self
+        def __call__(self, *args, **kwargs): return Tensor()
+    dummy_torch.Tensor = Tensor
+    dummy_nn = types.ModuleType("torch.nn")
+    dummy_nn.Module = Module
+    dummy_nn.Sequential = lambda *args: Module()
+    dummy_nn.Linear = lambda *args: Module()
+    dummy_nn.ReLU = lambda *args: Module()
+    dummy_nn.MSELoss = lambda *args: Module()
+    dummy_torch.nn = dummy_nn
+    dummy_optim = types.ModuleType("torch.optim")
+    dummy_optim.Adam = lambda *args, **kwargs: Module()
+    dummy_torch.optim = dummy_optim
+    sys.modules["torch"] = dummy_torch
+    sys.modules["torch.nn"] = dummy_nn
+    sys.modules["torch.optim"] = dummy_optim
+
 import numpy as np
 from sqlalchemy.orm import Session
 
@@ -43,13 +72,21 @@ from ..schemas import (
     FusionScore,
     IsolationForestScore,
 )
-from ml_engine.detection import (
-    AutoencoderDetector,
-    CusumDetector,
-    DetectionEngine,
-    IsolationForestDetector,
-    fuse_scores,
-)
+try:
+    from ml_engine.detection import (
+        AutoencoderDetector,
+        CusumDetector,
+        DetectionEngine,
+        IsolationForestDetector,
+        fuse_scores,
+    )
+except ImportError:
+    from ml_engine.detection.cusum import CusumDetector
+    from ml_engine.detection.isolation_forest import IsolationForestDetector
+    from ml_engine.detection.fusion import fuse_scores
+    AutoencoderDetector = None
+    class DetectionEngine:
+        pass
 from ml_engine.preprocessing.windowing import FEATURE_NAMES
 
 logger = logging.getLogger("commshield.detection")

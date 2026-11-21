@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDemo } from '../context/DemoContext';
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Play, ShieldAlert, Sparkles, Zap, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Play, ShieldAlert, Sparkles, Zap, TrendingUp } from 'lucide-react';
 
 export const DemoEventBanner: React.FC = () => {
   const {
@@ -9,6 +9,7 @@ export const DemoEventBanner: React.FC = () => {
     activeKeyEvent,
     pausedAtEvent,
     resumeFromKeyEvent,
+    nextPreset,
     injectAttack,
     scaleTraffic2x,
   } = useDemo();
@@ -40,13 +41,22 @@ export const DemoEventBanner: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={resumeFromKeyEvent}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-navy font-bold text-xs rounded-lg transition-colors shadow-md flex-shrink-0"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>Continue Replay</span>
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={resumeFromKeyEvent}
+              className="flex items-center justify-center gap-2 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-navy font-bold text-xs rounded-lg transition-colors shadow-md"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Continue Replay</span>
+            </button>
+            <button
+              onClick={nextPreset}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue hover:bg-blue/90 text-white font-bold text-xs rounded-lg transition-colors shadow-md"
+            >
+              <span>Next scene</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -205,7 +215,7 @@ export const DemoEventBanner: React.FC = () => {
                             </span>
                           </td>
                           <td className="py-2 text-text">
-                            {arm.recall !== null ? `${(arm.recall * 100).toFixed(0)}%` : 'N/A'}
+                            {arm.recall !== null && arm.recall !== undefined ? `${(arm.recall * 100).toFixed(0)}%` : 'N/A'}
                           </td>
                           <td className="py-2 text-text">{(arm.fpr * 100).toFixed(1)}%</td>
                           <td className="py-2 text-text">{(arm.contamination * 100).toFixed(1)}%</td>

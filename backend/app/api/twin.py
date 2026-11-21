@@ -259,6 +259,15 @@ async def get_digital_twin_dashboard(
     time_step: int = Query(15, ge=0, le=29, description="Active time step in replay interval"),
 ) -> Dict[str, Any]:
     """Retrieve full Digital Twin state reading exclusively from saved result files."""
+    if hasattr(time_step, "default"):
+        time_step = time_step.default
+    if not isinstance(time_step, int):
+        time_step = 15
+    if hasattr(scenario, "default"):
+        scenario = scenario.default
+    if hasattr(source, "default"):
+        source = source.default
+
     valid_scenarios = [
         "approved_onboarding",
         "unprovisioned_burst",

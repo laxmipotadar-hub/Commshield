@@ -70,17 +70,21 @@ export interface DemoPreset {
   preset_number: number;
   name: string;
   description: string;
-  data_label: 'real' | 'semi-synthetic';
+  data_label: string;
+  source?: string;
+  source_badge?: string;
+  scenario?: string;
   dataset_id: string;
   best_attack_type?: string | null;
   window_range: DemoWindowRange;
   key_events: DemoKeyEvent[];
   three_arm_summary?: {
     scenario: string;
-    data_label: string;
+    source?: string;
+    data_label?: string;
     arms: Record<string, {
       name: string;
-      recall: number | null;
+      recall?: number | null;
       fpr: number;
       contamination: number;
       adaptations: number;
@@ -88,8 +92,9 @@ export interface DemoPreset {
     }>;
   };
   decision_trace?: {
-    candidate_version: string;
-    overall_status: string;
+    status?: string;
+    candidate_version?: string;
+    overall_status?: string;
     checks: Array<{
       name: string;
       status: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDemo } from '../context/DemoContext';
-import { ChevronRight, Presentation, Shield, TrendingUp, Zap } from 'lucide-react';
+import { ChevronRight, Presentation, Shield } from 'lucide-react';
 
 export const DemoControlBar: React.FC = () => {
   const {
@@ -11,8 +11,6 @@ export const DemoControlBar: React.FC = () => {
     activePresetIndex,
     selectPreset,
     nextPreset,
-    injectAttack,
-    scaleTraffic2x,
   } = useDemo();
 
   return (
@@ -41,22 +39,25 @@ export const DemoControlBar: React.FC = () => {
       {/* 2. Controls visible when Demo Mode is ON */}
       {isDemoMode && (
         <>
-          {/* Persistent Real 5G-NIDD Replay Badge */}
-          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm">
-            <Shield className="w-3.5 h-3.5 text-amber-400" />
-            <span className="whitespace-nowrap">Replay mode: real 5G-NIDD traffic</span>
+          {/* Source Tag Badge */}
+          <div
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm border ${
+              activePreset.source === 'lab' || activePreset.source_badge === 'Live lab'
+                ? 'bg-purple-500/15 border-purple-500/40 text-purple-300'
+                : activePreset.source === 'real_recorded' || activePreset.source_badge === 'Real recorded'
+                ? 'bg-blue/15 border-blue/40 text-blue'
+                : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span className="whitespace-nowrap">
+              Source: {activePreset.source_badge || (activePreset.source === 'lab' ? 'Live lab' : 'Simulated twin')}
+            </span>
           </div>
-
-          {/* Semi-Synthetic Badge if applicable */}
-          {activePreset.data_label === 'semi-synthetic' && (
-            <div className="flex items-center gap-1 bg-purple-500/15 border border-purple-500/30 text-purple-300 px-2 py-1 rounded-lg text-xs font-bold">
-              <span>semi-synthetic</span>
-            </div>
-          )}
 
           {/* Scenario Selector Dropdown (1 to 4) */}
           <div className="flex items-center gap-1.5 bg-bg px-2 py-1 rounded-lg border border-border">
-            <span className="text-[11px] font-bold text-muted uppercase">Scenario:</span>
+            <span className="text-[11px] font-bold text-muted uppercase">Scene:</span>
             <select
               value={activePresetIndex}
               onChange={(e) => selectPreset(Number(e.target.value))}
@@ -64,43 +65,21 @@ export const DemoControlBar: React.FC = () => {
             >
               {presets.map((p, idx) => (
                 <option key={p.id} value={idx}>
-                  {idx + 1}. {p.name} ({p.data_label})
+                  {idx + 1}. {p.name} [{p.source_badge || (p.source === 'lab' ? 'Live lab' : 'Simulated twin')}]
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Next Scenario Button */}
+          {/* Next Scene Button */}
           <button
             onClick={nextPreset}
-            className="flex items-center gap-1 px-2.5 py-1 bg-card hover:bg-border/60 border border-border text-text rounded-lg text-xs font-semibold transition-colors"
-            title="Advance to next presentation scenario"
+            className="flex items-center gap-1 px-3 py-1 bg-blue hover:bg-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
+            title="Advance to next presentation scene"
           >
-            <span>Next</span>
+            <span>Next scene</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
-
-          {/* Live Judge Action Buttons (Only when on Scenario 1) */}
-          {activePreset.preset_number === 1 && (
-            <div className="flex items-center gap-1.5 pl-1.5 border-l border-border">
-              <button
-                onClick={injectAttack}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-attack/15 hover:bg-attack/25 border border-attack/40 text-attack text-[11px] font-bold transition-all shadow-sm"
-                title="Switch replay to prepared SYNScan attack window"
-              >
-                <Zap className="w-3 h-3 text-attack fill-current" />
-                <span>Inject attack</span>
-              </button>
-              <button
-                onClick={scaleTraffic2x}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-teal/15 hover:bg-teal/25 border border-teal/40 text-teal text-[11px] font-bold transition-all shadow-sm"
-                title="Switch replay to prepared 2.0x scaled growth stream"
-              >
-                <TrendingUp className="w-3 h-3 text-teal" />
-                <span>Scale traffic 2x</span>
-              </button>
-            </div>
-          )}
         </>
       )}
     </div>

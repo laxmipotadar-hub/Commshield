@@ -49,6 +49,52 @@ class ReplayService:
         window_scale_sec: int = 60,
     ) -> List[Dict[str, Any]]:
         """Load windows from scenario file in data/synthetic/ or adapt real 5G-NIDD telemetry."""
+        # Four-Scene Demo loading: (1) baseline, (2) approved onboarding, (3) unprovisioned device, (4) hidden ramp
+        twin_demo_map = {
+            "baseline": ("approved_onboarding", 10),
+            "scene_1_baseline": ("approved_onboarding", 10),
+            "demo_baseline": ("approved_onboarding", 10),
+            "approved_onboarding": ("approved_onboarding", 20),
+            "scene_2_approved_onboarding": ("approved_onboarding", 20),
+            "demo_approved_onboarding": ("approved_onboarding", 20),
+            "unprovisioned_device": ("unprovisioned_burst", 20),
+            "scene_3_unprovisioned_device": ("unprovisioned_burst", 20),
+            "demo_unprovisioned_device": ("unprovisioned_burst", 20),
+            "hidden_ramp": ("slow_ramp_in_onboarding", 20),
+            "scene_4_hidden_ramp": ("slow_ramp_in_onboarding", 20),
+            "demo_hidden_ramp": ("slow_ramp_in_onboarding", 20),
+        }
+
+        if dataset_id in twin_demo_map:
+            stream_name, num_wins = twin_demo_map[dataset_id]
+            # For Scene 3, if data/lab/windows.jsonl exists and validates, use it!
+            if dataset_id in ("unprovisioned_device", "scene_3_unprovisioned_device", "demo_unprovisioned_device"):
+                lab_path = PROJECT_ROOT / "data" / "lab" / "windows.jsonl"
+                if lab_path.is_file():
+                    try:
+                        from ml_engine.provisioning.schema import validate_window
+                        lab_windows = []
+                        with open(lab_path, "r", encoding="utf-8", newline="\n") as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    win = json.loads(line)
+                                    if "slice_id" in win and "raw_counters" in win:
+                                        validate_window(win)
+                                        lab_windows.append(win)
+                        if lab_windows:
+                            return lab_windows
+                    except Exception as e:
+                        logger.warning("Lab windows validation error in demo loader: %s", e)
+
+            from ml_engine.scenarios.twin_generator import TwinScenarioGenerator
+            gen = TwinScenarioGenerator(seed=42, source="simulated_twin")
+            stream_data = gen.generate_stream(stream_name, num_windows=num_wins)
+            windows = stream_data["slice_windows"]
+            for idx, w in enumerate(windows):
+                w["window_id"] = f"{stream_name}_{w['slice_id']}_{idx:04d}"
+            return windows
+
         # Demo alias resolution
         demo_aliases = {
             "real_benign": "demo_real_benign",
