@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class ReplayStartRequest(BaseModel):
-    dataset_id: str
-    data_source: Optional[str] = "synthetic"
+    dataset_id: str = "5g_nidd"
+    data_source: Optional[str] = "5g_nidd"
     speed_multiplier: float = 1.0
     active_arms: List[str] = Field(
         default_factory=lambda: ["arm_a_static", "arm_b_naive", "arm_c_commshield"]
@@ -16,7 +16,7 @@ class ReplayStartRequest(BaseModel):
 class ReplayStatusResponse(BaseModel):
     status: str
     dataset_id: str
-    data_source: Optional[str] = "synthetic"
+    data_source: Optional[str] = "5g_nidd"
     current_window_index: int
     total_windows: int
     speed_multiplier: float

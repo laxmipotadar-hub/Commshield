@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { api, ReplayStatusResponse } from '../services/api';
 
 export const SCENARIOS = [
+  { id: '5g_nidd', label: '5G-NIDD (Real 5G Testbed)' },
   { id: 'stable_benign', label: 'Stable Benign' },
   { id: 'legitimate_growth', label: 'Legitimate Growth' },
   { id: 'slow_attack_ramp', label: 'Slow Attack Ramp' },
@@ -37,13 +38,13 @@ interface ReplayContextType {
 const ReplayContext = createContext<ReplayContextType | undefined>(undefined);
 
 export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('stable_benign');
-  const [selectedDataSource, setSelectedDataSource] = useState<DataSourceId>('synthetic');
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('5g_nidd');
+  const [selectedDataSource, setSelectedDataSource] = useState<DataSourceId>('5g_nidd');
   const [open5gsAvailable, setOpen5gsAvailable] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(2.0);
   const [status, setStatus] = useState<string>('STOPPED');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [totalWindows, setTotalWindows] = useState<number>(60);
+  const [totalWindows, setTotalWindows] = useState<number>(80);
   const [pollTick, setPollTick] = useState<number>(0);
   const [activeBaselineVersion, setActiveBaselineVersion] = useState<string>('v1.0.0-anchor');
   const [selectedSlice, setSelectedSlice] = useState<string>('sst-1-sd-010203');

@@ -27,8 +27,8 @@ class ReplayService:
 
     def __init__(self):
         self.status: str = "STOPPED"
-        self.dataset_id: str = "stable_benign"
-        self.data_source: str = "synthetic"
+        self.dataset_id: str = "5g_nidd"
+        self.data_source: str = "5g_nidd"
         self.current_window_index: int = 0
         self.total_windows: int = 0
         self.speed_multiplier: float = 1.0

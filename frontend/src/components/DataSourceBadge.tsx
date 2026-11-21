@@ -16,7 +16,8 @@ export const DataSourceBadge: React.FC<DataSourceBadgeProps> = ({
   const { selectedDataSource, selectedScenario } = useReplay();
   const activeSource = sourceOverride || selectedDataSource;
 
-  const isAssignedSlices = activeSource === '5g_nidd';
+  const isReal5GNIDD = activeSource === '5g_nidd';
+  const isAssignedSlices = isReal5GNIDD;
   const isSemiSynthetic =
     forceSemiSynthetic ||
     (activeSource === '5g_nidd' &&
@@ -25,19 +26,19 @@ export const DataSourceBadge: React.FC<DataSourceBadgeProps> = ({
         selectedScenario.includes('growth') ||
         selectedScenario.includes('scaled')));
 
-  const sourceName =
-    activeSource === '5g_nidd'
-      ? '5G-NIDD'
-      : activeSource === 'open5gs_lab'
-      ? 'Open5GS Lab'
-      : 'Synthetic';
+  let badgeLabel = 'Controlled simulation (ground truth known)';
+  if (isReal5GNIDD) {
+    badgeLabel = 'Real 5G testbed traffic (5G-NIDD), replayed';
+  } else if (activeSource === 'open5gs_lab') {
+    badgeLabel = 'Open5GS Lab';
+  }
 
   return (
     <div className={`inline-flex items-center gap-2 flex-wrap ${className}`}>
       {/* Active Source Name Badge */}
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-navy text-white border border-slate/40 shadow-xs">
         <Database className="w-3.5 h-3.5 text-teal" />
-        <span>Source: {sourceName}</span>
+        <span>{badgeLabel}</span>
       </span>
 
       {/* Assigned Slices Badge */}
@@ -47,7 +48,7 @@ export const DataSourceBadge: React.FC<DataSourceBadgeProps> = ({
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30"
         >
           <Tag className="w-3 h-3" />
-          <span>assigned slices</span>
+          <span>slices assigned</span>
         </span>
       )}
 

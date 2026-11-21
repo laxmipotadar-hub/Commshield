@@ -24,7 +24,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { StatusBadge, DemoControlBar, DemoEventBanner } from './components';
+import { StatusBadge, DemoControlBar, DemoEventBanner, DataProvenanceStrip } from './components';
 import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitoringPage } from './pages/MonitoringPage';
@@ -211,8 +211,8 @@ const AppLayout: React.FC = () => {
                 className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
                 title="Active Telemetry Data Source"
               >
+                <option value="5g_nidd">Real 5G-NIDD</option>
                 <option value="synthetic">Synthetic</option>
-                <option value="5g_nidd">5G-NIDD</option>
                 {open5gsAvailable && <option value="open5gs_lab">Open5GS lab</option>}
               </select>
             </div>
@@ -284,6 +284,9 @@ const AppLayout: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {/* Presentation Demo Mode Key Event & Scenario 4 Banner */}
             <DemoEventBanner />
+
+            {/* Data Provenance & Real Data Honest Labeling Strip */}
+            <DataProvenanceStrip />
 
             <Routes>
               <Route path="/" element={<OverviewPage />} />
