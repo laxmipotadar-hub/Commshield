@@ -250,6 +250,29 @@ Split-conformal calibration has been integrated into the attribution layer to pr
 5. **Automated Unit Tests (`backend/tests/test_twin_attribution.py`)**:
    - 8 unit tests passing covering: Rule 1 unprovisioned detection, Rule 2 clean onboarding promotion, Rule 3 volume exceeds batch, Rule 3 conformal gray-band uncertainty, Rule 3 partial event match, stream verdict compliance, bitwise determinism across seeds, zero raw SIM ID leakage, and backward compatibility flag.
 
+## Milestone Status: Lab Adapter & Open5GS Offline Telemetry Ingestion
+
+1. **Cross-Platform Open5GS Lab Adapter (`lab/adapter.py`)**:
+   - Ingests Open5GS AMF/UPF logs and AMF metrics, mapping 3GPP control-plane procedures and user-plane flows to canonical slice-level and per-device windows.
+   - Enforces HMAC-SHA256 identity pseudonymisation with zero raw IMSI or SIM ID leakage.
+   - Strictly validates all windows against `ml_engine/provisioning/schema.py` with `source="lab"`.
+   - Produces a single persistent output artifact: `data/lab/windows.jsonl`.
+
+2. **Offline Replay on Sample Logs (`lab/sample_logs/`)**:
+   - Bundles sample captures (`open5gs_amf.log`, `open5gs_upf.log`, `amf_metrics.json`) enabling execution on Windows 10/11 and CI runners without live 5G core daemons or root access.
+
+3. **Canonical Window Validator CLI (`lab/validate.py`)**:
+   - CLI validator executable via `python -m lab.validate data/lab/windows.jsonl` (and `python3 -m lab.validate data/lab/windows.jsonl`).
+   - Verifies schema constraints, `source="lab"`, 64-hex HMAC hashes, and zero raw subscriber ID leaks.
+
+4. **Lab Testbed Documentation (`docs/LAB.md`)**:
+   - Details Open5GS (AMF, SMF, UPF) and UERANSIM (gNodeB, UE) architecture, differentiating live 3GPP control/user plane daemons from simulated RF propagation.
+   - Explains zero-daemon offline fallback for Windows and developer environments with PowerShell and Bash commands.
+
+5. **Automated Unit Tests (`lab/test_adapter.py`)**:
+   - 6 automated unit tests passing using sample logs only (never a running core).
+
+
 
 
 

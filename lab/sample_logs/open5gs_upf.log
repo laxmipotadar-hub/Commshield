@@ -1,0 +1,11 @@
+# Open5GS UPF User-Plane Session Log Capture
+# Format: MM/DD HH:MM:SS.mmm [component] LEVEL: [imsi] flow report
+11/21 08:00:10.000: [upf] INFO: [imsi-999700000000001] Flow stats: teid=0x100001, slice=sst-1-sd-010203, packets_ul=2400, bytes_ul=2880000, packets_dl=120, bytes_dl=72000
+11/21 08:00:15.000: [upf] INFO: [imsi-999700000000002] Flow stats: teid=0x100002, slice=sst-1-sd-010203, packets_ul=2350, bytes_ul=2820000, packets_dl=115, bytes_dl=69000
+11/21 08:00:20.000: [upf] INFO: [imsi-999700000000011] Flow stats: teid=0x200001, slice=sst-2-sd-020304, packets_ul=4500, bytes_ul=2250000, packets_dl=350, bytes_dl=175000
+11/21 08:00:25.000: [upf] INFO: [imsi-999700000000021] Flow stats: teid=0x300001, slice=sst-3-sd-030405, packets_ul=600, bytes_ul=180000, packets_dl=60, bytes_dl=18000
+11/21 08:01:15.000: [upf] INFO: [imsi-999700000000003] Flow stats: teid=0x100003, slice=sst-1-sd-010203, packets_ul=2450, bytes_ul=2940000, packets_dl=130, bytes_dl=78000
+11/21 08:01:20.000: [upf] INFO: [imsi-999700000000022] Flow stats: teid=0x300002, slice=sst-3-sd-030405, packets_ul=620, bytes_ul=186000, packets_dl=62, bytes_dl=18600
+11/21 08:02:25.000: [upf] INFO: [imsi-999700000000012] Flow stats: teid=0x200002, slice=sst-2-sd-020304, packets_ul=4600, bytes_ul=2300000, packets_dl=360, bytes_dl=180000
+11/21 08:03:15.000: [upf] INFO: [imsi-999700000000023] Flow stats: teid=0x300003, slice=sst-3-sd-030405, packets_ul=580, bytes_ul=174000, packets_dl=58, bytes_dl=17400
+11/21 08:04:20.000: [upf] INFO: [imsi-999700000000004] Flow stats: teid=0x100004, slice=sst-1-sd-010203, packets_ul=2500, bytes_ul=3000000, packets_dl=125, bytes_dl=75000
