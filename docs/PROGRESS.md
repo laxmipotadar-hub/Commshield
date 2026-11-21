@@ -136,3 +136,11 @@ Split-conformal calibration has been integrated into the attribution layer to pr
 
 7. **Verification & Tests (`backend/tests/test_conformal_attribution.py`)**:
    - 6 automated unit tests passing: exact p-value correctness on toy example, bitwise determinism, calibration disjointness audit, named abstention reasons, calibration size and pooling fallback, and decision trace persistence.
+
+## Milestone Status: Cross-Platform & Agent Rules Verification
+
+1. **Protocol & Contract Audit**:
+   - Reviewed `docs/AGENT_RULES.md`, `docs/CONTRACTS.md`, `docs/PROGRESS.md`, and `docs/AI_FEASIBILITY.md`.
+   - Verified cross-platform constraints (Windows primary, Ubuntu secondary; pure Python scripts; pathlib paths; UTF-8 LF encoding; explicit random states; environment-backed secrets).
+   - Confirmed strict empirical integrity: no hardcoded numbers, no changes to existing detector code, thresholds, or governance gates.
+
