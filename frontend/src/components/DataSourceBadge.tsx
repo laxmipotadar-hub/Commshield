@@ -30,9 +30,9 @@ export const DataSourceBadge: React.FC<DataSourceBadgeProps> = ({
         selectedScenario.includes('growth') ||
         selectedScenario.includes('scaled')));
 
-  let badgeLabel = 'Simulated (ground truth known)';
+  let badgeLabel = 'Simulated Twin';
   if (isReal5GNIDD) {
-    badgeLabel = 'Source: 5G-NIDD (Real)';
+    badgeLabel = '5G-NIDD (Real)';
   } else if (activeSource === 'open5gs_lab') {
     badgeLabel = 'Open5GS Lab';
   }

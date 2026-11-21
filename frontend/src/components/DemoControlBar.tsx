@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDemo } from '../context/DemoContext';
-import { ChevronRight, Presentation, Shield, Zap } from 'lucide-react';
+import { ChevronRight, FastForward, Presentation, Shield, Timer, Zap } from 'lucide-react';
 
 export const DemoControlBar: React.FC = () => {
   const {
@@ -11,6 +11,9 @@ export const DemoControlBar: React.FC = () => {
     activePresetIndex,
     selectPreset,
     nextPreset,
+    skipScene,
+    timeRemaining,
+    autoAdvanceEnabled,
     isOfflineFallback,
     reducedMotion,
     setReducedMotion,
@@ -100,6 +103,35 @@ export const DemoControlBar: React.FC = () => {
           >
             <Zap className="w-3 h-3" />
             <span>{reducedMotion ? 'Low-Motion: ON' : 'Low-Motion: OFF'}</span>
+          </button>
+
+          {/* 30-Second Auto-Advancement Countdown with Progress Indicator */}
+          <div
+            className="flex items-center gap-2 px-2.5 py-1 bg-card rounded-lg border border-border shadow-xs text-xs font-mono"
+            title={autoAdvanceEnabled ? `Auto-advancing to next scene in ${timeRemaining}s` : 'Auto-advance paused'}
+          >
+            <Timer className={`w-3.5 h-3.5 ${timeRemaining <= 5 ? 'text-attack animate-pulse' : 'text-teal'}`} />
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted text-[10px] hidden sm:inline">Auto-advance:</span>
+              <span className="font-bold text-text">{timeRemaining}s</span>
+            </div>
+            {/* Visual mini progress bar */}
+            <div className="w-12 bg-bg rounded-full h-1.5 overflow-hidden border border-border">
+              <div
+                className={`h-full transition-all duration-1000 ${timeRemaining <= 5 ? 'bg-attack' : 'bg-teal'}`}
+                style={{ width: `${(timeRemaining / 30) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Skip Scene Button */}
+          <button
+            onClick={skipScene}
+            className="flex items-center gap-1 px-2.5 py-1 bg-teal/15 hover:bg-teal/25 text-teal border border-teal/30 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+            title="Skip current scene and immediately advance to next"
+          >
+            <FastForward className="w-3 h-3" />
+            <span>Skip Scene</span>
           </button>
 
           {/* Next Scene Button with Key Indicator */}

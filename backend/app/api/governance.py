@@ -10,16 +10,23 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Baseline, CandidateBaseline
 from ..schemas import (
+    AdaptationSummaryResponse,
     ApprovalActionRequest,
     BaselineSummaryResponse,
     CandidateResponse,
     EvaluateCandidateRequest,
     GovernanceApproveRequest,
     GovernanceRejectRequest,
+    GraduatedDecisionResponse,
+    GraduatedEvaluationRequest,
+    GraduatedScenarioItem,
     RollbackRequest,
     RollbackResponse,
     ThreeArmComparisonResponse,
 )
+from ..governance import graduated_governance_engine
+from ..services.lineage import lineage_adapter
+from ml_engine.scenarios.graduated_scenarios import get_graduated_scenarios
 from ..services.governance import governance_service
 from ml_engine.evaluation.benchmark import evaluate_three_arms
 
@@ -329,3 +336,63 @@ def get_three_arm_comparison(
     """Empirical three-arm replay comparison across Static Anchor, Naive Retraining, and CommShield Gated."""
     result = evaluate_three_arms(dataset_id=dataset_id or "5g_nidd_portscan_growth")
     return ThreeArmComparisonResponse(**result)
+
+
+@router.post("/governance/graduated-evaluate", response_model=GraduatedDecisionResponse)
+@router.post("/v1/governance/graduated-evaluate", response_model=GraduatedDecisionResponse)
+def evaluate_graduated_governance(
+    payload: GraduatedEvaluationRequest,
+    db: Session = Depends(get_db),
+) -> GraduatedDecisionResponse:
+    """Evaluate a candidate baseline against three-tier graduated adaptation criteria.
+    
+    Tiers:
+    - Tier 1 (AUTO-APPROVE): JSD < 0.020, Canary tests pass, Safety budget within limits.
+      Promotes atomically and increments patch version.
+    - Tier 2 (FLAG FOR REVIEW): 0.020 <= JSD < 0.035, Canary tests pass.
+      Flagged for human review without premature activation.
+    - Tier 3 (BLOCK AND QUARANTINE): JSD >= 0.035, Canary tests fail, or budget exceeded.
+      Quarantined immediately; low drift alone never overrides safety check failures.
+    """
+    decision = graduated_governance_engine.evaluate_and_enact(
+        candidate_id=payload.candidate_id,
+        db=db,
+        override_jsd=payload.override_jsd,
+        volume_multiplier=float(payload.volume_multiplier or 1.0),
+    )
+    return GraduatedDecisionResponse(**decision.model_dump())
+
+
+@router.get("/governance/summary", response_model=AdaptationSummaryResponse)
+@router.get("/v1/governance/summary", response_model=AdaptationSummaryResponse)
+def get_adaptation_summary(
+    slice_id: Optional[str] = Query(default=None, description="Optional S-NSSAI slice filter"),
+    db: Session = Depends(get_db),
+) -> AdaptationSummaryResponse:
+    """Retrieve dynamic summary counts across all governance candidates."""
+    summary = graduated_governance_engine.calculate_adaptation_summary(db=db, slice_id=slice_id)
+    return AdaptationSummaryResponse(**summary)
+
+
+@router.get("/governance/scenarios", response_model=List[GraduatedScenarioItem])
+@router.get("/v1/governance/scenarios", response_model=List[GraduatedScenarioItem])
+def list_graduated_scenarios() -> List[GraduatedScenarioItem]:
+    """List canonical graduated governance scenarios (Scenario A, Scenario B, Scenario C)."""
+    return [GraduatedScenarioItem(**s) for s in get_graduated_scenarios()]
+
+
+@router.get("/governance/lineage")
+@router.get("/v1/governance/lineage")
+def get_governance_lineage(
+    slice_id: Optional[str] = Query(default=None, description="Optional slice ID filter"),
+) -> Dict[str, Any]:
+    """Retrieve tamper-evident SHA-256 cryptographic lineage ledger blocks and integrity status."""
+    is_valid, error = lineage_adapter.verify_integrity()
+    blocks = lineage_adapter.get_blocks(slice_id=slice_id)
+    return {
+        "integrity_verified": is_valid,
+        "integrity_error": error,
+        "total_blocks": len(blocks),
+        "chain_head_hash": blocks[-1]["current_hash"] if blocks else None,
+        "blocks": blocks,
+    }

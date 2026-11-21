@@ -99,3 +99,58 @@ class ThreeArmComparisonResponse(BaseModel):
 
     dataset_id: str
     arms: Dict[str, Any]
+
+
+class GraduatedEvaluationRequest(BaseModel):
+    candidate_id: str
+    override_jsd: Optional[float] = None
+    volume_multiplier: Optional[float] = 1.0
+
+
+class GraduatedDecisionResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    candidate_id: str
+    slice_id: str
+    tier: str
+    action: str
+    verdict: str
+    status: str
+    previous_version: str
+    new_version: Optional[str] = None
+    is_approved: bool
+    is_blocked: bool
+    jsd_score: float
+    explanation: str
+    reasons: List[str] = []
+    gate_outcomes: Dict[str, Any] = {}
+    timestamp: str
+
+
+class AdaptationSummaryResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    total_candidates: int
+    auto_approved_count: int
+    analyst_approved_count: int
+    total_approved_count: int
+    flagged_count: int
+    blocked_count: int
+    adaptation_rate: float
+    summary_text: str
+
+
+class GraduatedScenarioItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    scenario_id: str
+    name: str
+    description: str
+    slice_id: str
+    jsd_divergence: float
+    canary_retention_pass: bool
+    drift_budget_pass: bool
+    expected_tier: str
+    action: str
+    details: str
+    source: str = "simulated_twin"

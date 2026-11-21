@@ -45,6 +45,12 @@ import {
   InvestigationDetailsResponse,
 } from '../services/api';
 
+const formatPctValue = (val: number | undefined | null): string => {
+  if (val === undefined || val === null || isNaN(val)) return '0.0%';
+  const pct = val > 1.0 ? val : val * 100;
+  return `${pct.toFixed(1)}%`;
+};
+
 export const InvestigationView: React.FC = () => {
   const { id: routeTargetId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -295,7 +301,7 @@ export const InvestigationView: React.FC = () => {
             <div className="text-right">
               <div className="text-xs font-semibold uppercase tracking-wider text-muted">Fused Percentile</div>
               <div className="text-2xl font-black text-attack font-mono">
-                {(evidence.detector_scores.fusion.fused_percentile * 100).toFixed(1)}%
+                {formatPctValue(evidence.detector_scores.fusion.fused_percentile)}
               </div>
             </div>
             <div className="h-10 w-px bg-border/80" />
@@ -593,7 +599,7 @@ export const InvestigationView: React.FC = () => {
                 <div>
                   <div className="text-xs font-semibold text-text">Isolation Forest Score</div>
                   <div className="text-xs text-muted">
-                    Percentile: <strong className="font-mono text-text">{(evidence.detector_scores.isolation_forest.percentile * 100).toFixed(1)}%</strong> (Thresh: {(evidence.detector_scores.isolation_forest.threshold * 100).toFixed(1)}%)
+                    Percentile: <strong className="font-mono text-text">{formatPctValue(evidence.detector_scores.isolation_forest.percentile)}</strong> (Thresh: {formatPctValue(evidence.detector_scores.isolation_forest.threshold)})
                   </div>
                 </div>
                 {evidence.detector_scores.isolation_forest.flagged ? (
@@ -607,7 +613,7 @@ export const InvestigationView: React.FC = () => {
                 <div>
                   <div className="text-xs font-semibold text-text">Autoencoder Reconstruction</div>
                   <div className="text-xs text-muted">
-                    Loss: <strong className="font-mono text-text">{evidence.detector_scores.autoencoder.reconstruction_mse}</strong> | Percentile: <strong className="font-mono text-text">{(evidence.detector_scores.autoencoder.percentile * 100).toFixed(1)}%</strong>
+                    Loss: <strong className="font-mono text-text">{evidence.detector_scores.autoencoder.reconstruction_mse}</strong> | Percentile: <strong className="font-mono text-text">{formatPctValue(evidence.detector_scores.autoencoder.percentile)}</strong>
                   </div>
                 </div>
                 {evidence.detector_scores.autoencoder.flagged ? (

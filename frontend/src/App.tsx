@@ -13,6 +13,7 @@ import {
   GitBranch,
   Key,
   LayoutDashboard,
+  Layers,
   Pause,
   Play,
   Radio,
@@ -24,7 +25,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { StatusBadge, DemoControlBar, DemoEventBanner, DataProvenanceStrip, DataPanelModal } from './components';
+import { StatusBadge, DemoControlBar, DemoEventBanner, DataProvenanceStrip, DataPanelModal, BuiltVsPlannedModal } from './components';
 import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitoringPage } from './pages/MonitoringPage';
@@ -77,6 +78,7 @@ const AppLayout: React.FC = () => {
   const isRunning = status === 'RUNNING';
   const [showSettings, setShowSettings] = React.useState(false);
   const [showDataPanel, setShowDataPanel] = React.useState(false);
+  const [showMatrixModal, setShowMatrixModal] = React.useState(false);
   const [tokenInput, setTokenInput] = React.useState('');
   const [tokenSaved, setTokenSaved] = React.useState(false);
 
@@ -287,6 +289,16 @@ const AppLayout: React.FC = () => {
               <Database className="w-3.5 h-3.5 text-blue" />
               <span>Data</span>
             </button>
+
+            {/* Built vs Planned Matrix Button */}
+            <button
+              onClick={() => setShowMatrixModal(true)}
+              className="flex items-center gap-1.5 bg-bg hover:bg-slate/30 text-xs font-semibold text-text px-2.5 py-1.5 rounded-lg border border-border transition-colors cursor-pointer shadow-xs"
+              title="View Built vs Planned Implementation Matrix"
+            >
+              <Layers className="w-3.5 h-3.5 text-teal" />
+              <span>Matrix</span>
+            </button>
           </div>
         </header>
 
@@ -319,6 +331,12 @@ const AppLayout: React.FC = () => {
       <DataPanelModal
         isOpen={showDataPanel}
         onClose={() => setShowDataPanel(false)}
+      />
+
+      {/* Built vs Planned Implementation Matrix Modal */}
+      <BuiltVsPlannedModal
+        isOpen={showMatrixModal}
+        onClose={() => setShowMatrixModal(false)}
       />
 
       {/* Settings Modal */}

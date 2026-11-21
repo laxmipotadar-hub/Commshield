@@ -167,12 +167,13 @@ class AutoencoderDetector(BaseDetector):
         return mse
 
     def score_percentile(self, raw_score: float) -> float:
-        """Map reconstruction MSE to a 0-100 percentile score against benign training distribution."""
+        """Map reconstruction MSE to a 0-100 percentile score against benign training distribution with tie-handling."""
         if not self.fitted or self.train_errors_ is None or self.n_train_samples_ == 0:
             raise RuntimeError("AutoencoderDetector must be fit before computing percentile.")
 
-        idx = np.searchsorted(self.train_errors_, raw_score, side="right")
-        percentile = (float(idx) / float(self.n_train_samples_)) * 100.0
+        count_less = int(np.searchsorted(self.train_errors_, raw_score, side="left"))
+        count_equal = int(np.searchsorted(self.train_errors_, raw_score, side="right")) - count_less
+        percentile = ((float(count_less) + 0.5 * float(count_equal)) / float(self.n_train_samples_)) * 100.0
         return float(np.clip(round(percentile, 4), 0.0, 100.0))
 
     def evaluate_sample(self, x: np.ndarray) -> Tuple[float, float, bool]:

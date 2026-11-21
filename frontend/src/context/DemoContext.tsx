@@ -218,6 +218,10 @@ interface DemoContextType {
   isOfflineFallback: boolean;
   reducedMotion: boolean;
   setReducedMotion: (val: boolean) => void;
+  timeRemaining: number;
+  skipScene: () => Promise<void>;
+  autoAdvanceEnabled: boolean;
+  setAutoAdvanceEnabled: (val: boolean) => void;
 }
 
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
@@ -235,6 +239,8 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return false;
   });
+  const [timeRemaining, setTimeRemaining] = useState<number>(30);
+  const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState<boolean>(true);
 
   const acknowledgedEventsRef = useRef<Set<number>>(new Set());
   const { currentIndex, status, handlePause, handleResume, setSelectedDataSource, speed } = useReplay();
@@ -317,6 +323,33 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await selectPreset(2);
   };
 
+  const skipScene = async () => {
+    setTimeRemaining(30);
+    await nextPreset();
+  };
+
+  // Reset 30s countdown on preset change
+  useEffect(() => {
+    setTimeRemaining(30);
+  }, [activePresetIndex]);
+
+  // 30-second auto-advancement timer
+  useEffect(() => {
+    if (!isDemoMode || !autoAdvanceEnabled) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          nextPreset();
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isDemoMode, autoAdvanceEnabled, activePresetIndex, presets.length]);
+
   // Monitor currentIndex against activePreset key_events for auto-pause
   useEffect(() => {
     if (!isDemoMode || status !== 'RUNNING') return;
@@ -386,6 +419,10 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOfflineFallback,
         reducedMotion,
         setReducedMotion,
+        timeRemaining,
+        skipScene,
+        autoAdvanceEnabled,
+        setAutoAdvanceEnabled,
       }}
     >
       {children}
