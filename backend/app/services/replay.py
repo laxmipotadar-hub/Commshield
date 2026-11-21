@@ -366,7 +366,9 @@ class ReplayService:
         dataset_id: str,
         speed_multiplier: float = 1.0,
         data_source: Optional[str] = "synthetic",
-    ) -> ReplayStatusResponse:
+        max_windows: Optional[int] = None,
+        db: Optional[Any] = None,
+    ) -> Any:
         """Initialize scenario for synchronous stepping (used in CLI demo and tests)."""
         self.stop()
         self.dataset_id = dataset_id
@@ -389,6 +391,11 @@ class ReplayService:
             attribution_service.reset_trackers()
         except Exception:
             pass
+
+        if max_windows is not None:
+            res = self.step_sync(count=max_windows)
+            self.status = "STOPPED"
+            return res
         return self.get_status()
 
     def pause(self) -> ReplayStatusResponse:

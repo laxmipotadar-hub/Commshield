@@ -113,6 +113,8 @@ def get_all_experiment_results(
     Accepts data_source filter ('synthetic', '5g_nidd', 'real', 'open5gs_lab').
     Falls back to offline snapshots in experiments/snapshot/ if live results or database records are absent.
     """
+    if hasattr(data_source, "default"):
+        data_source = data_source.default
     src = (data_source or "synthetic").strip().lower()
 
     # --- Real 5G-NIDD Data Source ---
@@ -188,36 +190,37 @@ def get_all_experiment_results(
             logger.warning("Error reading summary file: %s", e)
 
     # Fallback 1: Query from experiment_results DB table
-    rows = db.query(ExperimentResult).all()
-    if rows:
-        scenarios = list(set(r.scenario for r in rows))
-        seeds = list(set(r.seed for r in rows))
+    if db is not None:
+        rows = db.query(ExperimentResult).all()
+        if rows:
+            scenarios = list(set(r.scenario for r in rows))
+            seeds = list(set(r.seed for r in rows))
 
-        return {
-            "data_source": "synthetic",
-            "source": "database",
-            "scenarios": scenarios,
-            "seeds": seeds,
-            "total_records": len(rows),
-            "results": [
-                {
-                    "id": r.id,
-                    "scenario": r.scenario,
-                    "seed": r.seed,
-                    "arm": r.arm,
-                    "config_version": r.config_version,
-                    "recall": r.recall,
-                    "fpr": r.fpr,
-                    "contamination_final": r.contamination_final,
-                    "adaptations_count": r.adaptations_count,
-                    "quarantined_count": r.quarantined_count,
-                    "recovery_time_windows": r.recovery_time_windows,
-                    "metrics": r.metrics,
-                    "timestamp": r.timestamp.isoformat(),
-                }
-                for r in rows
-            ],
-        }
+            return {
+                "data_source": "synthetic",
+                "source": "database",
+                "scenarios": scenarios,
+                "seeds": seeds,
+                "total_records": len(rows),
+                "results": [
+                    {
+                        "id": r.id,
+                        "scenario": r.scenario,
+                        "seed": r.seed,
+                        "arm": r.arm,
+                        "config_version": r.config_version,
+                        "recall": r.recall,
+                        "fpr": r.fpr,
+                        "contamination_final": r.contamination_final,
+                        "adaptations_count": r.adaptations_count,
+                        "quarantined_count": r.quarantined_count,
+                        "recovery_time_windows": r.recovery_time_windows,
+                        "metrics": r.metrics,
+                        "timestamp": r.timestamp.isoformat(),
+                    }
+                    for r in rows
+                ],
+            }
 
     # Fallback 2: Read offline snapshot in experiments/snapshot/
     snapshot_file = SNAPSHOT_DIR / "experiment_summary.json"
@@ -244,6 +247,8 @@ def get_scenario_experiment_results(
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
     """Retrieve multi-seed benchmark results for a designated scenario."""
+    if hasattr(data_source, "default"):
+        data_source = data_source.default
     src = (data_source or "synthetic").strip().lower()
 
     if src in ("real", "5g_nidd", "fiveg_nidd"):
@@ -293,31 +298,32 @@ def get_scenario_experiment_results(
             logger.warning("Error reading scenario from summary file: %s", e)
 
     # Check database
-    rows = db.query(ExperimentResult).filter(ExperimentResult.scenario == scenario).all()
-    if not rows:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Experiment results for scenario '{scenario}' not found.",
-        )
-
-    return {
-        "scenario": scenario,
-        "data_source": "synthetic",
-        "total_runs": len(rows),
-        "records": [
-            {
-                "id": r.id,
-                "seed": r.seed,
-                "arm": r.arm,
-                "recall": r.recall,
-                "fpr": r.fpr,
-                "contamination_final": r.contamination_final,
-                "adaptations_count": r.adaptations_count,
-                "quarantined_count": r.quarantined_count,
-                "recovery_time_windows": r.recovery_time_windows,
-                "metrics": r.metrics,
-                "timestamp": r.timestamp.isoformat(),
+    if db is not None:
+        rows = db.query(ExperimentResult).filter(ExperimentResult.scenario == scenario).all()
+        if rows:
+            return {
+                "scenario": scenario,
+                "data_source": "synthetic",
+                "total_runs": len(rows),
+                "records": [
+                    {
+                        "id": r.id,
+                        "seed": r.seed,
+                        "arm": r.arm,
+                        "recall": r.recall,
+                        "fpr": r.fpr,
+                        "contamination_final": r.contamination_final,
+                        "adaptations_count": r.adaptations_count,
+                        "quarantined_count": r.quarantined_count,
+                        "recovery_time_windows": r.recovery_time_windows,
+                        "metrics": r.metrics,
+                        "timestamp": r.timestamp.isoformat(),
+                    }
+                    for r in rows
+                ],
             }
-            for r in rows
-        ],
-    }
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"Experiment results for scenario '{scenario}' not found.",
+    )

@@ -19,6 +19,7 @@ from backend.app.database import SessionLocal
 from backend.app.models import (
     ApprovalLog,
     Baseline,
+    BaselineRegistry,
     CanonicalWindow,
     DetectionResult,
     AttributionResult,
@@ -223,49 +224,65 @@ def test_dwell_time_blocks_second_promotion_inside_interval(db, embb_baseline_bu
         "attribution": {"verdict": "likely_benign"},
     }
 
-    # 1. Build and promote Candidate 1
-    _, cand_row1 = build_shadow_candidate(
-        slice_id=slice_id,
-        active_bundle=act_bundle,
-        anchor_bundle=anc_bundle,
-        adaptation_windows=[legit_win],
-        db=db,
-    )
-    cand_row1.gate_metrics = {"all_mandatory_passed": True, "overall_passed": True}
-    db.commit()
+    try:
+        # 1. Build and promote Candidate 1
+        _, cand_row1 = build_shadow_candidate(
+            slice_id=slice_id,
+            active_bundle=act_bundle,
+            anchor_bundle=anc_bundle,
+            adaptation_windows=[legit_win],
+            db=db,
+        )
+        cand_row1.gate_metrics = {"all_mandatory_passed": True, "overall_passed": True}
+        db.commit()
 
-    governance_service.approve_and_promote(
-        candidate_id=cand_row1.id,
-        analyst_id="analyst_test",
-        notes="First promotion",
-        db=db,
-    )
-
-    db.refresh(cand_row1)
-    assert any("Dwell time check: PASSED" in line for line in cand_row1.decision_trace)
-
-    # 2. Build Candidate 2 immediately (within DWELL_TIME_MIN_SECONDS interval)
-    _, cand_row2 = build_shadow_candidate(
-        slice_id=slice_id,
-        active_bundle=act_bundle,
-        anchor_bundle=anc_bundle,
-        adaptation_windows=[legit_win],
-        db=db,
-    )
-    cand_row2.gate_metrics = {"all_mandatory_passed": True, "overall_passed": True}
-    db.commit()
-
-    # Promotion 2 should be rejected with 409
-    with pytest.raises(HTTPException) as exc_info:
         governance_service.approve_and_promote(
-            candidate_id=cand_row2.id,
+            candidate_id=cand_row1.id,
             analyst_id="analyst_test",
-            notes="Second promotion too rapid",
+            notes="First promotion",
             db=db,
         )
 
-    assert exc_info.value.status_code == 409
-    assert "Dwell time violation" in exc_info.value.detail
+        db.refresh(cand_row1)
+        assert any("Dwell time check: PASSED" in line for line in cand_row1.decision_trace)
 
-    db.refresh(cand_row2)
-    assert any("Dwell time check: FAILED" in line for line in cand_row2.decision_trace)
+        # 2. Build Candidate 2 immediately (within DWELL_TIME_MIN_SECONDS interval)
+        _, cand_row2 = build_shadow_candidate(
+            slice_id=slice_id,
+            active_bundle=act_bundle,
+            anchor_bundle=anc_bundle,
+            adaptation_windows=[legit_win],
+            db=db,
+        )
+        cand_row2.gate_metrics = {"all_mandatory_passed": True, "overall_passed": True}
+        db.commit()
+
+        # Promotion 2 should be rejected with 409
+        with pytest.raises(HTTPException) as exc_info:
+            governance_service.approve_and_promote(
+                candidate_id=cand_row2.id,
+                analyst_id="analyst_test",
+                notes="Second promotion too rapid",
+                db=db,
+            )
+
+        assert exc_info.value.status_code == 409
+        assert "Dwell time violation" in exc_info.value.detail
+
+        db.refresh(cand_row2)
+        assert any("Dwell time check: FAILED" in line for line in cand_row2.decision_trace)
+    finally:
+        # Clean up: rollback to trusted anchor and clear test approval logs
+        try:
+            governance_service.rollback_baseline(
+                slice_id=slice_id,
+                target_version="v1.0.0-anchor",
+                analyst_id="analyst_test",
+                reason="Cleanup dwell time test promotion",
+                db=db,
+            )
+        except Exception:
+            pass
+        db.query(ApprovalLog).filter(ApprovalLog.slice_id == slice_id).delete()
+        db.commit()
+        detection_service.clear_cache()

@@ -18,10 +18,12 @@ CANONICAL_WINDOW_ALLOWLIST: Set[str] = {
     "window_start",
     "window_end",
     "duration_sec",
+    "active_ue_count",
     "raw_counters",
     "ratio_features",
     "composition_vector",
     "ground_truth",
+    "metadata",
 }
 
 RAW_COUNTERS_ALLOWLIST: Set[str] = {

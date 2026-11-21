@@ -90,6 +90,7 @@ class AttributionService:
         db: Optional[Session] = None,
         scenario: Optional[str] = None,
         force_drift: bool = False,
+        slice_id: Optional[str] = None,
     ) -> AttributionOutput:
         """Analyze a canonical window for distribution drift and perform attribution."""
         owns_db = False
@@ -98,7 +99,7 @@ class AttributionService:
             owns_db = True
 
         window_id = window.get("window_id") or str(uuid.uuid4())
-        slice_id = window.get("slice_id", "sst-1-sd-010203")
+        slice_id = slice_id or window.get("slice_id", "sst-1-sd-010203")
         raw_counters = window.get("raw_counters", {})
         ratio_features = window.get("ratio_features", {})
 
@@ -328,22 +329,47 @@ class AttributionService:
             )
             db.add(db_trace)
 
-            # 8. Persist AttributionResult if canonical window exists
+            # 8. Persist AttributionResult (ensuring canonical window exists for foreign keys)
             win_exists = db.query(CanonicalWindow).filter(CanonicalWindow.id == window_id).first()
-            if win_exists:
-                db_attr = AttributionResult(
-                    id=attr_result_id,
-                    window_id=window_id,
+            if not win_exists:
+                w_start = window.get("window_start")
+                if isinstance(w_start, str):
+                    w_start = datetime.fromisoformat(w_start.replace("Z", "+00:00"))
+                elif not isinstance(w_start, datetime):
+                    w_start = now_dt
+                w_end = window.get("window_end")
+                if isinstance(w_end, str):
+                    w_end = datetime.fromisoformat(w_end.replace("Z", "+00:00"))
+                elif not isinstance(w_end, datetime):
+                    w_end = now_dt
+                db_win = CanonicalWindow(
+                    id=window_id,
                     slice_id=slice_id,
-                    drift_detected=drift_detected,
-                    verdict=verdict,
-                    abstain_reason=abstain_reason,
-                    jsd_divergence=prop_test_data.get("jsd_divergence", 0.0),
-                    scaling_factor_k=prop_test_data.get("scaling_factor_k", 1.0),
-                    evidence_signals=attribution_dict.get("supporting_signals", {}),
-                    created_at=now_dt,
+                    nf_id=window.get("nf_id", "UPF-01"),
+                    window_start=w_start,
+                    window_end=w_end,
+                    duration_sec=int(window.get("duration_sec", 60)),
+                    raw_counters=raw_counters,
+                    ratio_features=ratio_features,
+                    composition_vector=window.get("composition_vector", {}),
                 )
-                db.add(db_attr)
+                db.add(db_win)
+                db.flush()
+                win_exists = db_win
+
+            db_attr = AttributionResult(
+                id=attr_result_id,
+                window_id=window_id,
+                slice_id=slice_id,
+                drift_detected=drift_detected,
+                verdict=verdict,
+                abstain_reason=abstain_reason,
+                jsd_divergence=prop_test_data.get("jsd_divergence", 0.0),
+                scaling_factor_k=prop_test_data.get("scaling_factor_k", 1.0),
+                evidence_signals=attribution_dict.get("supporting_signals", {}),
+                created_at=now_dt,
+            )
+            db.add(db_attr)
 
             # 9. If drift was detected, persist DriftEvent
             if drift_detected and drift_event_id:

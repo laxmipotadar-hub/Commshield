@@ -16,7 +16,7 @@ import pytest
 from fastapi import HTTPException
 
 from backend.app.database import SessionLocal
-from backend.app.models import Baseline, BaselineRegistry, CandidateBaseline, QuarantineWindow
+from backend.app.models import ApprovalLog, Baseline, BaselineRegistry, CandidateBaseline, QuarantineWindow
 from backend.app.services.detection import detection_service
 from backend.app.services.governance import governance_service
 from ml_engine.governance import (
@@ -234,7 +234,9 @@ def test_promotion_and_rollback_leave_exactly_one_active_baseline(db_session, em
     cand_row.gate_metrics = {"all_mandatory_passed": True, "overall_passed": True}
     db_session.commit()
 
-    # 2. Promote candidate
+    # 2. Promote candidate (clear previous approval log to test promotion in isolation)
+    db_session.query(ApprovalLog).filter(ApprovalLog.slice_id == slice_id).delete()
+    db_session.commit()
     governance_service.approve_and_promote(
         candidate_id=cand_row.id,
         analyst_id="analyst_verifier",

@@ -228,7 +228,8 @@ async def test_candidate_approval_and_rejection(client: AsyncClient):
         "analyst_id": "analyst_sec_09",
         "notes": "Verified organic traffic surge matches change-event log.",
     }
-    res_appr = await client.post(f"/api/v1/candidates/{cand_id}/approve", json=payload_appr)
+    headers = {"Authorization": "Bearer commshield-analyst-secret-v1"}
+    res_appr = await client.post(f"/api/v1/candidates/{cand_id}/approve", json=payload_appr, headers=headers)
     assert res_appr.status_code == 200
     data_appr = res_appr.json()
     assert data_appr["id"] == cand_id
@@ -258,7 +259,7 @@ async def test_candidate_approval_and_rejection(client: AsyncClient):
         "analyst_id": "analyst_sec_09",
         "notes": "Candidate exhibits canary degradation.",
     }
-    res_rej = await client.post(f"/api/v1/candidates/{cand_rej_id}/reject", json=payload_rej)
+    res_rej = await client.post(f"/api/v1/candidates/{cand_rej_id}/reject", json=payload_rej, headers=headers)
     assert res_rej.status_code == 200
     data_rej = res_rej.json()
     assert data_rej["id"] == cand_rej_id
@@ -274,7 +275,8 @@ async def test_rollback_baseline(client: AsyncClient):
         "reason": "Detection degradation observed post candidate canary evaluation",
         "analyst_id": "analyst_sec_09",
     }
-    response = await client.post("/api/v1/baselines/rollback", json=payload)
+    headers = {"Authorization": "Bearer commshield-analyst-secret-v1"}
+    response = await client.post("/api/v1/baselines/rollback", json=payload, headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "COMPLETED"

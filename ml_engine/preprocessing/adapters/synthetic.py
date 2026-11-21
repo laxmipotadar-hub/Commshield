@@ -126,6 +126,7 @@ class SyntheticAdapter(TelemetryAdapter):
             "window_start": window_start.isoformat(),
             "window_end": window_end.isoformat(),
             "duration_sec": window_duration_sec,
+            "active_ue_count": active_ue_max,
             "raw_counters": {
                 "active_ue_count": active_ue_max,
                 "registration_attempts": reg_attempts,

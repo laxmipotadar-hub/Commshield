@@ -337,9 +337,37 @@ Split-conformal calibration has been integrated into the attribution layer to pr
      - PowerShell: `python -m unittest backend\tests\test_demo.py -v; cd frontend; npm run build`
      - Bash: `python3 -m unittest backend/tests/test_demo.py -v && npm --prefix frontend run build`
 
+## Milestone Status: Empirical Rigor & Result File Grounding Audit
 
+1. **Benchmark Grounding & Removal of Hardcoded Metrics (`ml_engine/evaluation/benchmark.py`, `backend/app/api/experiments.py`)**:
+   - Identified and removed all hard-coded metrics previously found in `ml_engine/evaluation/benchmark.py` (e.g., static anchor precision: 0.941, recall: 0.722, f1: 0.817, false alarm rate: 0.085, poisoning_susceptibility: 0.0; naive recall: 0.444, poisoning_susceptibility: 0.650; synthetic hash modulo attack checks `hash(w) % 7 == 0`).
+   - Connected Experiment Comparison API (`/api/v1/experiments/three-arm` and `/api/experiments/results`) strictly to `experiments/results/` (with fallback to `experiments/snapshot/`), ensuring all metrics (recall, FPR, contamination, adaptations) are read from saved result files.
+   - Completely eliminated `poisoning_susceptibility` metric from schemas, backend responses, and frontend interfaces.
 
+2. **Dynamic Control-Slice Concordance (`ml_engine/attribution/metrics.py`, `backend/app/services/attribution.py`, `frontend/src/views/AttributionView.tsx`)**:
+   - Computed `control_slice_concordant` dynamically by comparing primary slice (BS1/slice 1) and control slice (BS2/slice 2) telemetry (JSD divergence $\le 0.05$ and per-UE session rate deviation $\le 35\%$).
+   - Eliminated hardcoded `True` values; returns `None` when second-slice telemetry is absent.
+   - Frontend `AttributionView.tsx` conditionally hides the control-slice concordance panel when second-slice data is absent (`supportingSignals.control_slice_concordance == null`).
 
+3. **SHAP TreeExplainer & Robust Z-Score Fallback (`backend/app/api/windows.py`)**:
+   - Implemented real SHAP feature attribution using `shap.TreeExplainer` on Isolation Forest models for anomalous flagged windows.
+   - Provided robust z-score fallback (`(x - median) / IQR`) when SHAP is unavailable or on failure, updating feature contribution hypothesis labels accordingly.
 
+4. **README & Documentation Integrity (`README.md`, `experiments/README.md`)**:
+   - Removed MAWI and Open5GS/UERANSIM testbed claims from `README.md`; accurately documented active data sources (5G-NIDD captures and synthetic generators).
+   - Fixed Arm C growth statement in `experiments/README.md` to match saved results (0 adaptations under simulated growth with FPR about 97.0% ± 1.9%).
+   - Added ONE unified "Known limitations" section detailing: Arm C 0 adaptations under simulated growth with FPR ~97%, clean growth candidate rejected by canary and budget, poisoned candidate rejected only by the holdout, small window counts, ICMPFlood recall 0%, and missing ablations, re-anchoring, and time-of-day context (kept strictly out of the UI).
 
+5. **Dwell Time Enforcement (`backend/app/services/governance.py`, `ml_engine/governance/config.py`)**:
+   - Configured `DWELL_TIME_MIN_SECONDS = 300` in governance config.
+   - Enforced dwell time check in `governance_service.approve_and_promote()`, checking the timestamp of the last approved baseline for that slice in `ApprovalLog`.
+   - Added explicit dwell time decision trace entry (`Dwell time check: PASSED` or `Dwell time check: FAILED`) and raised HTTP 409 conflict upon rapid successive promotion attempts.
+   - Verified that dwell time blocks a second promotion inside the configured interval.
 
+6. **Verification & Test Suite**:
+   - 108 backend tests passing across all test suites (`backend/venv/bin/pytest backend/tests/`).
+   - 10/10 demo checks passing (`tools/demo_check.py`).
+   - Frontend production build passing with 0 errors (`npm --prefix frontend run build`).
+   - Execution commands:
+     - PowerShell: `python -m pytest backend\tests; python tools\demo_check.py; cd frontend; npm run build`
+     - Bash: `pytest backend/tests && python3 tools/demo_check.py && npm --prefix frontend run build`

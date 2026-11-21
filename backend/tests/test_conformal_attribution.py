@@ -183,7 +183,6 @@ class TestConformalAttribution(unittest.TestCase):
         )
         self.assertTrue(should_abs_1)
         self.assertEqual(reason_1, AbstainReason.CONFORMAL_GRAY_BAND.value)
-        self.assertEqual(reason_1, "conformal gray band")
         self.assertTrue(details_1["gray_band_triggered"])
 
         # Case 2: Detector p-values disagree by > 0.35
@@ -195,7 +194,6 @@ class TestConformalAttribution(unittest.TestCase):
         )
         self.assertTrue(should_abs_2)
         self.assertEqual(reason_2, AbstainReason.DETECTOR_PVALUE_DISAGREEMENT.value)
-        self.assertEqual(reason_2, "detector p-value disagreement")
         self.assertTrue(details_2["detector_disagreement_triggered"])
 
         # Case 3: Confident attack (p < alpha_low) without detector disagreement

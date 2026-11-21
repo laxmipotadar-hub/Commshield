@@ -21,10 +21,19 @@ class AttributionOutput(BaseModel):
     confidence_type: str = "evidence_category"
     proportional_growth_test: ProportionalGrowthTest
     supporting_signals: Dict[str, Any]
+    evidence_signals: Optional[Dict[str, Any]] = None
     action: Optional[str] = None
     action_recommendation: str
     decision_trace_id: Optional[str] = None
     attributor_type: Optional[str] = "rules"
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key == "evidence_signals":
+            return self.evidence_signals or self.supporting_signals or default
+        if hasattr(self, key):
+            val = getattr(self, key)
+            return val if val is not None else default
+        return default
 
 
 class AttributionAnalyzeRequest(BaseModel):

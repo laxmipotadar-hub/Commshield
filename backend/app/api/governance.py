@@ -26,7 +26,7 @@ from ml_engine.evaluation.benchmark import evaluate_three_arms
 router = APIRouter(tags=["Governance & Baselines"])
 
 
-def require_analyst_token(authorization: Optional[str] = Header(None)) -> str:
+async def require_analyst_token(authorization: Optional[str] = Header(None)) -> str:
     """Validate Bearer analyst authorization token from environment for state mutations."""
     expected_token = os.getenv("COMMSHIELD_ANALYST_TOKEN", "commshield-analyst-secret-v1")
     if not authorization:
@@ -34,13 +34,17 @@ def require_analyst_token(authorization: Optional[str] = Header(None)) -> str:
             status_code=401,
             detail="Unauthorized: Missing Authorization header for state-mutating governance action.",
         )
-    token = authorization.strip()
-    if token.lower().startswith("bearer "):
-        token = token[7:].strip()
+    auth_str = authorization.strip()
+    if not auth_str.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Invalid authorization format. Bearer token required.",
+        )
+    token = auth_str[7:].strip()
     if token != expected_token:
         raise HTTPException(
             status_code=401,
-            detail="Unauthorized: Invalid analyst authorization token.",
+            detail="Unauthorized: Invalid or expired analyst token.",
         )
     return token
 

@@ -62,7 +62,7 @@ accuracy, and governance integrity of automated 5G Core anomaly detection baseli
 ### Where CommShield Helped
 1. **Contamination Elimination**: Arm C maintained strictly **0.0% baseline contamination** across all attack scenarios (`slow_attack_ramp`, `attack_in_growth`, `mimicry_attack`). Quarantined attack windows were mathematically isolated from candidate training sets.
 2. **Attack Evasion Resistance**: Arm B suffered severe attack blinding in `slow_attack_ramp` and `attack_in_growth` as it absorbed attack traffic into its training data (contamination rising to 40-70%), cutting its attack recall in half. Arm C maintained full attack recall because its active baseline remained pure.
-3. **Growth vs Poisoning Trade-off**: Gated adaptation keeps baseline contamination strictly at 0.0% where naive adaptation reaches 56.0% to 83.3% across the slow ramp, attack-in-growth, and mimicry scenarios. However, under synthetic legitimate growth, Arm C made 0 adaptations because candidates did not pass the conservative governance gates, leaving FPR at approximately 97.5% (similar to the static anchor).
+3. **Growth vs Poisoning Trade-off**: Gated adaptation keeps baseline contamination strictly at 0.0% where naive adaptation reaches 56.0% to 83.3% across the slow ramp, attack-in-growth, and mimicry scenarios. However, under simulated growth, Arm C made 0 adaptations because candidates did not pass the conservative governance gates, leaving FPR about 97% (97.0% ± 1.9%, similar to the static anchor).
 
 ### Where CommShield Did Not Help & Trade-offs
 1. **Adaptation Delay (Inertia)**: CommShield requires verified proportional growth accumulation and a 4-check governance gate before promoting candidates. Under rapid growth, it adapts more conservatively than naive retraining.
@@ -73,12 +73,12 @@ accuracy, and governance integrity of automated 5G Core anomaly detection baseli
 
 ## Known Limitations
 
-- **Growth vs. Poisoning Protection Trade-off**: Gated adaptation achieves 0.0% baseline contamination across attack scenarios (where naive adaptation absorbs 56.0% to 83.3% attack data), but made 0 adaptations under synthetic legitimate growth, resulting in elevated false positive rates (~97.5%).
-- **Clean Growth Candidate Rejection**: Under empirical governance testing, a clean candidate trained on scaled benign traffic was rejected by the canary retention gate (retention dropped to 25.0%) and the drift budget gate ($D_{rms} = 6.65$), preventing automated promotion without manual override.
-- **Poisoned Candidate Rejected Only by Holdout**: The poisoned candidate passed canary retention with 100.0% recall, and was blocked exclusively by the normal holdout gate (holdout FPR reaching 100.0%).
-- **Small Window Counts**: In the 5G-NIDD real evaluation, attack campaigns yielded small sample sizes (1 to 11 attack windows and 3 to 20 benign windows per campaign), constraining confidence interval widths.
-- **ICMPFlood 0.0% Recall Across All Detectors**: Isolation Forest, Autoencoder, Percentile Fusion, and the Z-score baseline all achieved 0.0% recall on the trickle ICMP flood attack (613 packets over 20 minutes obscured in 60-second window aggregations).
-- **Unimplemented Modules**: Ablations (the seven planned ablation variations), re-anchoring to updated operational anchors, and time-of-day seasonal context are not implemented.
+- **Arm C 0 adaptations under simulated growth with FPR about 97%**: Under simulated legitimate growth, Arm C made 0 adaptations because candidates did not pass the conservative governance gates, leaving FPR at approximately 97% (97.0% ± 1.9%, identical to the static anchor).
+- **Clean growth candidate rejected by canary and budget**: Under empirical governance testing, a clean candidate trained on scaled benign traffic was rejected by the canary retention gate (retention dropped to 25.0%) and the drift budget gate ($D_{rms} = 6.65$), preventing automated promotion without manual override.
+- **Poisoned candidate rejected only by the holdout**: The poisoned candidate passed canary retention with 100.0% recall, and was blocked exclusively by the normal holdout gate (holdout FPR reaching 100.0%).
+- **Small window counts**: In the 5G-NIDD real evaluation, attack campaigns yielded small sample sizes (1 to 11 attack windows and 3 to 20 benign windows per campaign), constraining confidence interval widths.
+- **ICMPFlood recall 0%**: Across all detectors (Isolation Forest, Autoencoder, Percentile Fusion, and Fixed Z-Score), recall was 0.0% on the trickle ICMP flood attack (613 packets over 20 minutes obscured in 60-second window aggregations).
+- **Missing ablations, re-anchoring and time-of-day context**: The planned ablation variations, re-anchoring to updated operational anchors, and time-of-day seasonal context are not implemented.
 
 ---
 

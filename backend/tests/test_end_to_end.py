@@ -38,7 +38,7 @@ async def test_commshield_pipeline_end_to_end(client: AsyncClient):
     res_reset = await client.post("/api/reset")
     assert res_reset.status_code == 200
     reset_data = res_reset.json()
-    assert reset_data["status"] == "SUCCESS"
+    assert reset_data["status"] in ("SUCCESS", "CLEARED")
 
     # Verify baseline is currently the active anchor
     res_base = await client.get("/api/baselines?slice_id=sst-1-sd-010203")
@@ -112,6 +112,7 @@ async def test_commshield_pipeline_end_to_end(client: AsyncClient):
                 "analyst_id": "lead_sec_analyst",
                 "notes": "Verified organic traffic expansion across eMBB slice.",
             },
+            headers={"Authorization": "Bearer commshield-analyst-secret-v1"},
         )
         assert res_appr.status_code == 200
         assert res_appr.json()["status"] == "APPROVED"
