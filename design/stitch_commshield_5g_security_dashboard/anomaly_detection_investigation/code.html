@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"tertiary":"#006243","primary-fixed-dim":"#b4c5ff","tertiary-fixed-dim":"#68dba9","inverse-surface":"#213145","error":"#ba1a1a","primary-fixed":"#dbe1ff","surface-tint":"#0053db","tertiary-fixed":"#85f8c4","surface":"#f8f9ff","background":"#f8f9ff","on-tertiary":"#ffffff","primary-container":"#2563eb","on-secondary":"#ffffff","on-surface":"#0b1c30","on-background":"#0b1c30","on-secondary-container":"#586378","on-primary":"#ffffff","surface-container-low":"#eff4ff","surface-container-lowest":"#ffffff","secondary-fixed-dim":"#bbc7df","on-primary-container":"#eeefff","on-tertiary-fixed-variant":"#005137","surface-variant":"#d3e4fe","inverse-on-surface":"#eaf1ff","inverse-primary":"#b4c5ff","on-error-container":"#93000a","primary":"#004ac6","on-surface-variant":"#434655","outline":"#737686","secondary-container":"#d4e0f9","error-container":"#ffdad6","secondary":"#535f74","on-error":"#ffffff","surface-bright":"#f8f9ff","on-primary-fixed":"#00174b","surface-container-high":"#dce9ff","on-primary-fixed-variant":"#003ea8","surface-dim":"#cbdbf5","tertiary-container":"#007d57","on-tertiary-container":"#bdffdc","on-tertiary-fixed":"#002114","surface-container":"#e5eeff","secondary-fixed":"#d7e3fc","surface-container-highest":"#d3e4fe","outline-variant":"#c3c6d7","on-secondary-fixed":"#101c2e","on-secondary-fixed-variant":"#3c475b"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-md":"1rem","margin-desktop":"2rem","space-2xs":"0.125rem","margin":"1rem","space-2xl":"3rem","space-xl":"2rem","space-sm":"0.5rem","space-lg":"1.5rem","gutter":"1rem","space-xs":"0.25rem","gutter-desktop":"1.5rem"},fontFamily:{"body-sm":["Inter"],"headline-xl":["Inter"],"headline-lg":["Inter"],"display-lg":["Inter"],"body-md":["Inter"],"metric-stat":["Inter"],"headline-md":["Inter"],"label-mono":["JetBrains Mono"],"title-sm":["Inter"],"body-xs":["Inter"],"badge-status":["Inter"]},fontSize:{"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-xl":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-lg":["22px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"metric-stat":["24px",{lineHeight:"28px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["18px",{lineHeight:"24px",letterSpacing:"-0.01em",fontWeight:"600"}],"label-mono":["12px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"500"}],"title-sm":["15px",{lineHeight:"20px",fontWeight:"500"}],"body-xs":["12px",{lineHeight:"16px",fontWeight:"400"}],"badge-status":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-60 bg-[#0a1628] z-50 flex flex-col justify-between border-r border-[#1e293b] select-none"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between border-b border-[#1e293b]"><div class="flex items-center gap-space-sm"><img alt="CommShield Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBttAt1SRWgjuCLCK4TWSttsWsP1J2ZEeEXBPpOz69xzdeFVe0HXhuDnfyQw0kJqq6nZrcaqARiwl4i_lNCl2J8F1onMBXV7QD1bRV3z-pUlQ9ZE7rXGY14XtNtf6DE5QFljZB8poD3TpognU7vZ7Sw35BWX3ySayPpCigB4QLI2Og9wgHFTs1zgWAMaE_RIQXpr6ExE8vvK_tg8Yfy3pwGteNwfBFiTRT75uW8GHKD"/><div class="flex flex-col"><span class="font-title-sm text-title-sm font-bold text-white tracking-tight leading-none">CommShield</span><span class="font-label-mono text-[10px] text-[#94a3b8] uppercase tracking-wider mt-0.5">5G Core Ops</span></div></div><span class="font-badge-status text-badge-status px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-700/60 uppercase tracking-wider">5G SOC</span></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-mono text-[11px] font-semibold text-[#64748b] tracking-wider uppercase">Telemetry &amp; Control</span></div><nav class="flex flex-col gap-1 px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]"><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">monitoring</span><span class="font-body-sm text-body-sm">Overview</span></a><a aria-current="page" class="flex items-center gap-space-sm px-3 py-2 rounded-lg transition-all bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]" data-path="anomaly-detection" href="#"><span class="material-symbols-outlined text-[18px]">radar</span><span class="font-body-sm text-body-sm">Anomaly Detection</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="baseline-governance" href="#"><span class="material-symbols-outlined text-[18px]">policy</span><span class="font-body-sm text-body-sm">Baseline Governance</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="digital-twin" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span class="font-body-sm text-body-sm">Digital Twin</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="experiment-comparison" href="#"><span class="material-symbols-outlined text-[18px]">difference</span><span class="font-body-sm text-body-sm">Experiment Matrix</span></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="alerts" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-body-sm text-body-sm">Alert Triage</span></div><span class="font-label-mono text-[10px] px-1.5 py-0.5 rounded bg-error/20 text-error-container font-semibold">3</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-sm text-body-sm">System Settings</span></a></nav></div><div class="p-space-sm border-t border-[#1e293b]"><div class="flex items-center gap-space-sm p-2 rounded-lg bg-[#0f1d33] border border-[#1e293b]"><div class="relative flex-shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAddWR95mBphYXrQ11t2Vyb5QLCf_1vnLoOD03CWCyOQrXYiJ3hv5PSRbRGJVXLtpcUof5D2Tfppk-qyHACqbXKQBNOChHLgDzT9jRvgFD1v-2M1oN6zwcPpemW5MhpaBaT2eVxdtzqgKc4qFTnsXOFbQ4oPqH5SYLkpz_6IT8sb2BOthWYG8Wr0ATRy5KDMMKbrPQRNciVAFyXOgWZiN68dvM9mx7DNRPebq70Hng"/><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0f1d33]"></span></div><div class="flex flex-col min-w-0 flex-1"><div class="flex items-center justify-between"><span class="font-title-sm text-[13px] font-semibold text-white truncate">Sarah Jenkins</span><span class="flex h-1.5 w-1.5 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span></div><span class="font-body-xs text-body-xs text-[#94a3b8] truncate">Lead SOC Architect</span><span class="font-label-mono text-[10px] text-emerald-400 tracking-wide mt-0.5 truncate">ONLINE - ENCLAVE 04</span></div></div></div></aside><div class="pl-60 min-h-screen flex flex-col bg-surface"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline-variant/60 z-40 flex items-center justify-between px-space-lg shadow-[0_1px_6px_rgba(15,23,42,0.04)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-body-sm text-body-sm text-on-surface-variant"><span class="font-semibold text-on-surface">CommShield</span><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span>5G Slice US-East-1</span><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-primary font-medium">Security Command</span></div><div class="h-4 w-px bg-outline-variant"></div><div class="flex items-center gap-space-xs bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant/70"><span class="material-symbols-outlined text-[16px] text-primary">alt_route</span><span class="font-body-xs text-body-xs font-medium text-on-surface truncate max-w-[210px]">Active Edge Zero-Trust Attack Sim v4</span><span class="material-symbols-outlined text-[14px] text-outline cursor-pointer hover:text-on-surface">expand_more</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900"><span class="flex h-2 w-2 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span></span><span class="font-label-mono text-[11px] font-semibold text-emerald-900">UPF-EDGE-09</span></div><div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/80 text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-outline">search</span><span class="font-body-sm text-body-sm text-outline">Global inspect...</span><kbd class="font-label-mono text-[10px] px-1.5 py-0.5 rounded bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-semibold">⌘K</kbd></div><div class="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-lg border border-outline-variant text-on-surface cursor-pointer hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[16px] text-secondary">security</span><span class="font-body-xs text-body-xs font-semibold">ENCLAVE 04</span><span class="material-symbols-outlined text-[14px] text-outline">unfold_more</span></div><div class="relative cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span></span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAddWR95mBphYXrQ11t2Vyb5QLCf_1vnLoOD03CWCyOQrXYiJ3hv5PSRbRGJVXLtpcUof5D2Tfppk-qyHACqbXKQBNOChHLgDzT9jRvgFD1v-2M1oN6zwcPpemW5MhpaBaT2eVxdtzqgKc4qFTnsXOFbQ4oPqH5SYLkpz_6IT8sb2BOthWYG8Wr0ATRy5KDMMKbrPQRNciVAFyXOgWZiN68dvM9mx7DNRPebq70Hng"/></div></header><main class="w-full pt-16 px-space-md lg:px-margin-desktop py-space-md flex-1 bg-surface"><div class="flex flex-col w-full gap-space-lg pb-space-2xl">
+<!-- Investigation Context Header Banner -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-space-xs font-label-mono text-body-xs text-on-surface-variant">
+<span>INVESTIGATION</span>
+<span class="text-outline">/</span>
+<span>THREAT HUNTING</span>
+<span class="text-outline">/</span>
+<span class="text-primary font-medium">INCIDENT #INC-2024-8842</span>
+<span class="px-2 py-0.5 ml-2 rounded-full bg-error-container text-on-error-container font-badge-status text-badge-status tracking-wider">CRITICAL BREACH</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Anomaly Detection &amp; Multi-Model Inference</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Active 5G core telemetry analysis with concurrent non-parametric drift scoring across slice US-East-1.</p>
+</div>
+<!-- Controls Row -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Mode Toggle Segmented Control -->
+<div class="flex items-center p-1 bg-surface-container-low rounded-lg shadow-inner">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary font-body-sm text-body-sm font-semibold shadow-sm transition-all flex items-center gap-1.5" id="toggle-ensemble">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+          Ensemble Mode (Active)
+        </button>
+<button class="px-3 py-1.5 rounded-lg text-secondary font-body-sm text-body-sm hover:text-on-surface transition-all flex items-center gap-1.5" id="toggle-individual">
+<span class="material-symbols-outlined text-[16px]">grouped_bar_chart</span>
+          Individual Detectors
+        </button>
+</div>
+<!-- Confidence Slider -->
+<div class="flex items-center gap-space-sm bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm">
+<label class="font-label-mono text-body-xs text-on-surface-variant" for="conf-slider">Confidence:</label>
+<input class="w-24 accent-primary cursor-pointer h-1.5 bg-surface-variant rounded-full" id="conf-slider" max="99" min="50" type="range" value="85"/>
+<span class="font-label-mono text-body-xs font-semibold text-primary" id="conf-val">85%</span>
+</div>
+<!-- Timeframe Selector -->
+<div class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-secondary">schedule</span>
+<span class="font-medium">Last 4 Hours</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</div>
+<button class="bg-primary text-on-primary px-3.5 py-1.5 rounded-lg font-body-sm text-body-sm font-medium hover:bg-surface-tint shadow-sm flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">emergency_home</span>
+        Trigger Defensive Containment
+      </button>
+</div>
+</div>
+<!-- Split View Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- LEFT 60%: Multi-Detector Diagnostic Panel -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<!-- High Severity Fused Score Banner -->
+<div class="relative overflow-hidden bg-gradient-to-r from-error/90 via-error to-[#7a0606] text-on-error p-space-md rounded-xl shadow-md">
+<div class="absolute -right-6 -bottom-6 w-36 h-36 rounded-full bg-white/5 blur-xl pointer-events-none"></div>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm relative z-10">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[28px] text-on-error animate-pulse">crisis_alert</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-body-xs tracking-wider uppercase opacity-90">Ensemble Fused Anomaly Score</span>
+<span class="px-2 py-0.5 rounded-full bg-white/20 text-white font-badge-status text-badge-status tracking-widest uppercase">P98 CRITICAL</span>
+</div>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-display-lg text-display-lg font-bold tracking-tight">94.6</span>
+<span class="font-headline-md text-headline-md opacity-80">/ 100</span>
+<span class="font-label-mono text-body-xs text-error-container ml-2 bg-black/25 px-2 py-0.5 rounded">+18.4% above 5-min baseline</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-3 py-1 rounded bg-black/30 font-label-mono text-body-xs font-semibold tracking-wider text-error-container flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-on-error animate-ping"></span>
+              CRITICAL ACTION TRIGGERED
+            </span>
+<span class="font-body-xs text-body-xs opacity-75 mt-1">Autonomous micro-segmentation active</span>
+</div>
+</div>
+</div>
+<!-- 3 Detector Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Detector 1: Isolation Forest -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">Isolation Forest</span>
+<span class="px-1.5 py-0.5 rounded bg-error-container text-on-error-container font-label-mono text-[10px] font-bold">ALERT</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Tree-path depth metric</p>
+<!-- SVG Dial / Radial Gauge -->
+<div class="flex flex-col items-center my-2 relative">
+<svg class="w-28 h-20" viewbox="0 0 120 70">
+<path class="text-surface-variant" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="9"></path>
+<!-- 92% of arc: dasharray ~141, dashoffset ~11 -->
+<path class="text-primary-container" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="currentColor" stroke-dasharray="141.37" stroke-dashoffset="11.3" stroke-linecap="round" stroke-width="9"></path>
+</svg>
+<div class="absolute bottom-0 text-center">
+<span class="font-metric-stat text-metric-stat text-on-surface font-bold">92<span class="text-body-xs font-normal text-on-surface-variant">nd</span></span>
+<span class="block font-label-mono text-[10px] text-on-surface-variant -mt-1">Percentile</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 pt-2 bg-surface-container-low p-2 rounded-lg font-label-mono text-body-xs">
+<div class="flex justify-between text-on-surface-variant">
+<span>Contamination:</span>
+<span class="font-semibold text-on-surface">0.015</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Max Tree Depth:</span>
+<span class="font-semibold text-on-surface">12</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Model Conf:</span>
+<span class="font-semibold text-primary">94.2%</span>
+</div>
+</div>
+</div>
+<!-- Detector 2: Autoencoder Loss -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">Autoencoder</span>
+<span class="px-1.5 py-0.5 rounded bg-error-container text-on-error-container font-label-mono text-[10px] font-bold">LOSS SPIKE</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Reconstruction MSE</p>
+<div class="flex flex-col items-center my-2 relative">
+<svg class="w-28 h-20" viewbox="0 0 120 70">
+<path class="text-surface-variant" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="9"></path>
+<path class="text-error" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="currentColor" stroke-dasharray="141.37" stroke-dashoffset="4.2" stroke-linecap="round" stroke-width="9"></path>
+</svg>
+<div class="absolute bottom-0 text-center">
+<span class="font-metric-stat text-metric-stat text-error font-bold">97<span class="text-body-xs font-normal text-on-surface-variant">th</span></span>
+<span class="block font-label-mono text-[10px] text-on-surface-variant -mt-1">Percentile</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 pt-2 bg-surface-container-low p-2 rounded-lg font-label-mono text-body-xs">
+<div class="flex justify-between text-on-surface-variant">
+<span>MSE Loss:</span>
+<span class="font-semibold text-error">4.82 <span class="text-[10px] text-outline font-normal">(0.12)</span></span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Latent Dist:</span>
+<span class="font-semibold text-error">3.4σ</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Model Conf:</span>
+<span class="font-semibold text-primary">96.8%</span>
+</div>
+</div>
+</div>
+<!-- Detector 3: Bayesian Fusion -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">Bayesian Fusion</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-mono text-[10px] font-bold">CONVERGED</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Dynamic posteriors</p>
+<div class="flex flex-col items-center my-2 relative">
+<svg class="w-28 h-20" viewbox="0 0 120 70">
+<path class="text-surface-variant" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="9"></path>
+<path class="text-surface-tint" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="currentColor" stroke-dasharray="141.37" stroke-dashoffset="7.0" stroke-linecap="round" stroke-width="9"></path>
+</svg>
+<div class="absolute bottom-0 text-center">
+<span class="font-metric-stat text-metric-stat text-surface-tint font-bold">95<span class="text-body-xs font-normal text-on-surface-variant">th</span></span>
+<span class="block font-label-mono text-[10px] text-on-surface-variant -mt-1">Percentile</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 pt-2 bg-surface-container-low p-2 rounded-lg font-label-mono text-body-xs">
+<div class="flex justify-between text-on-surface-variant">
+<span>Dyn Weights:</span>
+<span class="font-semibold text-on-surface">.42 IF / .58 AE</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Post Entropy:</span>
+<span class="font-semibold text-on-surface">0.18 nats</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Confidence:</span>
+<span class="font-semibold text-primary">95.5%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Feature Attribution / SHAP Explainer Card -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">analytics</span>
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">Multi-Model Feature Attribution (TreeSHAP)</span>
+</div>
+<span class="font-label-mono text-body-xs text-on-surface-variant">Normalized Contribution Weights</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Feature 1 -->
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-medium text-on-surface">GTP Packet Length Variance</span>
+<span class="font-label-mono text-primary font-semibold">41.0% (Δ +34.2)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container">
+<div class="h-2 rounded-full bg-primary" style="width: 41%"></div>
+</div>
+</div>
+<!-- Feature 2 -->
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-medium text-on-surface">Inter-Arrival Jitter (ms)</span>
+<span class="font-label-mono text-primary-container font-semibold">28.0% (Δ +19.1)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container">
+<div class="h-2 rounded-full bg-primary-container" style="width: 28%"></div>
+</div>
+</div>
+<!-- Feature 3 -->
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-medium text-on-surface">Port Entropy &amp; Session Concurrency</span>
+<span class="font-label-mono text-secondary font-semibold">19.0% (Δ +11.4)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container">
+<div class="h-2 rounded-full bg-secondary" style="width: 19%"></div>
+</div>
+</div>
+<!-- Feature 4 -->
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-medium text-on-surface">NGAP Sequence Gap Rate</span>
+<span class="font-label-mono text-outline font-semibold">12.0% (Nominal)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container">
+<div class="h-2 rounded-full bg-outline-variant" style="width: 12%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT 40%: CUSUM Drift & Agreement Timeline -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<!-- CUSUM Drift Chart Card -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-error">waterfall_chart</span>
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">CUSUM Sequential Drift (H± = 4.0σ)</span>
+</div>
+<span class="px-2 py-0.5 rounded font-label-mono text-[10px] bg-error-container text-on-error-container font-bold">BREACH @ 13:42 UTC</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant mb-3">Continuous cumulative deviation monitoring indicating persistent state shift.</p>
+<!-- Inline SVG Chart for CUSUM -->
+<div class="relative w-full h-44 bg-surface-container-low rounded-lg p-2 flex flex-col justify-end">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 320 140">
+<!-- Grid Lines -->
+<line stroke="#cbd5e1" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="320" y1="20" y2="20"></line>
+<line stroke="#94a3b8" stroke-width="1" x1="0" x2="320" y1="70" y2="70"></line>
+<line stroke="#cbd5e1" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="320" y1="120" y2="120"></line>
+<!-- Upper Threshold Label H+ = +4.0 -->
+<text fill="#ba1a1a" font-family="JetBrains Mono" font-size="8" font-weight="600" x="8" y="16">H+ (+4.0σ THRESHOLD)</text>
+<!-- Baseline -->
+<text fill="#64748b" font-family="JetBrains Mono" font-size="8" x="8" y="66">BASELINE μ = 0</text>
+<!-- Lower Threshold Label H- = -4.0 -->
+<text fill="#64748b" font-family="JetBrains Mono" font-size="8" x="8" y="132">H- (-4.0σ)</text>
+<!-- Safe Zone Fill -->
+<rect fill="#2563eb" fill-opacity="0.03" height="100" width="320" x="0" y="20"></rect>
+<!-- Breach Shading -->
+<polygon fill="#ffdad6" fill-opacity="0.4" points="210,20 210,10 240,6 270,4 300,5 315,6 315,20"></polygon>
+<!-- CUSUM Line Path (Breaches at x=210) -->
+<path d="M 0 70 
+                     L 25 71 
+                     L 50 68 
+                     L 80 72 
+                     L 110 65 
+                     L 140 60 
+                     L 170 48 
+                     L 190 32 
+                     L 210 19 
+                     L 235 9 
+                     L 260 7 
+                     L 285 5 
+                     L 320 6" fill="none" stroke="#ba1a1a" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<!-- Breach Point Indicator Circle -->
+<circle cx="210" cy="19" fill="#ba1a1a" r="4.5" stroke="#ffffff" stroke-width="2"></circle>
+<circle cx="310" cy="6" fill="#ba1a1a" r="3.5"></circle>
+</svg>
+<!-- Timeline X-Axis markers -->
+<div class="flex justify-between items-center text-[10px] font-label-mono text-outline pt-1">
+<span>10:00 UTC</span>
+<span>11:00</span>
+<span>12:00</span>
+<span>13:00</span>
+<span class="text-error font-bold">13:42 (CUSUM 5.8σ)</span>
+<span>14:00</span>
+</div>
+</div>
+</div>
+<!-- Multi-Detector Agreement Timeline Matrix -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between flex-1">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">stacked_bar_chart</span>
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">Detector Agreement Heat Track</span>
+</div>
+<span class="font-label-mono text-body-xs text-on-surface-variant">4-Hour Resolution</span>
+</div>
+<div class="flex flex-col gap-3 py-1">
+<!-- Row 1: Isolation Forest -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[11px] font-label-mono text-on-surface">
+<span class="font-semibold">Isolation Forest</span>
+<span class="text-error font-medium">92% Alert Conc.</span>
+</div>
+<div class="grid grid-cols-24 h-4 gap-0.5 rounded overflow-hidden">
+<!-- 24 time slices representing 4 hours -->
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-primary-fixed-dim"></div>
+<div class="bg-primary-container"></div>
+<div class="bg-primary-container"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+</div>
+</div>
+<!-- Row 2: Autoencoder -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[11px] font-label-mono text-on-surface">
+<span class="font-semibold">Autoencoder Reconstruction</span>
+<span class="text-error font-medium">97% Loss Spike</span>
+</div>
+<div class="grid grid-cols-24 h-4 gap-0.5 rounded overflow-hidden">
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-primary-fixed-dim"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+</div>
+</div>
+<!-- Row 3: Spectral Clustering -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-[11px] font-label-mono text-on-surface">
+<span class="font-semibold">Spectral Graph Clustering</span>
+<span class="text-error font-medium">Outlier Partition</span>
+</div>
+<div class="grid grid-cols-24 h-4 gap-0.5 rounded overflow-hidden">
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-surface-container-high"></div>
+<div class="bg-primary-container"></div>
+<div class="bg-primary-container"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+<div class="bg-error"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-xs font-label-mono text-on-surface-variant pt-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-surface-container-high"></span>
+<span>Nominal</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-primary-container"></span>
+<span>Drift Warning</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-error"></span>
+<span>High Severity Breach</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: High-Fidelity Network Flow Deep Packet Inspection Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<!-- Header with Batch Actions -->
+<div class="p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<div class="p-2 rounded-lg bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[20px]">troubleshoot</span>
+</div>
+<div>
+<h2 class="font-title-sm text-title-sm font-semibold text-on-surface">5G Ingress Packet Flow Diagnostics</h2>
+<span class="font-body-xs text-body-xs text-on-surface-variant">Live telemetry slice feed — UPF Edge Router 09 ingress queue</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<button class="bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-outline">filter_alt</span>
+<span>Confidence &gt; 90%</span>
+</button>
+<button class="bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Export PCAP</span>
+</button>
+<button class="bg-error text-on-error hover:bg-error/90 font-body-sm text-body-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">block</span>
+<span>Quarantine Source IP</span>
+</button>
+</div>
+</div>
+<!-- Tabular Grid View -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-mono text-[11px] uppercase tracking-wider select-none">
+<tr>
+<th class="py-2.5 px-space-md"></th>
+<th class="py-2.5 px-space-md">Packet ID</th>
+<th class="py-2.5 px-space-md">Timestamp (UTC)</th>
+<th class="py-2.5 px-space-md">5G Protocol</th>
+<th class="py-2.5 px-space-md">Source Enclave</th>
+<th class="py-2.5 px-space-md">Target UPF</th>
+<th class="py-2.5 px-space-md">Anomaly Prob</th>
+<th class="py-2.5 px-space-md">Status / Action</th>
+</tr>
+</thead>
+<tbody class="text-on-surface">
+<!-- Row 1: CRITICAL EXPANDED DPI ROW -->
+<tr class="bg-error-container/20 cursor-pointer hover:bg-error-container/30 transition-colors">
+<td class="py-3 px-space-md text-center">
+<span class="material-symbols-outlined text-[18px] text-error transition-transform transform rotate-90" id="row1-icon">expand_circle_right</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs font-semibold text-error">
+              #PKT-992140
+            </td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface-variant">
+              13:42:08.412
+            </td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded font-label-mono text-[11px] font-bold bg-primary-fixed text-on-primary-fixed">GTP-U</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              198.51.100.74 <span class="text-outline text-[10px]">(ENCL-04)</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              UPF-EDGE-09:2152
+            </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-label-mono font-bold text-error">98.4%</span>
+<div class="w-12 h-1.5 rounded-full bg-error-container">
+<div class="h-1.5 rounded-full bg-error" style="width: 98%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-0.5 rounded-full bg-error text-on-error font-badge-status text-badge-status tracking-wide">ISOLATED</span>
+</td>
+</tr>
+<!-- Deep Packet Inspection Accordion Content -->
+<tr class="bg-surface-container-low/60" id="row1-expanded">
+<td class="p-space-md" colspan="8">
+<div class="p-space-md bg-surface-container-lowest rounded-xl shadow-inner flex flex-col gap-space-md">
+<!-- Actionable Alert Header inside Inspector -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm bg-error-container/40 p-3 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-error">warning</span>
+<span class="font-body-sm text-body-sm font-semibold text-on-error-container">Deep Packet Anomaly Detected: GTP-U Extension Malformation</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-body-xs text-on-surface-variant font-medium">Remediation:</span>
+<span class="px-2 py-1 rounded bg-error text-on-error font-label-mono text-body-xs font-semibold">Drop GTP-U traffic matching TEID 0x00A412</span>
+</div>
+</div>
+<!-- Deep Packet Inspection Split: Decode Tree vs Hex Stream -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+<!-- Left: Protocol Decode Tree -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-mono text-body-xs text-on-surface-variant pb-1">
+<span>PROTOCOL DECODE HIERARCHY</span>
+<span class="text-primary">3GPP TS 29.281 Rel-17</span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg font-label-mono text-body-xs flex flex-col gap-1.5 text-on-surface">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="material-symbols-outlined text-[14px]">arrow_right</span>
+<span>Ethernet II, Src: 00:1a:2b:3c:4d:5e, Dst: fa:16:3e:89:12:ef</span>
+</div>
+<div class="flex items-center gap-1.5 text-outline">
+<span class="material-symbols-outlined text-[14px]">arrow_right</span>
+<span>Internet Protocol Version 4, Src: 198.51.100.74, Dst: 10.244.0.18</span>
+</div>
+<div class="flex items-center gap-1.5 text-outline">
+<span class="material-symbols-outlined text-[14px]">arrow_right</span>
+<span>User Datagram Protocol, Src Port: 52189, Dst Port: 2152</span>
+</div>
+<div class="flex flex-col gap-1 pl-4 bg-error-container/30 p-2 rounded">
+<div class="flex items-center gap-1.5 text-error font-semibold">
+<span class="material-symbols-outlined text-[14px]">error</span>
+<span>GPRS Tunneling Protocol User Plane (GTP-U)</span>
+</div>
+<div class="pl-4 flex flex-col gap-0.5 text-on-surface-variant text-[11px]">
+<div>Flags: 0x34 (Version 1, Protocol Type: GTP, Extension Flag: 1)</div>
+<div>Message Type: 0xFF (G-PDU)</div>
+<div>Length: 1488 octets (Mismatch with physical frame 1514)</div>
+<div class="text-error font-semibold">Tunnel Endpoint Identifier (TEID): 0x00A412</div>
+<div class="bg-error/10 text-error p-1 rounded font-bold">
+                            CRITICAL ERROR: Extension Header [Type 0x85 - PDU Session Container] has illegal TLV Length: 0xFF (Expected max 0x04)
+                          </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Hex/Payload Snippet -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-mono text-body-xs text-on-surface-variant pb-1">
+<span>RAW PAYLOAD HEX STREAM</span>
+<span>OFFSET 0x0020 - 0x0060</span>
+</div>
+<div class="bg-[#0a1628] text-on-primary-container p-3 rounded-lg font-label-mono text-[11px] leading-relaxed overflow-x-auto">
+<div class="flex gap-4">
+<span class="text-slate-500 select-none">0000</span>
+<span class="text-slate-300">34 ff 05 d0 00 00 a4 12  85 <span class="bg-error text-white px-0.5 font-bold">ff</span> de ad be ef  48 65</span>
+<span class="text-slate-400 select-none">|4.......H.deadbeefHe|</span>
+</div>
+<div class="flex gap-4">
+<span class="text-slate-500 select-none">0010</span>
+<span class="text-slate-300">6c 6c 6f 20 53 6c 69 63  65 20 42 75 66 66 65 72</span>
+<span class="text-slate-400 select-none">|llo Slice Buffer|</span>
+</div>
+<div class="flex gap-4">
+<span class="text-slate-500 select-none">0020</span>
+<span class="text-slate-300">4f 76 65 72 66 6c 6f 77  20 50 6f 72 74 20 45 78</span>
+<span class="text-slate-400 select-none">|Overflow Port Ex|</span>
+</div>
+<div class="flex gap-4">
+<span class="text-slate-500 select-none">0030</span>
+<span class="text-slate-300">70 6c 6f 69 74 20 76 34  00 00 00 00 00 00 00 00</span>
+<span class="text-slate-400 select-none">|ploit v4........|</span>
+</div>
+</div>
+<div class="flex items-center justify-between font-label-mono text-[11px] text-on-surface-variant">
+<span>Signature match: <span class="text-error font-semibold">SIG-5G-GTP-BUFFER-EXPLOIT</span></span>
+<button class="text-primary hover:underline font-medium">View Full Packet Dissection (1.4 KB)</button>
+</div>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 2: Standard Incident -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md text-center">
+<span class="material-symbols-outlined text-[18px] text-outline">expand_circle_right</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs font-semibold text-on-surface">
+              #PKT-992139
+            </td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface-variant">
+              13:42:07.994
+            </td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded font-label-mono text-[11px] font-bold bg-secondary-container text-on-secondary-fixed">NGAP</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              198.51.100.74 <span class="text-outline text-[10px]">(ENCL-04)</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              AMF-CORE-01:38412
+            </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-label-mono font-bold text-error">91.8%</span>
+<div class="w-12 h-1.5 rounded-full bg-error-container">
+<div class="h-1.5 rounded-full bg-error" style="width: 91%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-badge-status text-badge-status tracking-wide">FLAGGED</span>
+</td>
+</tr>
+<!-- Row 3: Standard Incident -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md text-center">
+<span class="material-symbols-outlined text-[18px] text-outline">expand_circle_right</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs font-semibold text-on-surface">
+              #PKT-992138
+            </td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface-variant">
+              13:42:07.120
+            </td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded font-label-mono text-[11px] font-bold bg-surface-container-high text-on-surface">SCTP</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              203.0.113.12 <span class="text-outline text-[10px]">(ENCL-02)</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              SMF-CN-02:38412
+            </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-label-mono font-semibold text-secondary">74.2%</span>
+<div class="w-12 h-1.5 rounded-full bg-surface-variant">
+<div class="h-1.5 rounded-full bg-secondary" style="width: 74%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-badge-status text-badge-status tracking-wide">MONITORED</span>
+</td>
+</tr>
+<!-- Row 4: Normal Traffic Control -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md text-center">
+<span class="material-symbols-outlined text-[18px] text-outline">expand_circle_right</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs font-semibold text-on-surface">
+              #PKT-992137
+            </td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface-variant">
+              13:42:06.885
+            </td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded font-label-mono text-[11px] font-bold bg-tertiary-fixed text-on-tertiary-fixed">NAS-5GS</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              198.51.100.19 <span class="text-outline text-[10px]">(ENCL-01)</span>
+</td>
+<td class="py-3 px-space-md font-label-mono text-body-xs text-on-surface">
+              AUSF-01:7777
+            </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-label-mono font-medium text-tertiary">08.1%</span>
+<div class="w-12 h-1.5 rounded-full bg-surface-variant">
+<div class="h-1.5 rounded-full bg-tertiary" style="width: 8%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-badge-status text-badge-status tracking-wide">ALLOWED</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Metrics Footer -->
+<div class="px-space-md py-space-sm bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-space-xs font-body-xs text-body-xs text-on-surface-variant">
+<div class="flex items-center gap-space-md">
+<span>Showing <strong class="text-on-surface">1-4</strong> of <strong class="text-on-surface">8,412</strong> packets inspected in anomaly window</span>
+<span class="h-3 w-px bg-outline-variant"></span>
+<span class="font-label-mono">Mean Ingestion Latency: 1.24 ms</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container-low text-on-surface disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="px-2 font-label-mono font-semibold text-primary">Page 1 of 210</span>
+<button class="p-1 rounded hover:bg-surface-container-low text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple interactive micro-state handlers
+  const confSlider = document.getElementById('conf-slider');
+  const confVal = document.getElementById('conf-val');
+  if (confSlider && confVal) {
+    confSlider.addEventListener('input', (e) => {
+      confVal.textContent = e.target.value + '%';
+    });
+  }
+
+  const toggleEnsemble = document.getElementById('toggle-ensemble');
+  const toggleIndividual = document.getElementById('toggle-individual');
+  if (toggleEnsemble && toggleIndividual) {
+    toggleEnsemble.addEventListener('click', () => {
+      toggleEnsemble.className = "px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary font-body-sm text-body-sm font-semibold shadow-sm transition-all flex items-center gap-1.5";
+      toggleIndividual.className = "px-3 py-1.5 rounded-lg text-secondary font-body-sm text-body-sm hover:text-on-surface transition-all flex items-center gap-1.5";
+    });
+    toggleIndividual.addEventListener('click', () => {
+      toggleIndividual.className = "px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary font-body-sm text-body-sm font-semibold shadow-sm transition-all flex items-center gap-1.5";
+      toggleEnsemble.className = "px-3 py-1.5 rounded-lg text-secondary font-body-sm text-body-sm hover:text-on-surface transition-all flex items-center gap-1.5";
+    });
+  }
+</script></main></div></body></html>

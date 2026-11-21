@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"tertiary":"#006243","primary-fixed-dim":"#b4c5ff","tertiary-fixed-dim":"#68dba9","inverse-surface":"#213145","error":"#ba1a1a","primary-fixed":"#dbe1ff","surface-tint":"#0053db","tertiary-fixed":"#85f8c4","surface":"#f8f9ff","background":"#f8f9ff","on-tertiary":"#ffffff","primary-container":"#2563eb","on-secondary":"#ffffff","on-surface":"#0b1c30","on-background":"#0b1c30","on-secondary-container":"#586378","on-primary":"#ffffff","surface-container-low":"#eff4ff","surface-container-lowest":"#ffffff","secondary-fixed-dim":"#bbc7df","on-primary-container":"#eeefff","on-tertiary-fixed-variant":"#005137","surface-variant":"#d3e4fe","inverse-on-surface":"#eaf1ff","inverse-primary":"#b4c5ff","on-error-container":"#93000a","primary":"#004ac6","on-surface-variant":"#434655","outline":"#737686","secondary-container":"#d4e0f9","error-container":"#ffdad6","secondary":"#535f74","on-error":"#ffffff","surface-bright":"#f8f9ff","on-primary-fixed":"#00174b","surface-container-high":"#dce9ff","on-primary-fixed-variant":"#003ea8","surface-dim":"#cbdbf5","tertiary-container":"#007d57","on-tertiary-container":"#bdffdc","on-tertiary-fixed":"#002114","surface-container":"#e5eeff","secondary-fixed":"#d7e3fc","surface-container-highest":"#d3e4fe","outline-variant":"#c3c6d7","on-secondary-fixed":"#101c2e","on-secondary-fixed-variant":"#3c475b"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-md":"1rem","margin-desktop":"2rem","space-2xs":"0.125rem","margin":"1rem","space-2xl":"3rem","space-xl":"2rem","space-sm":"0.5rem","space-lg":"1.5rem","gutter":"1rem","space-xs":"0.25rem","gutter-desktop":"1.5rem"},fontFamily:{"body-sm":["Inter"],"headline-xl":["Inter"],"headline-lg":["Inter"],"display-lg":["Inter"],"body-md":["Inter"],"metric-stat":["Inter"],"headline-md":["Inter"],"label-mono":["JetBrains Mono"],"title-sm":["Inter"],"body-xs":["Inter"],"badge-status":["Inter"]},fontSize:{"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-xl":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-lg":["22px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"metric-stat":["24px",{lineHeight:"28px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["18px",{lineHeight:"24px",letterSpacing:"-0.01em",fontWeight:"600"}],"label-mono":["12px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"500"}],"title-sm":["15px",{lineHeight:"20px",fontWeight:"500"}],"body-xs":["12px",{lineHeight:"16px",fontWeight:"400"}],"badge-status":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-60 bg-[#0a1628] z-50 flex flex-col justify-between border-r border-[#1e293b] select-none"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between border-b border-[#1e293b]"><div class="flex items-center gap-space-sm"><img alt="CommShield Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrBttAt1SRWgjuCLCK4TWSttsWsP1J2ZEeEXBPpOz69xzdeFVe0HXhuDnfyQw0kJqq6nZrcaqARiwl4i_lNCl2J8F1onMBXV7QD1bRV3z-pUlQ9ZE7rXGY14XtNtf6DE5QFljZB8poD3TpognU7vZ7Sw35BWX3ySayPpCigB4QLI2Og9wgHFTs1zgWAMaE_RIQXpr6ExE8vvK_tg8Yfy3pwGteNwfBFiTRT75uW8GHKD"/><div class="flex flex-col"><span class="font-title-sm text-title-sm font-bold text-white tracking-tight leading-none">CommShield</span><span class="font-label-mono text-[10px] text-[#94a3b8] uppercase tracking-wider mt-0.5">5G Core Ops</span></div></div><span class="font-badge-status text-badge-status px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-700/60 uppercase tracking-wider">5G SOC</span></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-mono text-[11px] font-semibold text-[#64748b] tracking-wider uppercase">Telemetry &amp; Control</span></div><nav class="flex flex-col gap-1 px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]"><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">monitoring</span><span class="font-body-sm text-body-sm">Overview</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="anomaly-detection" href="#"><span class="material-symbols-outlined text-[18px]">radar</span><span class="font-body-sm text-body-sm">Anomaly Detection</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="baseline-governance" href="#"><span class="material-symbols-outlined text-[18px]">policy</span><span class="font-body-sm text-body-sm">Baseline Governance</span></a><a aria-current="page" class="flex items-center gap-space-sm px-3 py-2 rounded-lg transition-all bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]" data-path="digital-twin" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span class="font-body-sm text-body-sm">Digital Twin</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="experiment-comparison" href="#"><span class="material-symbols-outlined text-[18px]">difference</span><span class="font-body-sm text-body-sm">Experiment Matrix</span></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="alerts" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-body-sm text-body-sm">Alert Triage</span></div><span class="font-label-mono text-[10px] px-1.5 py-0.5 rounded bg-error/20 text-error-container font-semibold">3</span></a><a class="flex items-center gap-space-sm px-3 py-2 rounded-lg text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-sm text-body-sm">System Settings</span></a></nav></div><div class="p-space-sm border-t border-[#1e293b]"><div class="flex items-center gap-space-sm p-2 rounded-lg bg-[#0f1d33] border border-[#1e293b]"><div class="relative flex-shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAddWR95mBphYXrQ11t2Vyb5QLCf_1vnLoOD03CWCyOQrXYiJ3hv5PSRbRGJVXLtpcUof5D2Tfppk-qyHACqbXKQBNOChHLgDzT9jRvgFD1v-2M1oN6zwcPpemW5MhpaBaT2eVxdtzqgKc4qFTnsXOFbQ4oPqH5SYLkpz_6IT8sb2BOthWYG8Wr0ATRy5KDMMKbrPQRNciVAFyXOgWZiN68dvM9mx7DNRPebq70Hng"/><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0f1d33]"></span></div><div class="flex flex-col min-w-0 flex-1"><div class="flex items-center justify-between"><span class="font-title-sm text-[13px] font-semibold text-white truncate">Sarah Jenkins</span><span class="flex h-1.5 w-1.5 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span></div><span class="font-body-xs text-body-xs text-[#94a3b8] truncate">Lead SOC Architect</span><span class="font-label-mono text-[10px] text-emerald-400 tracking-wide mt-0.5 truncate">ONLINE - ENCLAVE 04</span></div></div></div></aside><div class="pl-60 min-h-screen flex flex-col bg-surface"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline-variant/60 z-40 flex items-center justify-between px-space-lg shadow-[0_1px_6px_rgba(15,23,42,0.04)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-body-sm text-body-sm text-on-surface-variant"><span class="font-semibold text-on-surface">CommShield</span><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span>5G Slice US-East-1</span><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-primary font-medium">Security Command</span></div><div class="h-4 w-px bg-outline-variant"></div><div class="flex items-center gap-space-xs bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant/70"><span class="material-symbols-outlined text-[16px] text-primary">alt_route</span><span class="font-body-xs text-body-xs font-medium text-on-surface truncate max-w-[210px]">Active Edge Zero-Trust Attack Sim v4</span><span class="material-symbols-outlined text-[14px] text-outline cursor-pointer hover:text-on-surface">expand_more</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900"><span class="flex h-2 w-2 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span></span><span class="font-label-mono text-[11px] font-semibold text-emerald-900">UPF-EDGE-09</span></div><div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/80 text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-outline">search</span><span class="font-body-sm text-body-sm text-outline">Global inspect...</span><kbd class="font-label-mono text-[10px] px-1.5 py-0.5 rounded bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-semibold">⌘K</kbd></div><div class="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-lg border border-outline-variant text-on-surface cursor-pointer hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[16px] text-secondary">security</span><span class="font-body-xs text-body-xs font-semibold">ENCLAVE 04</span><span class="material-symbols-outlined text-[14px] text-outline">unfold_more</span></div><div class="relative cursor-pointer p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span></span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAddWR95mBphYXrQ11t2Vyb5QLCf_1vnLoOD03CWCyOQrXYiJ3hv5PSRbRGJVXLtpcUof5D2Tfppk-qyHACqbXKQBNOChHLgDzT9jRvgFD1v-2M1oN6zwcPpemW5MhpaBaT2eVxdtzqgKc4qFTnsXOFbQ4oPqH5SYLkpz_6IT8sb2BOthWYG8Wr0ATRy5KDMMKbrPQRNciVAFyXOgWZiN68dvM9mx7DNRPebq70Hng"/></div></header><main class="w-full pt-16 px-space-md lg:px-margin-desktop py-space-md flex-1 bg-surface"><div class="flex flex-col w-full gap-space-md">
+<!-- Command Header & Spatial Filters -->
+<section class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest p-space-md rounded-xl shadow-sm">
+<div class="flex flex-col gap-space-2xs min-w-0">
+<div class="flex items-center gap-space-xs font-label-mono text-body-xs text-primary uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px]">sensors</span>
+<span>Physical-to-Virtual Real-time Mirror</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight truncate">
+        Digital Twin — 5G Facility Floor Plan &amp; Telemetry Mesh
+      </h1>
+<p class="font-body-xs text-body-xs text-secondary truncate">
+        Synchronized topological digital twin mapping ultra-reliable low latency UPF slices to factory spatial assets.
+      </p>
+</div>
+<!-- Controls Palette -->
+<div class="flex flex-wrap items-center gap-space-sm self-start lg:self-center">
+<!-- Facility Selector -->
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-lg text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary">domain</span>
+<div class="flex flex-col">
+<span class="font-body-xs text-[11px] text-secondary font-medium leading-none">FACILITY &amp; SECTOR</span>
+<span class="font-body-sm text-body-sm font-semibold truncate max-w-[190px]">Campus Alpha — Prod 01</span>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline ml-1 cursor-pointer">arrow_drop_down</span>
+</div>
+<!-- Level Selector -->
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-lg text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-secondary">layers</span>
+<div class="flex flex-col">
+<span class="font-body-xs text-[11px] text-secondary font-medium leading-none">ELEVATION</span>
+<span class="font-body-sm text-body-sm font-semibold">Sub-Level B</span>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline ml-1 cursor-pointer">unfold_more</span>
+</div>
+<!-- Active Layer Toggles -->
+<div class="flex items-center bg-surface-container p-0.5 rounded-lg gap-0.5">
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-surface-container-lowest text-primary font-body-xs text-body-xs font-semibold shadow-xs" id="layer-cam">
+<span class="material-symbols-outlined text-[15px]">videocam</span>
+<span>Cameras</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-secondary hover:text-on-surface font-body-xs text-body-xs font-medium" id="layer-av">
+<span class="material-symbols-outlined text-[15px]">precision_manufacturing</span>
+<span>AV Track</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-secondary hover:text-on-surface font-body-xs text-body-xs font-medium" id="layer-sensor">
+<span class="material-symbols-outlined text-[15px]">grain</span>
+<span>Sensors</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-secondary hover:text-on-surface font-body-xs text-body-xs font-medium" id="layer-upf">
+<span class="material-symbols-outlined text-[15px]">router</span>
+<span>UPF Core</span>
+</button>
+</div>
+<!-- Live Speed Control -->
+<div class="flex items-center bg-surface-container-low px-1.5 py-1 rounded-lg gap-1 font-label-mono text-body-xs">
+<span class="text-secondary font-medium pl-1 text-[11px]">RATE:</span>
+<button class="px-1.5 py-0.5 rounded text-secondary hover:text-on-surface">1x</button>
+<button class="px-1.5 py-0.5 rounded bg-primary text-on-primary font-bold">2x</button>
+<button class="px-1.5 py-0.5 rounded text-secondary hover:text-on-surface">5x</button>
+<button class="px-1.5 py-0.5 rounded text-secondary hover:text-on-surface">10x</button>
+</div>
+</div>
+</section>
+<!-- Main Canvas + Inspector Split (72% / 28%) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-start w-full">
+<!-- Spatial Canvas Workspace (Central/Left 72%) -->
+<div class="xl:col-span-8 flex flex-col bg-[#0f172a] rounded-xl overflow-hidden shadow-xl relative min-h-[660px]">
+<!-- Canvas HUD Overlay Top -->
+<div class="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+<div class="flex items-center gap-space-sm pointer-events-auto">
+<div class="flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-white font-label-mono text-body-xs shadow-md">
+<span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+<span class="text-emerald-400 font-bold">5G URLLC MESH</span>
+<span class="text-[#64748b]">|</span>
+<span class="text-[#cbd5e1]">LATENCY: 1.18ms</span>
+<span class="text-[#64748b]">|</span>
+<span class="text-[#cbd5e1]">JITTER: ±0.04ms</span>
+</div>
+<div class="flex items-center gap-1.5 bg-[#1e293b]/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-white font-label-mono text-body-xs shadow-md">
+<span class="material-symbols-outlined text-[15px] text-amber-400">warning</span>
+<span class="text-amber-300 font-semibold">1 ADVISORY</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pointer-events-auto">
+<button class="p-1.5 rounded-lg bg-[#1e293b]/90 hover:bg-[#334155] text-[#94a3b8] hover:text-white transition-colors" title="Toggle Grid overlay">
+<span class="material-symbols-outlined text-[18px]">grid_4x4</span>
+</button>
+<button class="p-1.5 rounded-lg bg-[#1e293b]/90 hover:bg-[#334155] text-[#94a3b8] hover:text-white transition-colors" title="Reset Viewport">
+<span class="material-symbols-outlined text-[18px]">crop_free</span>
+</button>
+<button class="p-1.5 rounded-lg bg-[#1e293b]/90 hover:bg-[#334155] text-[#94a3b8] hover:text-white transition-colors" title="Zoom In">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+<button class="p-1.5 rounded-lg bg-[#1e293b]/90 hover:bg-[#334155] text-[#94a3b8] hover:text-white transition-colors" title="Zoom Out">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+</div>
+</div>
+<!-- Architectural SVG Canvas Floor Plan -->
+<div class="relative w-full h-[660px] flex items-center justify-center select-none overflow-hidden bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px]">
+<svg class="w-full h-full" fill="none" viewbox="0 0 1000 660" xmlns="http://www.w3.org/2000/svg">
+<!-- Outer Structural Perimeter Walls -->
+<path d="M 40 40 L 960 40 L 960 620 L 40 620 Z" fill="#0b1329" fill-opacity="0.6" stroke="#334155" stroke-width="4"></path>
+<!-- Internal Load-Bearing Partitions -->
+<path d="M 40 230 L 440 230 M 440 230 L 440 40 M 440 390 L 960 390 M 440 390 L 440 620" stroke="#1e293b" stroke-dasharray="6 6" stroke-width="3"></path>
+<!-- UPF Edge Gateway Backbones -->
+<line opacity="0.4" stroke="#0284c7" stroke-dasharray="4 4" stroke-width="1.5" x1="220" x2="680" y1="120" y2="210"></line>
+<line opacity="0.4" stroke="#0284c7" stroke-dasharray="4 4" stroke-width="1.5" x1="680" x2="520" y1="210" y2="500"></line>
+<!-- ZONE 1: Camera Array (Top-Left) -->
+<g id="zone-cctv">
+<rect fill="#1d4ed8" fill-opacity="0.08" height="160" rx="10" stroke="#3b82f6" stroke-dasharray="5 4" stroke-width="1.5" width="360" x="60" y="55"></rect>
+<!-- Zone Label -->
+<rect fill="#1e293b" fill-opacity="0.9" height="22" rx="4" width="190" x="75" y="65"></rect>
+<text fill="#93c5fd" font-family="JetBrains Mono" font-size="11" font-weight="600" letter-spacing="0.05em" x="85" y="80">ZONE 1: CAMERA ARRAY</text>
+<text fill="#60a5fa" font-family="Inter" font-size="10" x="280" y="80">8 NODES (4K H.265)</text>
+<!-- Inter-camera links -->
+<path d="M 100 130 L 160 110 L 220 150 L 300 110 L 370 140" opacity="0.3" stroke="#2563eb" stroke-width="1"></path>
+<!-- Nodes -->
+<!-- Cam 1 -->
+<circle cx="100" cy="130" fill="#10b981" r="5"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="92" y="150">CAM-01</text>
+<!-- Cam 2 -->
+<circle cx="160" cy="110" fill="#10b981" r="5"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="152" y="98">CAM-02</text>
+<!-- Cam 3 -->
+<circle cx="180" cy="170" fill="#10b981" r="5"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="172" y="190">CAM-03</text>
+<!-- SELECTED NODE: CAM-SEC-04B with animated targeting reticle -->
+<g class="cursor-pointer" id="node-cam-04b">
+<!-- Glow Aura -->
+<circle cx="250" cy="130" fill="#2563eb" fill-opacity="0.25" r="28">
+<animate attributename="r" dur="2.5s" repeatcount="indefinite" values="20;30;20"></animate>
+<animate attributename="opacity" dur="2.5s" repeatcount="indefinite" values="0.6;0.1;0.6"></animate>
+</circle>
+<!-- Outer Dashed Reticle -->
+<circle cx="250" cy="130" r="18" stroke="#60a5fa" stroke-dasharray="4 2" stroke-width="1.5">
+<animatetransform attributename="transform" dur="8s" from="0 250 130" repeatcount="indefinite" to="360 250 130" type="rotate"></animatetransform>
+</circle>
+<!-- Target Crosshairs -->
+<line stroke="#93c5fd" stroke-width="1.5" x1="250" x2="250" y1="105" y2="114"></line>
+<line stroke="#93c5fd" stroke-width="1.5" x1="250" x2="250" y1="146" y2="155"></line>
+<line stroke="#93c5fd" stroke-width="1.5" x1="225" x2="234" y1="130" y2="130"></line>
+<line stroke="#93c5fd" stroke-width="1.5" x1="266" x2="275" y1="130" y2="130"></line>
+<!-- Core Beacon Point -->
+<circle cx="250" cy="130" fill="#3b82f6" r="7" stroke="#ffffff" stroke-width="2"></circle>
+<!-- Label Tag -->
+<rect fill="#0284c7" fill-opacity="0.95" height="24" rx="4" width="105" x="272" y="118"></rect>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="700" x="278" y="134">CAM-SEC-04B [ACTIVE]</text>
+</g>
+<!-- Cam 5 -->
+<circle cx="320" cy="165" fill="#10b981" r="5"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="312" y="185">CAM-05</text>
+<!-- Cam 6 -->
+<circle cx="370" cy="115" fill="#10b981" r="5"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="362" y="103">CAM-06</text>
+<!-- Cam 7 (Telemetry Variance) -->
+<circle cx="120" cy="190" fill="#f59e0b" r="6"></circle>
+<circle cx="120" cy="190" r="10" stroke="#f59e0b" stroke-dasharray="2 2" stroke-width="1"></circle>
+<text fill="#fbbf24" font-family="JetBrains Mono" font-size="9" x="132" y="194">CAM-07 (JITTER)</text>
+<!-- Cam 8 -->
+<circle cx="390" cy="180" fill="#10b981" r="5"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="382" y="200">CAM-08</text>
+</g>
+<!-- ZONE 2: AV Track (Center/Right) -->
+<g id="zone-av">
+<rect fill="#d97706" fill-opacity="0.06" height="315" rx="10" stroke="#d97706" stroke-dasharray="6 4" stroke-width="1.5" width="470" x="470" y="55"></rect>
+<!-- Zone Tag -->
+<rect fill="#1e293b" fill-opacity="0.9" height="22" rx="4" width="220" x="485" y="65"></rect>
+<text fill="#fcd34d" font-family="JetBrains Mono" font-size="11" font-weight="600" letter-spacing="0.05em" x="495" y="80">ZONE 2: AV &amp; AGV RUNWAYS</text>
+<text fill="#fbbf24" font-family="Inter" font-size="10" x="720" y="80">URLLC CARRIER 3.7GHz</text>
+<!-- AGV Track Loops -->
+<path d="M 520 140 C 620 140, 680 110, 780 110 C 880 110, 890 220, 830 270 C 770 320, 600 330, 530 270 C 470 220, 520 140, 520 140 Z" stroke="#78350f" stroke-dasharray="8 6" stroke-width="2.5"></path>
+<path d="M 560 180 L 820 180 L 820 240 L 560 240 Z" opacity="0.6" stroke="#b45309" stroke-width="1.5"></path>
+<!-- Moving AGV 1 -->
+<g transform="translate(680, 110)">
+<rect fill="#d97706" height="18" rx="4" stroke="#ffffff" stroke-width="1.5" width="28" x="-14" y="-9"></rect>
+<circle cx="0" cy="0" fill="#ffffff" r="3"></circle>
+<text fill="#fbbf24" font-family="JetBrains Mono" font-size="9" font-weight="bold" x="-20" y="22">AGV-NAV-01</text>
+</g>
+<!-- Moving AGV 2 -->
+<g transform="translate(830, 270)">
+<rect fill="#10b981" height="18" rx="4" stroke="#ffffff" stroke-width="1.5" width="28" x="-14" y="-9"></rect>
+<circle cx="0" cy="0" fill="#ffffff" r="3"></circle>
+<text fill="#6ee7b7" font-family="JetBrains Mono" font-size="9" x="-20" y="-14">AGV-NAV-02</text>
+</g>
+<!-- Moving AGV 3: ANOMALY (SIGNAL JAMMING DETECTED) -->
+<g transform="translate(610, 315)">
+<!-- Pulsing Red Ring -->
+<circle cx="0" cy="0" fill="#dc2626" fill-opacity="0.3" r="18">
+<animate attributename="r" dur="1.2s" repeatcount="indefinite" values="12;24;12"></animate>
+</circle>
+<rect fill="#dc2626" height="18" rx="4" stroke="#fecaca" stroke-width="2" width="28" x="-14" y="-9"></rect>
+<text fill="#ffffff" font-family="Inter" font-size="10" font-weight="bold" text-anchor="middle" x="0" y="4">!</text>
+<rect fill="#7f1d1d" height="16" rx="3" width="70" x="-35" y="16"></rect>
+<text fill="#fca5a5" font-family="JetBrains Mono" font-size="8" font-weight="700" text-anchor="middle" x="0" y="28">JAMMING AT 5.8G</text>
+</g>
+<!-- Waypoint Beacons -->
+<circle cx="520" cy="140" fill="#b45309" r="4"></circle>
+<circle cx="780" cy="110" fill="#b45309" r="4"></circle>
+<circle cx="820" cy="180" fill="#b45309" r="4"></circle>
+<circle cx="560" cy="240" fill="#b45309" r="4"></circle>
+<circle cx="530" cy="270" fill="#b45309" r="4"></circle>
+</g>
+<!-- ZONE 3: Sensor Mesh (Bottom) -->
+<g id="zone-sensors">
+<rect fill="#059669" fill-opacity="0.05" height="355" rx="10" stroke="#10b981" stroke-dasharray="6 4" stroke-width="1.5" width="360" x="60" y="245"></rect>
+<!-- Zone Tag -->
+<rect fill="#1e293b" fill-opacity="0.9" height="22" rx="4" width="230" x="75" y="255"></rect>
+<text fill="#6ee7b7" font-family="JetBrains Mono" font-size="11" font-weight="600" letter-spacing="0.05em" x="85" y="270">ZONE 3: IOT TELEMETRY MESH</text>
+<text fill="#34d399" font-family="Inter" font-size="10" x="320" y="270">24 SENSORS</text>
+<!-- Mesh grid pattern lines -->
+<g opacity="0.4" stroke="#065f46" stroke-width="0.8">
+<line x1="90" x2="390" y1="310" y2="310"></line>
+<line x1="90" x2="390" y1="370" y2="370"></line>
+<line x1="90" x2="390" y1="430" y2="430"></line>
+<line x1="90" x2="390" y1="490" y2="490"></line>
+<line x1="90" x2="390" y1="550" y2="550"></line>
+<line x1="120" x2="120" y1="290" y2="570"></line>
+<line x1="180" x2="180" y1="290" y2="570"></line>
+<line x1="240" x2="240" y1="290" y2="570"></line>
+<line x1="300" x2="300" y1="290" y2="570"></line>
+<line x1="360" x2="360" y1="290" y2="570"></line>
+</g>
+<!-- 24 Micro Telemetry Nodes -->
+<!-- Row 1 -->
+<circle cx="120" cy="310" fill="#10b981" r="4.5"></circle>
+<circle cx="180" cy="310" fill="#10b981" r="4.5"></circle>
+<circle cx="240" cy="310" fill="#10b981" r="4.5"></circle>
+<circle cx="300" cy="310" fill="#10b981" r="4.5"></circle>
+<circle cx="360" cy="310" fill="#10b981" r="4.5"></circle>
+<!-- Row 2 -->
+<circle cx="120" cy="370" fill="#10b981" r="4.5"></circle>
+<circle cx="180" cy="370" fill="#f59e0b" r="5.5"></circle>
+<circle cx="240" cy="370" fill="#10b981" r="4.5"></circle>
+<circle cx="300" cy="370" fill="#10b981" r="4.5"></circle>
+<circle cx="360" cy="370" fill="#10b981" r="4.5"></circle>
+<!-- Row 3 -->
+<circle cx="120" cy="430" fill="#10b981" r="4.5"></circle>
+<circle cx="180" cy="430" fill="#10b981" r="4.5"></circle>
+<circle cx="240" cy="430" fill="#10b981" r="4.5"></circle>
+<circle cx="300" cy="430" fill="#10b981" r="4.5"></circle>
+<circle cx="360" cy="430" fill="#10b981" r="4.5"></circle>
+<!-- Row 4 -->
+<circle cx="120" cy="490" fill="#10b981" r="4.5"></circle>
+<circle cx="180" cy="490" fill="#10b981" r="4.5"></circle>
+<circle cx="240" cy="490" fill="#10b981" r="4.5"></circle>
+<circle cx="300" cy="490" fill="#f59e0b" r="5"></circle>
+<circle cx="360" cy="490" fill="#10b981" r="4.5"></circle>
+<!-- Row 5 (Cluster Base) -->
+<circle cx="150" cy="550" fill="#10b981" r="4.5"></circle>
+<circle cx="210" cy="550" fill="#10b981" r="4.5"></circle>
+<circle cx="270" cy="550" fill="#10b981" r="4.5"></circle>
+<circle cx="330" cy="550" fill="#10b981" r="4.5"></circle>
+</g>
+<!-- Core UPF Edge Nodes (Center-right bottom) -->
+<g id="zone-core-upf">
+<rect fill="#0284c7" fill-opacity="0.04" height="190" rx="10" stroke="#0284c7" stroke-dasharray="4 4" stroke-width="1.5" width="470" x="470" y="410"></rect>
+<!-- Header Tag -->
+<rect fill="#1e293b" fill-opacity="0.9" height="22" rx="4" width="220" x="485" y="420"></rect>
+<text fill="#38bdf8" font-family="JetBrains Mono" font-size="11" font-weight="600" x="495" y="435">UPF EDGE COMPUTE &amp; RAN PODS</text>
+<!-- UPF Rack 01 -->
+<g transform="translate(520, 465)">
+<rect fill="#1e293b" height="110" rx="6" stroke="#334155" stroke-width="1.5" width="80" x="0" y="0"></rect>
+<rect fill="#0284c7" height="8" rx="2" width="60" x="10" y="15"></rect>
+<rect fill="#0f172a" height="8" rx="2" width="60" x="10" y="30"></rect>
+<rect fill="#0f172a" height="8" rx="2" width="60" x="10" y="45"></rect>
+<circle cx="65" cy="85" fill="#10b981" r="4"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="10" y="100">POD-01-UPF</text>
+</g>
+<!-- UPF Rack 02 -->
+<g transform="translate(640, 465)">
+<rect fill="#1e293b" height="110" rx="6" stroke="#334155" stroke-width="1.5" width="80" x="0" y="0"></rect>
+<rect fill="#0284c7" height="8" rx="2" width="60" x="10" y="15"></rect>
+<rect fill="#0284c7" height="8" rx="2" width="60" x="10" y="30"></rect>
+<rect fill="#0f172a" height="8" rx="2" width="60" x="10" y="45"></rect>
+<circle cx="65" cy="85" fill="#10b981" r="4"></circle>
+<text fill="#94a3b8" font-family="JetBrains Mono" font-size="9" x="10" y="100">POD-02-UPF</text>
+</g>
+<!-- Central GNodeB Transmitter Node -->
+<g transform="translate(800, 520)">
+<circle cx="0" cy="0" fill="#0369a1" fill-opacity="0.15" r="32">
+<animate attributename="r" dur="3s" repeatcount="indefinite" values="24;36;24"></animate>
+</circle>
+<circle cx="0" cy="0" fill="#0284c7" r="12" stroke="#ffffff" stroke-width="2"></circle>
+<polygon fill="#ffffff" points="-5,-4 0,-12 5,-4"></polygon>
+<text fill="#7dd3fc" font-family="JetBrains Mono" font-size="10" font-weight="700" text-anchor="middle" x="0" y="24">gNodeB-ALPHA</text>
+</g>
+</g>
+</svg>
+<!-- Canvas Legend Overlay Bottom-Left -->
+<div class="absolute bottom-4 left-4 z-20 flex items-center gap-3 bg-[#0a1628]/95 backdrop-blur-md px-3.5 py-2 rounded-lg text-white font-label-mono text-[11px] shadow-lg">
+<span class="text-[#64748b] font-semibold">SIGNAL STATUS:</span>
+<div class="flex items-center gap-1.5">
+<span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+<span class="text-[#cbd5e1]">Nominal (34)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="h-2 w-2 rounded-full bg-amber-400"></span>
+<span class="text-[#cbd5e1]">Jitter Lag (3)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>
+<span class="text-rose-400 font-bold">Interference (1)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Inspector Panel (Right 28%) -->
+<div class="xl:col-span-4 flex flex-col gap-space-md">
+<!-- Device Card -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+<!-- Inspector Title & State -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5 font-label-mono text-body-xs text-primary font-semibold">
+<span class="material-symbols-outlined text-[16px]">videocam</span>
+<span>NODE DEEP INSPECTOR</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight mt-0.5">
+              CAM-SEC-04B
+            </h2>
+<span class="font-body-xs text-body-xs text-secondary">Perimeter Optical 4K UHD Ultra-Low Latency</span>
+</div>
+<span class="font-badge-status text-badge-status px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold uppercase tracking-wider flex items-center gap-1.5">
+<span class="h-2 w-2 rounded-full bg-emerald-600 animate-pulse"></span>
+            NOMINAL
+          </span>
+</div>
+<!-- Identity & Cryptographic Attestation Metadata -->
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between font-body-xs text-body-xs">
+<span class="text-secondary font-medium">Assigned Zone</span>
+<span class="font-semibold text-on-surface">Zone 1 — Camera Array</span>
+</div>
+<div class="flex items-center justify-between font-body-xs text-body-xs">
+<span class="text-secondary font-medium">Internal IP</span>
+<span class="font-label-mono font-medium text-on-surface">10.240.18.42</span>
+</div>
+<div class="flex items-center justify-between font-body-xs text-body-xs">
+<span class="text-secondary font-medium">MAC Address</span>
+<span class="font-label-mono font-medium text-on-surface">00:1A:2B:9C:34:D1</span>
+</div>
+<div class="flex items-center justify-between font-body-xs text-body-xs">
+<span class="text-secondary font-medium">Slice Allocation</span>
+<span class="font-label-mono text-primary font-semibold">SST-1 (eMBB-HighCap)</span>
+</div>
+<div class="mt-1 pt-2 flex flex-col gap-1">
+<div class="flex items-center justify-between text-[11px] font-label-mono">
+<span class="text-secondary">HMAC TPM 2.0 DIGEST</span>
+<span class="text-emerald-700 font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">verified</span> VERIFIED
+              </span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-2 py-1.5 rounded text-secondary font-label-mono text-body-xs">
+<span class="truncate text-on-surface font-mono">0x89D2F401A7C3...E842</span>
+<button class="material-symbols-outlined text-[16px] text-outline hover:text-primary ml-1" title="Copy HMAC">content_copy</button>
+</div>
+</div>
+</div>
+<!-- Anomaly Scoring Dial / Indicator -->
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">analytics</span>
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">Anomaly Propensity</span>
+</div>
+<span class="font-metric-stat text-metric-stat text-emerald-800 font-bold">12.4%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-gradient-to-r from-emerald-500 via-primary to-rose-500 h-full rounded-full" style="width: 12.4%;"></div>
+</div>
+<div class="flex items-center justify-between text-[11px] font-label-mono text-secondary">
+<span>BASELINE NORMAL (&lt; 25%)</span>
+<span>THRESHOLD: 65%</span>
+</div>
+</div>
+<!-- Telemetry Sparkline (60-Min Window) -->
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm font-semibold text-on-surface">60-Min Network Telemetry</span>
+<span class="font-label-mono text-[11px] text-secondary">ROLLING WINDOW</span>
+</div>
+<div class="grid grid-cols-3 gap-2 py-1">
+<div class="flex flex-col">
+<span class="font-body-xs text-[11px] text-secondary">Jitter</span>
+<span class="font-label-mono text-body-sm font-bold text-on-surface">0.08 ms</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-xs text-[11px] text-secondary">Throughput</span>
+<span class="font-label-mono text-body-sm font-bold text-on-surface">42.8 Mbps</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-xs text-[11px] text-secondary">Frame Drop</span>
+<span class="font-label-mono text-body-sm font-bold text-emerald-700">0.001%</span>
+</div>
+</div>
+<!-- Inline SVG Sparkline Chart -->
+<div class="w-full h-16 pt-1">
+<svg class="w-full h-full overflow-visible" fill="none" viewbox="0 0 300 60">
+<!-- Gradient Def -->
+<defs>
+<lineargradient id="streamGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#2563eb" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#2563eb" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Filled Area -->
+<path d="M 0 45 L 20 42 L 40 46 L 60 38 L 80 40 L 100 28 L 120 30 L 140 22 L 160 25 L 180 18 L 200 24 L 220 20 L 240 16 L 260 18 L 280 14 L 300 12 L 300 60 L 0 60 Z" fill="url(#streamGrad)"></path>
+<!-- Line Plot -->
+<path d="M 0 45 L 20 42 L 40 46 L 60 38 L 80 40 L 100 28 L 120 30 L 140 22 L 160 25 L 180 18 L 200 24 L 220 20 L 240 16 L 260 18 L 280 14 L 300 12" stroke="#004ac6" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- High-water mark marker -->
+<circle cx="300" cy="12" fill="#004ac6" r="4"></circle>
+</svg>
+</div>
+</div>
+<!-- Quick Mitigation & Diagnostic Actions -->
+<div class="flex flex-col gap-2 pt-1">
+<span class="font-label-mono text-[11px] text-secondary font-bold uppercase tracking-wider">Targeted Remediations</span>
+<div class="grid grid-cols-2 gap-2">
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">key</span>
+<span>Rotate Keys</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">live_tv</span>
+<span>Feed Ping</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">published_with_changes</span>
+<span>Re-Verify</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-error-container hover:bg-red-200 text-error font-body-sm text-body-sm font-bold transition-colors">
+<span class="material-symbols-outlined text-[16px]">shield_with_heart</span>
+<span>Isolate VLAN-99</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Interactive Time Scrubber (Historical Playback & Timeline Ticks) -->
+<div class="w-full bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<!-- Media Playback Deck -->
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-colors" title="Step Back 30s">
+<span class="material-symbols-outlined text-[20px]">replay_30</span>
+</button>
+<button class="px-4 py-2 rounded-lg bg-primary hover:bg-[#003ea8] text-on-primary flex items-center justify-center gap-1.5 shadow-sm transition-colors font-body-sm text-body-sm font-semibold" id="scrubber-play-toggle">
+<span class="material-symbols-outlined text-[20px]">pause</span>
+<span>PAUSE FEED</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-colors" title="Step Forward 30s">
+<span class="material-symbols-outlined text-[20px]">forward_30</span>
+</button>
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary hover:text-on-surface flex items-center gap-1 font-label-mono text-body-xs font-semibold">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>JUMP LIVE</span>
+</button>
+</div>
+<!-- Current Timestamp & Mode Indicators -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-body-xs text-secondary">BUFFERED: 4h 00m</span>
+<span class="text-outline-variant">|</span>
+<div class="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 px-2.5 py-1 rounded-md font-label-mono text-body-xs font-semibold">
+<span class="h-2 w-2 rounded-full bg-emerald-600 animate-ping"></span>
+<span>14:48:22 UTC - LIVE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Scrubber Timeline Track -->
+<div class="relative w-full flex flex-col pt-2 pb-1">
+<!-- Incident Tick Markers Layer -->
+<div class="relative w-full h-3 mb-1">
+<!-- Alert Marker 1 (Red Breach Attempt) -->
+<div class="absolute left-[24%] -top-1 transform -translate-x-1/2 flex flex-col items-center group cursor-pointer" title="11:14 UTC: Jamming Burst on Sector 02">
+<span class="material-symbols-outlined text-error text-[16px]">priority_high</span>
+<span class="h-2 w-0.5 bg-error"></span>
+<div class="hidden group-hover:flex absolute bottom-5 bg-[#0a1628] text-white text-[10px] font-label-mono px-2 py-1 rounded shadow-lg whitespace-nowrap z-30">
+            11:14 UTC Jamming Burst
+          </div>
+</div>
+<!-- Alert Marker 2 (Amber Jitter Drift) -->
+<div class="absolute left-[58%] -top-1 transform -translate-x-1/2 flex flex-col items-center group cursor-pointer" title="13:02 UTC: RTT Spike UPF-EDGE">
+<span class="material-symbols-outlined text-amber-500 text-[16px]">warning</span>
+<span class="h-2 w-0.5 bg-amber-500"></span>
+<div class="hidden group-hover:flex absolute bottom-5 bg-[#0a1628] text-white text-[10px] font-label-mono px-2 py-1 rounded shadow-lg whitespace-nowrap z-30">
+            13:02 UTC RTT Spike (84ms)
+          </div>
+</div>
+<!-- Alert Marker 3 (VLAN Configuration Drift) -->
+<div class="absolute left-[81%] -top-1 transform -translate-x-1/2 flex flex-col items-center group cursor-pointer" title="14:15 UTC: Key Rotation Desync">
+<span class="material-symbols-outlined text-error text-[16px]">priority_high</span>
+<span class="h-2 w-0.5 bg-error"></span>
+<div class="hidden group-hover:flex absolute bottom-5 bg-[#0a1628] text-white text-[10px] font-label-mono px-2 py-1 rounded shadow-lg whitespace-nowrap z-30">
+            14:15 UTC AGV Decouple Event
+          </div>
+</div>
+</div>
+<!-- Linear Scrubber Slider Bar -->
+<div class="relative w-full h-3 bg-surface-container rounded-full cursor-pointer flex items-center">
+<!-- Progress Fill -->
+<div class="bg-primary h-full rounded-full" style="width: 88%;"></div>
+<!-- Scrubber Thumb -->
+<div class="absolute left-[88%] transform -translate-x-1/2 h-5 w-5 bg-white border-2 border-primary rounded-full shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing">
+<div class="h-1.5 w-1.5 bg-primary rounded-full"></div>
+</div>
+</div>
+<!-- Time Stamps Scale -->
+<div class="flex justify-between items-center text-[11px] font-label-mono text-secondary pt-2">
+<span>10:48:00 UTC</span>
+<span>11:48:00</span>
+<span>12:48:00</span>
+<span>13:48:00</span>
+<span class="text-primary font-bold">14:48:22 (NOW)</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for active layer filter buttons
+  document.querySelectorAll('#layer-cam, #layer-av, #layer-sensor, #layer-upf').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('bg-surface-container-lowest');
+      btn.classList.toggle('text-primary');
+      btn.classList.toggle('shadow-xs');
+      btn.classList.toggle('text-secondary');
+    });
+  });
+
+  // Play / Pause Micro-Interaction
+  const playBtn = document.getElementById('scrubber-play-toggle');
+  if (playBtn) {
+    let isPlaying = true;
+    playBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      const icon = playBtn.querySelector('.material-symbols-outlined');
+      const text = playBtn.querySelector('span:not(.material-symbols-outlined)');
+      if (isPlaying) {
+        icon.textContent = 'pause';
+        text.textContent = 'PAUSE FEED';
+      } else {
+        icon.textContent = 'play_arrow';
+        text.textContent = 'RESUME FEED';
+      }
+    });
+  }
+</script></main></div></body></html>

@@ -210,17 +210,15 @@ export const DigitalTwinView: React.FC = () => {
             <div className="flex items-center bg-surface-container-low dark:bg-bg p-1 rounded-lg border border-outline-variant/50 dark:border-border text-xs">
               <button
                 onClick={() => setActiveSource('simulated_twin')}
-                className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                  activeSource === 'simulated_twin' ? 'bg-primary text-white shadow-xs' : 'text-secondary hover:text-on-surface'
-                }`}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${activeSource === 'simulated_twin' ? 'bg-primary text-white shadow-xs' : 'text-secondary hover:text-on-surface'
+                  }`}
               >
                 Simulated Twin
               </button>
               <button
                 onClick={() => setActiveSource('lab')}
-                className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                  activeSource === 'lab' ? 'bg-purple-600 text-white shadow-xs' : 'text-secondary hover:text-on-surface'
-                }`}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${activeSource === 'lab' ? 'bg-purple-600 text-white shadow-xs' : 'text-secondary hover:text-on-surface'
+                  }`}
               >
                 Live Lab Core
               </button>
@@ -228,13 +226,12 @@ export const DigitalTwinView: React.FC = () => {
           ) : (
             data && (
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                  data.source_badge === 'Live lab'
-                    ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-400/40'
-                    : data.source_badge === 'Real recorded'
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${data.source_badge === 'Live lab'
+                  ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-400/40'
+                  : data.source_badge === 'Real recorded'
                     ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-400/40'
                     : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-400/40'
-                }`}
+                  }`}
               >
                 <Activity className="w-3.5 h-3.5" />
                 {data.source_badge}
@@ -245,11 +242,10 @@ export const DigitalTwinView: React.FC = () => {
           {/* Reduced Motion Toggle Button */}
           <button
             onClick={() => setReducedMotion(!reducedMotion)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              reducedMotion
-                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-400/40'
-                : 'bg-surface-container-low dark:bg-bg text-secondary hover:text-on-surface border-outline-variant/50 dark:border-border'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${reducedMotion
+              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-400/40'
+              : 'bg-surface-container-low dark:bg-bg text-secondary hover:text-on-surface border-outline-variant/50 dark:border-border'
+              }`}
             title="Toggle particle animations and pulsing rings"
           >
             <Zap className="w-3.5 h-3.5" />
@@ -743,8 +739,8 @@ export const DigitalTwinView: React.FC = () => {
             {timeStep < 10
               ? 'Phase: Baseline Nominal'
               : timeStep < 20
-              ? 'Phase: Batch 1 Ingress / Surge'
-              : 'Phase: Batch 2 Ingress / Sustained'}
+                ? 'Phase: Batch 1 Ingress / Surge'
+                : 'Phase: Batch 2 Ingress / Sustained'}
           </div>
         </div>
       </div>
@@ -759,11 +755,10 @@ export const DigitalTwinView: React.FC = () => {
               <h3 className="text-sm font-semibold text-on-surface">Provisioning & Change Event Evidence</h3>
             </div>
             <span
-              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                data?.provisioning_card.fitting_volume
-                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-error-container text-on-error-container'
-              }`}
+              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${data?.provisioning_card.fitting_volume
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                : 'bg-error-container text-on-error-container'
+                }`}
             >
               {data?.provisioning_card.verdict || 'EVALUATING'}
             </span>
@@ -957,9 +952,8 @@ export const DigitalTwinView: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] font-mono text-secondary uppercase">Step 0{step.step}</span>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                      isApproved ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-surface-container dark:bg-slate-700 text-on-surface'
-                    }`}>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isApproved ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-surface-container dark:bg-slate-700 text-on-surface'
+                      }`}>
                       {step.status}
                     </span>
                   </div>

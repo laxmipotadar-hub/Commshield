@@ -429,9 +429,8 @@ export const OverviewPage: React.FC = () => {
           <div className="flex flex-col gap-1.5 my-2">
             <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${
-                  driftVerdict === 'attack' ? 'bg-red-500' : driftVerdict === 'growth' ? 'bg-amber-500' : 'bg-emerald-500'
-                }`}
+                className={`h-full rounded-full ${driftVerdict === 'attack' ? 'bg-red-500' : driftVerdict === 'growth' ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`}
                 style={{ width: driftVerdict === 'attack' ? '90%' : driftVerdict === 'growth' ? '65%' : '100%' }}
               />
             </div>
@@ -613,11 +612,10 @@ export const OverviewPage: React.FC = () => {
                     </div>
                   </div>
                   <span
-                    className={`font-mono text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                      slice.status === 'SECURED'
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                    }`}
+                    className={`font-mono text-[10px] px-2 py-0.5 rounded-full font-semibold ${slice.status === 'SECURED'
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                      }`}
                   >
                     {slice.status}
                   </span>
@@ -726,22 +724,20 @@ export const OverviewPage: React.FC = () => {
                     <tr key={alert.id || alert.window_id} className="hover:bg-surface-container-low/60 transition-colors">
                       <td className="py-3 px-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-mono text-[11px] font-semibold ${
-                            severity === 'CRITICAL'
-                              ? 'bg-red-500/10 text-red-600'
-                              : severity === 'HIGH'
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-mono text-[11px] font-semibold ${severity === 'CRITICAL'
+                            ? 'bg-red-500/10 text-red-600'
+                            : severity === 'HIGH'
                               ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                               : 'bg-blue-500/10 text-blue-700 dark:text-blue-400'
-                          }`}
+                            }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              severity === 'CRITICAL'
-                                ? 'bg-red-600'
-                                : severity === 'HIGH'
+                            className={`w-1.5 h-1.5 rounded-full ${severity === 'CRITICAL'
+                              ? 'bg-red-600'
+                              : severity === 'HIGH'
                                 ? 'bg-amber-600'
                                 : 'bg-blue-600'
-                            }`}
+                              }`}
                           />
                           {severity}
                         </span>
@@ -772,9 +768,8 @@ export const OverviewPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-16 bg-surface-container-high h-1.5 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full ${
-                                isBoth ? 'bg-red-600' : isHigh ? 'bg-amber-600' : 'bg-blue-600'
-                              }`}
+                              className={`h-full rounded-full ${isBoth ? 'bg-red-600' : isHigh ? 'bg-amber-600' : 'bg-blue-600'
+                                }`}
                               style={{ width: `${Math.min(100, Number(scorePercent))}%` }}
                             />
                           </div>
