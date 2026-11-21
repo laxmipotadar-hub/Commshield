@@ -364,6 +364,31 @@ export interface ThreeArmComparisonResponse {
   }>;
 }
 
+export interface AdaptationSummaryResponse {
+  total_candidates: number;
+  auto_approved_count: number;
+  analyst_approved_count: number;
+  total_approved_count: number;
+  flagged_count: number;
+  blocked_count: number;
+  adaptation_rate: number;
+  summary_text: string;
+}
+
+export interface GraduatedScenarioItem {
+  scenario_id: string;
+  name: string;
+  description: string;
+  slice_id: string;
+  jsd_divergence: number;
+  canary_retention_pass: boolean;
+  drift_budget_pass: boolean;
+  expected_tier: string;
+  action: string;
+  details: string;
+  source: string;
+}
+
 export interface InvestigationDetailsResponse {
   alert_header: {
     id: string;
@@ -655,6 +680,28 @@ export const api = {
     request<ThreeArmComparisonResponse>(
       `/api/v1/experiments/three-arm?dataset_id=${encodeURIComponent(datasetId)}`
     ),
+
+  getAdaptationSummary: (sliceId?: string) => {
+    const qs = sliceId && sliceId.toLowerCase() !== 'all' ? `?slice_id=${encodeURIComponent(sliceId)}` : '';
+    return request<AdaptationSummaryResponse>(`/api/governance/summary${qs}`);
+  },
+
+  evaluateGraduated: (payload: { candidate_id: string; override_jsd?: number; volume_multiplier?: number }) =>
+    request<any>('/api/governance/graduated-evaluate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getGraduatedScenarios: () =>
+    request<GraduatedScenarioItem[]>('/api/governance/scenarios'),
+
+  getScoreDistribution: () =>
+    request<any>('/api/detection/distribution'),
+
+  validateTelemetry: (sliceId?: string) => {
+    const qs = sliceId ? `?slice_id=${encodeURIComponent(sliceId)}` : '';
+    return request<any>(`/api/validation/check${qs}`);
+  },
 
   // Attribution & Drift
   getDriftEvents: (sliceId?: string, limit = 50) => {

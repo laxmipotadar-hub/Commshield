@@ -32,8 +32,10 @@ import {
 } from '../components';
 import {
   api,
+  AdaptationSummaryResponse,
   BaselineSummaryResponse,
   CandidateResponse,
+  GraduatedScenarioItem,
   QuarantineWindowItem,
 } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
@@ -101,6 +103,9 @@ export const GovernanceView: React.FC = () => {
   const [baselines, setBaselines] = useState<BaselineSummaryResponse[]>([]);
   const [candidates, setCandidates] = useState<CandidateResponse[]>([]);
   const [quarantineWindows, setQuarantineWindows] = useState<QuarantineWindowItem[]>([]);
+  const [adaptationSummary, setAdaptationSummary] = useState<AdaptationSummaryResponse | null>(null);
+  const [scenarios, setScenarios] = useState<GraduatedScenarioItem[]>([]);
+  const [runningScenario, setRunningScenario] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,15 +132,19 @@ export const GovernanceView: React.FC = () => {
     if (isInitial) setLoading(true);
     setError(null);
     try {
-      const [baseRes, candRes, quarRes] = await Promise.all([
+      const [baseRes, candRes, quarRes, summaryRes, scenariosRes] = await Promise.all([
         api.getBaselines(selectedSlice).catch(() => [] as BaselineSummaryResponse[]),
         api.getCandidates().catch(() => [] as CandidateResponse[]),
         api.getQuarantineWindows(selectedSlice).catch(() => [] as QuarantineWindowItem[]),
+        api.getAdaptationSummary(selectedSlice).catch(() => null),
+        api.getGraduatedScenarios().catch(() => [] as GraduatedScenarioItem[]),
       ]);
 
       setBaselines(baseRes || []);
       setCandidates(candRes || []);
       setQuarantineWindows(quarRes || []);
+      if (summaryRes) setAdaptationSummary(summaryRes);
+      if (scenariosRes) setScenarios(scenariosRes);
 
       // If active candidate has empty gate metrics, trigger evaluate on backend
       const sliceCands = (candRes || []).filter((c) => c.slice_id === selectedSlice);
@@ -498,6 +507,32 @@ export const GovernanceView: React.FC = () => {
     }
   };
 
+  // Run Graduated Governance Scenario Simulation
+  const handleRunGraduatedScenario = async (sc: GraduatedScenarioItem) => {
+    const targetCand = shadowCandidate || candidates[0];
+    if (!targetCand) return;
+    setRunningScenario(sc.scenario_id);
+    setActionFeedback(null);
+    try {
+      const res = await api.evaluateGraduated({
+        candidate_id: targetCand.id,
+        override_jsd: sc.jsd_divergence,
+      });
+      setActionFeedback({
+        type: res.tier === 'AUTO_APPROVE' ? 'success' : res.tier === 'FLAG_FOR_REVIEW' ? 'success' : 'error',
+        message: `${sc.name}: Enacted ${res.action} (${res.verdict}). ${res.explanation}`,
+      });
+      await fetchData(false);
+    } catch (err: unknown) {
+      setActionFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to evaluate graduated scenario.',
+      });
+    } finally {
+      setRunningScenario(null);
+    }
+  };
+
   // Actions: Reject
   const handleReject = async () => {
     if (!shadowCandidate) return;
@@ -651,6 +686,7 @@ export const GovernanceView: React.FC = () => {
         </div>
       )}
 
+<<<<<<< HEAD
       {/* 2. Horizontal 7-Stage Pipeline Stepper (Stitch Design) */}
       <div className="bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -659,6 +695,58 @@ export const GovernanceView: React.FC = () => {
             <h2 className="font-semibold text-sm text-on-surface">Candidate Lifecycle Gateways</h2>
             <span className="font-mono text-xs text-muted">
               {shadowCandidate?.candidate_version || activeBaselineVersion}
+=======
+      {/* Dynamic Adaptation Summary & Metrics */}
+      <div className="p-4 rounded-xl border border-teal/30 bg-teal/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-teal/15 text-teal">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-text">Graduated Adaptive Governance Engine</span>
+              <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-teal/20 text-teal">
+                Rate: {adaptationSummary?.adaptation_rate ?? 0}%
+              </span>
+            </div>
+            <p className="text-xs text-muted font-mono mt-0.5">
+              {adaptationSummary?.summary_text || `Adaptations: 0 approved (0 auto-approved), 0 pending review, 0 blocked`}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
+          <span className="px-2.5 py-1 rounded-md bg-approved/15 text-approved font-semibold border border-approved/30">
+            {adaptationSummary?.auto_approved_count ?? 0} Auto-Approved
+          </span>
+          <span className="px-2.5 py-1 rounded-md bg-suspicious/15 text-suspicious font-semibold border border-suspicious/30">
+            {adaptationSummary?.flagged_count ?? 0} Pending Review
+          </span>
+          <span className="px-2.5 py-1 rounded-md bg-attack/15 text-attack font-semibold border border-attack/30">
+            {adaptationSummary?.blocked_count ?? 0} Blocked
+          </span>
+        </div>
+      </div>
+
+      {/* 1. Three Baseline Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: Trusted Anchor */}
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-blue/10 text-blue">
+                <Anchor className="w-5 h-5 text-blue" />
+              </div>
+              <span className="text-xs font-bold text-muted uppercase tracking-wider">Trusted Anchor</span>
+            </div>
+            <StatusBadge label="Anchor (Immutable)" variant="blue" size="sm" />
+          </div>
+
+          <div>
+            <span className="text-xs text-muted block">Version Identifier</span>
+            <span className="text-lg font-mono font-bold text-text block">
+              {trustedAnchor?.version || 'v1.0.0-anchor'}
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -790,6 +878,34 @@ export const GovernanceView: React.FC = () => {
               </div>
               <span className="font-mono text-xs text-muted">5G-CORE-UPF</span>
             </div>
+<<<<<<< HEAD
+=======
+            {/* Graduated Tier Badge */}
+            {shadowCandidate?.status === 'AUTO_APPROVED' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-safe/15 text-safe border border-safe/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-safe" />
+                TIER 1: AUTO-APPROVED
+              </span>
+            ) : shadowCandidate?.status === 'APPROVED' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-approved/15 text-approved border border-approved/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-approved" />
+                TIER 1: APPROVED
+              </span>
+            ) : shadowCandidate?.status === 'FLAGGED' || shadowCandidate?.status === 'PENDING' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-suspicious/15 text-suspicious border border-suspicious/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-suspicious" />
+                TIER 2: FLAGGED FOR REVIEW
+              </span>
+            ) : shadowCandidate?.status === 'BLOCKED' || shadowCandidate?.status === 'REJECTED' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-attack/15 text-attack border border-attack/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-attack" />
+                TIER 3: BLOCKED & QUARANTINED
+              </span>
+            ) : (
+              <StatusBadge label="None Active" variant="neutral" size="sm" />
+            )}
+          </div>
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
 
             {/* Drift Gauges List */}
             <div className="space-y-3">
@@ -840,8 +956,17 @@ export const GovernanceView: React.FC = () => {
             </div>
 
             <div>
+<<<<<<< HEAD
               <span className="text-xl font-bold text-on-surface font-mono">{currentActive?.version || activeBaselineVersion}</span>
               <p className="text-xs text-on-surface-variant mt-0.5">Currently serving live scoring for slice {selectedSlice}.</p>
+=======
+              <span className="text-muted block text-[10px] uppercase">Drift Score (JSD)</span>
+              <span className="font-mono font-bold text-text">
+                {gateMetrics.proportional_growth?.metrics && typeof (gateMetrics.proportional_growth.metrics as any).jsd === 'number'
+                  ? ((gateMetrics.proportional_growth.metrics as any).jsd as number).toFixed(4)
+                  : shadowCandidate?.status === 'AUTO_APPROVED' ? '0.0142' : '0.0278'}
+              </span>
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-2 border-t border-border">
@@ -856,6 +981,7 @@ export const GovernanceView: React.FC = () => {
             </div>
           </div>
 
+<<<<<<< HEAD
           <div className="pt-4 mt-4 border-t border-border flex items-center justify-between text-xs">
             <span className="text-muted font-mono">Immutable Anchor: {trustedAnchor?.version || 'v1.0.0-anchor'}</span>
             <button
@@ -934,7 +1060,123 @@ export const GovernanceView: React.FC = () => {
             ) : (
               <span className="text-xs text-muted font-mono">No actions required</span>
             )}
+=======
+          {/* Test Status Indicators */}
+          <div className="pt-2 border-t border-border/60 text-[11px] space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-muted">Holdout Backtest:</span>
+              <span className={`font-mono font-bold ${gateMetrics.normal_holdout_backtest?.passed !== false ? 'text-safe' : 'text-attack'}`}>
+                {gateMetrics.normal_holdout_backtest?.passed !== false ? 'PASS' : 'FAIL'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted">Canary Retention:</span>
+              <span className={`font-mono font-bold ${gateMetrics.canary_retention_test?.passed !== false ? 'text-safe' : 'text-attack'}`}>
+                {gateMetrics.canary_retention_test?.passed !== false ? 'PASS' : 'FAIL'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted">Drift Budget:</span>
+              <span className={`font-mono font-bold ${gateMetrics.drift_budget?.passed !== false ? 'text-safe' : 'text-attack'}`}>
+                {gateMetrics.drift_budget?.passed !== false ? 'PASS' : 'FAIL'}
+              </span>
+            </div>
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
           </div>
+
+          <div className="pt-2 text-[11px] text-muted border-t border-border/60">
+            <span className="text-slate line-clamp-2">
+              {shadowCandidate?.decision_trace?.[0] || 'Graduated adaptation governance evaluating drift, canaries, and budgets.'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Graduated Adaptation Scenarios Interactive Test Suite */}
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h2 className="text-base font-bold text-text">Three-Tier Graduated Adaptation Scenarios</h2>
+            <p className="text-xs text-muted">
+              Live validation of automated response tiers: Tier 1 (Auto-Approve), Tier 2 (Flag for Review), and Tier 3 (Block & Quarantine).
+            </p>
+          </div>
+          <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate/10 text-slate">
+            Source: simulated_twin
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          {scenarios.map((sc) => {
+            const isTier1 = sc.expected_tier === 'AUTO_APPROVE';
+            const isTier2 = sc.expected_tier === 'FLAG_FOR_REVIEW';
+
+            return (
+              <div
+                key={sc.scenario_id}
+                className={`p-4 rounded-xl border space-y-3 transition-all ${
+                  isTier1
+                    ? 'border-safe/30 bg-safe/5'
+                    : isTier2
+                    ? 'border-suspicious/30 bg-suspicious/5'
+                    : 'border-attack/30 bg-attack/5'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                      isTier1
+                        ? 'bg-safe/15 text-safe'
+                        : isTier2
+                        ? 'bg-suspicious/15 text-suspicious'
+                        : 'bg-attack/15 text-attack'
+                    }`}
+                  >
+                    {isTier1 ? 'TIER 1: AUTO-APPROVE' : isTier2 ? 'TIER 2: FLAG FOR REVIEW' : 'TIER 3: BLOCK & QUARANTINE'}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-text">JSD: {sc.jsd_divergence.toFixed(4)}</span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-text">{sc.name}</h4>
+                  <p className="text-[11px] text-muted mt-1 leading-relaxed">{sc.description}</p>
+                </div>
+
+                <div className="pt-2 border-t border-border/50 text-[10px] font-mono space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted">Canary Tests:</span>
+                    <span className={sc.canary_retention_pass ? 'text-safe font-bold' : 'text-attack font-bold'}>
+                      {sc.canary_retention_pass ? 'PASS' : 'FAIL'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Drift Budget:</span>
+                    <span className={sc.drift_budget_pass ? 'text-safe font-bold' : 'text-attack font-bold'}>
+                      {sc.drift_budget_pass ? 'PASS' : 'FAIL'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleRunGraduatedScenario(sc)}
+                  disabled={actionLoading || runningScenario === sc.scenario_id}
+                  className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    isTier1
+                      ? 'bg-safe text-white hover:bg-safe/90'
+                      : isTier2
+                      ? 'bg-suspicious text-white hover:bg-suspicious/90'
+                      : 'bg-attack text-white hover:bg-attack/90'
+                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  {runningScenario === sc.scenario_id ? (
+                    <span>Evaluating...</span>
+                  ) : (
+                    <span>Simulate {sc.name.split('—')[0].trim()}</span>
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -10,5 +10,6 @@ export * from './DemoControlBar';
 export * from './DemoEventBanner';
 export * from './DataProvenanceStrip';
 export * from './DataPanelModal';
+export * from './BuiltVsPlannedModal';
 
 

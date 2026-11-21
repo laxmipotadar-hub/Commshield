@@ -15,7 +15,11 @@ import {
   GitBranch,
   Key,
   LayoutDashboard,
+<<<<<<< HEAD
   Moon,
+=======
+  Layers,
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
   Pause,
   Play,
   Radio,
@@ -30,6 +34,7 @@ import {
   Zap,
   ZapOff,
 } from 'lucide-react';
+<<<<<<< HEAD
 import {
   StatusBadge,
   DemoControlBar,
@@ -37,6 +42,9 @@ import {
   DataProvenanceStrip,
   DataPanelModal,
 } from './components';
+=======
+import { StatusBadge, DemoControlBar, DemoEventBanner, DataProvenanceStrip, DataPanelModal, BuiltVsPlannedModal } from './components';
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
 import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitoringPage } from './pages/MonitoringPage';
@@ -88,6 +96,7 @@ const AppLayout: React.FC = () => {
   } = useReplay();
 
   const isRunning = status === 'RUNNING';
+<<<<<<< HEAD
   const [showSettings, setShowSettings] = useState(false);
   const [showDataPanel, setShowDataPanel] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
@@ -131,6 +140,13 @@ const AppLayout: React.FC = () => {
   const currentNav = navItems.find((item) =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
   );
+=======
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [showDataPanel, setShowDataPanel] = React.useState(false);
+  const [showMatrixModal, setShowMatrixModal] = React.useState(false);
+  const [tokenInput, setTokenInput] = React.useState('');
+  const [tokenSaved, setTokenSaved] = React.useState(false);
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
 
   return (
     <div className="h-screen flex overflow-hidden bg-surface text-on-surface">
@@ -359,6 +375,7 @@ const AppLayout: React.FC = () => {
               <span>Data</span>
             </button>
 
+<<<<<<< HEAD
             {/* Low Motion Toggle */}
             <button
               onClick={() => setLowMotion(!lowMotion)}
@@ -375,6 +392,16 @@ const AppLayout: React.FC = () => {
               title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             >
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-600" />}
+=======
+            {/* Built vs Planned Matrix Button */}
+            <button
+              onClick={() => setShowMatrixModal(true)}
+              className="flex items-center gap-1.5 bg-bg hover:bg-slate/30 text-xs font-semibold text-text px-2.5 py-1.5 rounded-lg border border-border transition-colors cursor-pointer shadow-xs"
+              title="View Built vs Planned Implementation Matrix"
+            >
+              <Layers className="w-3.5 h-3.5 text-teal" />
+              <span>Matrix</span>
+>>>>>>> 4ff6ad03a6324a7b121c7f7b146675269c4c644e
             </button>
           </div>
         </header>
@@ -408,6 +435,12 @@ const AppLayout: React.FC = () => {
       <DataPanelModal
         isOpen={showDataPanel}
         onClose={() => setShowDataPanel(false)}
+      />
+
+      {/* Built vs Planned Implementation Matrix Modal */}
+      <BuiltVsPlannedModal
+        isOpen={showMatrixModal}
+        onClose={() => setShowMatrixModal(false)}
       />
 
       {/* Settings Modal */}

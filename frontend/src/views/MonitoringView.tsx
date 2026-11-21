@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { ChartCard, DataTable, StatCard, Column } from '../components';
 import { api, CanonicalTrafficWindow } from '../services/api';
+import { formatBytes } from '../utils/formatters';
 
 const throughputData = [
   { time: '12:00', uplink_mbps: 18.9, downlink_mbps: 119.2 },
@@ -73,23 +74,19 @@ export const MonitoringView: React.FC = () => {
     },
     {
       key: 'bytes_uplink',
-      header: 'Uplink (MB)',
+      header: 'Uplink Volume',
       render: (w) => (
-        <span className="text-xs text-muted">
-          {w.raw_counters.total_bytes_uplink
-            ? (w.raw_counters.total_bytes_uplink / (1024 * 1024)).toFixed(1)
-            : '—'} MB
+        <span className="text-xs text-muted font-mono">
+          {formatBytes(w.raw_counters.total_bytes_uplink)}
         </span>
       ),
     },
     {
       key: 'bytes_downlink',
-      header: 'Downlink (MB)',
+      header: 'Downlink Volume',
       render: (w) => (
-        <span className="text-xs text-muted">
-          {w.raw_counters.total_bytes_downlink
-            ? (w.raw_counters.total_bytes_downlink / (1024 * 1024)).toFixed(1)
-            : '—'} MB
+        <span className="text-xs text-muted font-mono">
+          {formatBytes(w.raw_counters.total_bytes_downlink)}
         </span>
       ),
     },

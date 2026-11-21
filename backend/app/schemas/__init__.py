@@ -18,12 +18,16 @@ from .detection import (
 )
 from .governance import (
     ApprovalActionRequest,
+    AdaptationSummaryResponse,
     BaselineSummaryResponse,
     CandidateBaselinePackage,
     CandidateResponse,
     EvaluateCandidateRequest,
     GovernanceApproveRequest,
     GovernanceRejectRequest,
+    GraduatedDecisionResponse,
+    GraduatedEvaluationRequest,
+    GraduatedScenarioItem,
     RollbackRequest,
     RollbackResponse,
     ThreeArmComparisonResponse,
@@ -80,4 +84,8 @@ __all__ = [
     "RollbackResponse",
     "ThreeArmComparisonResponse",
     "CandidateBaselinePackage",
+    "GraduatedEvaluationRequest",
+    "GraduatedDecisionResponse",
+    "AdaptationSummaryResponse",
+    "GraduatedScenarioItem",
 ]
