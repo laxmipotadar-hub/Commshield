@@ -20,6 +20,10 @@ class AbstainReason(str, Enum):
     UNCERTAIN_CONFIDENCE = "uncertain_confidence"
     CONFORMAL_GRAY_BAND = "conformal_gray_band"
     DETECTOR_PVALUE_DISAGREEMENT = "detector_pvalue_disagreement"
+    GROWTH_EXCEEDS_APPROVED_BATCH = "growth_exceeds_approved_batch"
+    DEVICE_BEHAVIOUR_UNCERTAIN = "device_behaviour_uncertain"
+    PARTIAL_EVENT_MATCH = "partial_event_match"
+    UNPROVISIONED_DEVICES_PRESENT = "unprovisioned_devices_present"
 
 
 class AttributionVerdict(str, Enum):
@@ -76,6 +80,13 @@ class AttributionConfig:
     conformal_detector_disagreement_margin: float = 0.35
     conformal_min_calibration_size: int = 30
     conformal_pooling_fallback: bool = True
+
+    # 9. Device & Provisioning Evidence Parameters
+    device_evidence_enabled: bool = False
+    min_provisioned_share: float = 0.95
+    max_anomalous_share: float = 0.10
+    max_uncertain_share: float = 0.30
+    volume_batch_tolerance: float = 1.25
 
 
 DEFAULT_ATTRIBUTION_CONFIG = AttributionConfig()

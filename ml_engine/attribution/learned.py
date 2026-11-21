@@ -11,8 +11,15 @@ import logging
 import math
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
-import numpy as np
-from scipy.optimize import minimize
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    from scipy.optimize import minimize
+except ImportError:
+    minimize = None
 
 from .base import BaseAttributor
 from .config import (

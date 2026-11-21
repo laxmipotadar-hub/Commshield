@@ -205,5 +205,51 @@ Split-conformal calibration has been integrated into the attribution layer to pr
    - Documented findings, simulation disclosure, and limitations in `experiments/README.md`.
    - 5 automated unit tests passing (disjoint calibration audit, toy example p-value correctness, determinism, raw ID exclusion, held-out class safety).
 
+## Milestone Status: Attribution with Provisioning & Device Evidence (Three-Arm Twin Benchmark)
+
+1. **Attribution Signals Integration (`ml_engine/attribution/metrics.py`)**:
+   - Added signals: `provisioned_share` (fraction of active devices provisioned in catalog), `event_match` (active scheduled batch verification with added device concordance), `volume_vs_batch_size` (ratio of added devices vs approved batch size and `fitting_volume` boolean).
+   - Added signals: `device_anomalous_share` and `device_uncertain_share` derived from per-device split-conformal inference verdicts.
+
+2. **Attribution Rules Behind Config Flag (`ml_engine/attribution/rule_based.py`)**:
+   - Maintained backward compatibility via `device_evidence_enabled` flag on `AttributionConfig`.
+   - Rule 1: `provisioned_share < min_provisioned_share` (0.95) -> `likely_attack`, `quarantine` (`unprovisioned_devices_present`).
+   - Rule 2: `provisioned` AND `matched event` AND `fitting volume` AND `low anomalous share` (<= 0.10) AND `low uncertain share` (<= 0.30) -> `likely_benign`, `adapt_candidate`.
+   - Rule 3: Uncertain with specific named reasons:
+     - `growth_exceeds_approved_batch` when event matches but volume exceeds batch size tolerance (1.25x).
+     - `device_behaviour_uncertain` when conformal gray-band abstention share exceeds threshold (0.30).
+     - `partial_event_match` when new devices join without verified change event match.
+
+3. **Three-Arm Replay Benchmark Across 10 Test Seeds (`experiments/results/twin/three_arm_twin_summary.json`)**:
+   - CLI Runner (`experiments/run_twin_benchmark.py`) supports `--source simulated_twin` (default) and `--source lab` (with schema validation).
+   - Execution commands:
+     - PowerShell: `python experiments\run_twin_benchmark.py --source simulated_twin`
+     - Bash: `python3 experiments/run_twin_benchmark.py --source simulated_twin`
+   - Empirical Metrics Summary (Mean & 95% Bootstrap CI):
+     - `approved_onboarding`:
+       - Naive: Contamination 0.0% [0.0%, 0.0%], FPR 0.0% [0.0%, 0.0%], Adapted 2.0
+       - CommShield Base: Contamination 0.0% [0.0%, 0.0%], FPR 66.7% [66.7%, 66.7%], Adapted 0.0
+       - CommShield Twin: Contamination 0.0% [0.0%, 0.0%], FPR 2.7% [1.9%, 3.7%], Adapted 2.0
+     - `unprovisioned_burst`:
+       - Naive: Contamination 50.0% [50.0%, 50.0%], FPR 13.3% [13.3%, 13.3%], Adapted 0.0
+       - CommShield Base: Contamination 0.0% [0.0%, 0.0%], FPR 100.0% [100.0%, 100.0%], Adapted 0.0
+       - CommShield Twin: Contamination 0.0% [0.0%, 0.0%], FPR 2.5% [1.3%, 3.8%], Adapted 0.0
+     - `provisioned_burst_no_event`:
+       - Naive: Contamination 50.0% [50.0%, 50.0%], FPR 13.3% [13.3%, 13.3%], Adapted 0.0
+       - CommShield Base: Contamination 0.0% [0.0%, 0.0%], FPR 100.0% [100.0%, 100.0%], Adapted 0.0
+       - CommShield Twin: Contamination 0.0% [0.0%, 0.0%], FPR 3.0% [1.3%, 4.8%], Adapted 0.0
+     - `slow_ramp_in_onboarding`:
+       - Naive: Contamination 33.3% [33.3%, 33.3%], FPR 0.0% [0.0%, 0.0%], Adapted 0.0
+       - CommShield Base: Contamination 0.0% [0.0%, 0.0%], FPR 100.0% [100.0%, 100.0%], Adapted 0.0
+       - CommShield Twin: Contamination 1.7% [0.0%, 5.0%], FPR 2.7% [1.5%, 4.0%], Adapted 0.0
+
+4. **Where the New Arm is NOT Better**:
+   - In `unprovisioned_burst` and `provisioned_burst_no_event`, CommShield Base already achieves 0.0% contamination; the new arm adds per-device feature extraction overhead without improving upon the 0.0% contamination ceiling.
+   - **Weakest Result**: In `slow_ramp_in_onboarding`, CommShield Twin experiences subtle early contamination leakage (1.7% [0.0%, 5.0%]) during the initial ramp windows before conformal abstention kicks in, whereas CommShield Base kept contamination at 0.0% (at the cost of 100.0% FPR).
+
+5. **Automated Unit Tests (`backend/tests/test_twin_attribution.py`)**:
+   - 8 unit tests passing covering: Rule 1 unprovisioned detection, Rule 2 clean onboarding promotion, Rule 3 volume exceeds batch, Rule 3 conformal gray-band uncertainty, Rule 3 partial event match, stream verdict compliance, bitwise determinism across seeds, zero raw SIM ID leakage, and backward compatibility flag.
+
+
 
 

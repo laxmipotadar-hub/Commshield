@@ -2,7 +2,10 @@
 
 import math
 from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 from .config import DEFAULT_ATTRIBUTION_CONFIG
 
@@ -23,19 +26,31 @@ def compute_jsd(
     if not keys:
         return 0.0
 
-    p_raw = np.array([max(0.0, float(p_dict.get(k, 0.0))) + pseudo_count for k in keys], dtype=np.float64)
-    q_raw = np.array([max(0.0, float(q_dict.get(k, 0.0))) + pseudo_count for k in keys], dtype=np.float64)
+    if np is not None:
+        p_raw = np.array([max(0.0, float(p_dict.get(k, 0.0))) + pseudo_count for k in keys], dtype=np.float64)
+        q_raw = np.array([max(0.0, float(q_dict.get(k, 0.0))) + pseudo_count for k in keys], dtype=np.float64)
 
-    p = p_raw / np.sum(p_raw)
-    q = q_raw / np.sum(q_raw)
-    m = 0.5 * (p + q)
+        p = p_raw / np.sum(p_raw)
+        q = q_raw / np.sum(q_raw)
+        m = 0.5 * (p + q)
 
-    # KL divergences with base e
-    kl_pm = np.sum(p * np.log(p / m))
-    kl_qm = np.sum(q * np.log(q / m))
-    jsd = 0.5 * (kl_pm + kl_qm)
-
-    return float(np.clip(round(jsd, 5), 0.0, 1.0))
+        # KL divergences with base e
+        kl_pm = np.sum(p * np.log(p / m))
+        kl_qm = np.sum(q * np.log(q / m))
+        jsd = 0.5 * (kl_pm + kl_qm)
+        return float(np.clip(round(jsd, 5), 0.0, 1.0))
+    else:
+        p_raw = [max(0.0, float(p_dict.get(k, 0.0))) + pseudo_count for k in keys]
+        q_raw = [max(0.0, float(q_dict.get(k, 0.0))) + pseudo_count for k in keys]
+        sum_p = sum(p_raw)
+        sum_q = sum(q_raw)
+        p = [x / sum_p for x in p_raw]
+        q = [x / sum_q for x in q_raw]
+        m = [0.5 * (p[i] + q[i]) for i in range(len(p))]
+        kl_pm = sum(p[i] * math.log(p[i] / m[i]) for i in range(len(p)) if p[i] > 0)
+        kl_qm = sum(q[i] * math.log(q[i] / m[i]) for i in range(len(q)) if q[i] > 0)
+        jsd = 0.5 * (kl_pm + kl_qm)
+        return float(max(0.0, min(1.0, round(jsd, 5))))
 
 
 def compute_volume_multiplier(
@@ -198,3 +213,111 @@ def evaluate_threat_indicators(
         "new_ue_triggered": new_ue_triggered,
         "has_threat_indicators": has_threat,
     }
+
+
+DEFAULT_BASELINE_UES_BY_SLICE = {
+    "sst-1-sd-010203": 20,
+    "sst-2-sd-020304": 20,
+    "sst-3-sd-030405": 40,
+}
+
+
+def compute_device_provisioning_evidence(
+    device_windows: List[Dict[str, Any]],
+    loader: Any,
+    window_start: Any,
+    slice_id: str,
+    baseline_active_ues: Optional[int] = None,
+    tolerance: float = 1.25,
+) -> Dict[str, Any]:
+    """Compute provisioning and onboarding event match evidence from device windows."""
+    if not device_windows:
+        return {
+            "provisioned_share": 1.0,
+            "event_match": False,
+            "volume_vs_batch_size": {
+                "batch_id": None,
+                "batch_size": 0,
+                "added_devices": 0,
+                "ratio": 0.0,
+                "fitting_volume": False,
+            },
+        }
+
+    total_devices = len(device_windows)
+    provisioned_count = 0
+    matched_ev_cnt = 0
+
+    # Check active batches in loader if available
+    active_batch: Optional[Dict[str, Any]] = None
+    if loader and hasattr(loader, "_events"):
+        from ml_engine.provisioning.schema import parse_iso_timestamp
+        dt = parse_iso_timestamp(window_start)
+        for ev in loader._events:
+            if ev["slice"] == slice_id and ev["start"] <= dt <= ev["end"]:
+                active_batch = ev
+                break
+
+    for dw in device_windows:
+        dev_id = dw.get("device_id_hash")
+        lookup_res = loader.lookup(dev_id, window_start) if loader else {"provisioned": True, "event_id": None}
+        if lookup_res.get("provisioned", False):
+            provisioned_count += 1
+        if active_batch and dev_id in active_batch.get("hashed_sim_ids", set()):
+            matched_ev_cnt += 1
+        elif lookup_res.get("event_id") is not None:
+            matched_ev_cnt += 1
+
+    provisioned_share = round(provisioned_count / float(total_devices), 4)
+    base_ues = baseline_active_ues if baseline_active_ues is not None else DEFAULT_BASELINE_UES_BY_SLICE.get(slice_id, 20)
+    added = max(0, total_devices - base_ues)
+
+    if active_batch:
+        batch_size = active_batch["count"]
+        batch_id = active_batch["batch_id"]
+        ratio = round(added / float(max(1, batch_size)), 4)
+        fitting_vol = bool(0 < added <= batch_size * tolerance)
+        event_match = bool(matched_ev_cnt >= max(1, int(batch_size * 0.4)) and added > 0)
+    else:
+        batch_id = None
+        batch_size = 0
+        added = 0
+        ratio = 0.0
+        fitting_vol = False
+        event_match = False
+
+    return {
+        "provisioned_share": provisioned_share,
+        "event_match": event_match,
+        "volume_vs_batch_size": {
+            "batch_id": batch_id,
+            "batch_size": batch_size,
+            "added_devices": added,
+            "ratio": ratio,
+            "fitting_volume": fitting_vol,
+        },
+    }
+
+
+def compute_device_model_evidence(
+    device_predictions: List[Dict[str, Any]],
+) -> Dict[str, float]:
+    """Compute device anomalous and uncertain shares from device model verdicts."""
+    if not device_predictions:
+        return {
+            "device_anomalous_share": 0.0,
+            "device_uncertain_share": 0.0,
+            "device_normal_share": 1.0,
+        }
+
+    n = len(device_predictions)
+    anom_cnt = sum(1 for p in device_predictions if p.get("verdict") == "anomalous")
+    unc_cnt = sum(1 for p in device_predictions if p.get("verdict") == "uncertain")
+    norm_cnt = sum(1 for p in device_predictions if p.get("verdict") == "normal")
+
+    return {
+        "device_anomalous_share": round(anom_cnt / float(n), 4),
+        "device_uncertain_share": round(unc_cnt / float(n), 4),
+        "device_normal_share": round(norm_cnt / float(n), 4),
+    }
+

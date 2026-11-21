@@ -14,7 +14,11 @@ Implements:
 from dataclasses import dataclass, field
 import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
-import numpy as np
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 from ml_engine.attribution.config import (
     DEFAULT_CONFORMAL_CONFIG,
@@ -47,16 +51,20 @@ def compute_conformal_pvalue(
     Returns:
         float: Conformal p-value rounded to 6 decimal places.
     """
-    scores = np.asarray(calibration_scores, dtype=np.float64)
-    n = len(scores)
+    if np is not None and isinstance(calibration_scores, np.ndarray):
+        extreme_count = int(np.sum(calibration_scores >= float(test_score)))
+        n = len(calibration_scores)
+    else:
+        scores = list(calibration_scores)
+        extreme_count = sum(1 for s in scores if s >= float(test_score))
+        n = len(scores)
+
     if n == 0:
         logger.warning("Empty calibration scores passed to compute_conformal_pvalue; returning fallback 0.5")
         return 0.5
 
-    # Count calibration scores greater than or equal to test_score
-    extreme_count = np.sum(scores >= float(test_score))
     p_value = float(1.0 + extreme_count) / float(n + 1)
-    return float(np.clip(round(p_value, 6), 0.0, 1.0))
+    return float(max(0.0, min(1.0, round(p_value, 6))))
 
 
 def evaluate_conformal_abstention(
@@ -115,9 +123,9 @@ class CalibrationSliceBundle:
     """Stores calibration nonconformity scores and provenance metadata for a slice."""
     slice_id: str
     window_ids: List[str]
-    if_scores: np.ndarray
-    ae_scores: np.ndarray
-    attr_scores: np.ndarray
+    if_scores: Any
+    ae_scores: Any
+    attr_scores: Any
     size: int
     is_pooled: bool = False
     fallback_reason: Optional[str] = None
@@ -183,9 +191,9 @@ class ConformalCalibrationManager:
         bundle = CalibrationSliceBundle(
             slice_id=slice_id,
             window_ids=list(calibration_window_ids),
-            if_scores=np.asarray(if_scores, dtype=np.float64),
-            ae_scores=np.asarray(ae_scores, dtype=np.float64),
-            attr_scores=np.asarray(attr_scores, dtype=np.float64),
+            if_scores=np.asarray(if_scores, dtype=np.float64) if np is not None else list(if_scores),
+            ae_scores=np.asarray(ae_scores, dtype=np.float64) if np is not None else list(ae_scores),
+            attr_scores=np.asarray(attr_scores, dtype=np.float64) if np is not None else list(attr_scores),
             size=n,
             is_pooled=is_pooled,
             fallback_reason=fallback_msg,
@@ -197,17 +205,17 @@ class ConformalCalibrationManager:
     def set_global_pooled_fallback(
         self,
         window_ids: List[str],
-        if_scores: np.ndarray,
-        ae_scores: np.ndarray,
-        attr_scores: np.ndarray,
+        if_scores: Any,
+        ae_scores: Any,
+        attr_scores: Any,
     ) -> CalibrationSliceBundle:
         """Configure pooled global calibration bundle used when slice-specific calibration is deficient."""
         self.global_pooled_bundle = CalibrationSliceBundle(
             slice_id="GLOBAL_POOLED",
             window_ids=list(window_ids),
-            if_scores=np.asarray(if_scores, dtype=np.float64),
-            ae_scores=np.asarray(ae_scores, dtype=np.float64),
-            attr_scores=np.asarray(attr_scores, dtype=np.float64),
+            if_scores=np.asarray(if_scores, dtype=np.float64) if np is not None else list(if_scores),
+            ae_scores=np.asarray(ae_scores, dtype=np.float64) if np is not None else list(ae_scores),
+            attr_scores=np.asarray(attr_scores, dtype=np.float64) if np is not None else list(attr_scores),
             size=len(window_ids),
             is_pooled=True,
             fallback_reason="Pooled across multiple slices to satisfy minimum calibration size requirement.",
