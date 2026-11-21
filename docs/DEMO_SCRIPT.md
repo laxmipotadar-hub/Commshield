@@ -90,3 +90,19 @@ npm --prefix frontend run build
 * **CommShield Base Failure**: achieves 0.0% contamination but suffers a catastrophic **100.0% False Positive Rate** by rejecting all legitimate onboardings.
 * **CommShield Twin (Gated)**: limits contamination to **1.7%** [95% CI: 0.0%, 5.0%] while maintaining a low **2.7% False Positive Rate** [95% CI: 1.5%, 4.0%].
 * **Conformal Gray Band**: point at **>30.0% uncertain share** in split-conformal bounds ($p \in [0.01, 0.05]$) triggering quarantine of excess devices.
+
+---
+
+## Telemetry Data Catalog & Live JSON Export Panel
+
+During or after the four demo scenes, evaluators can inspect raw data and download complete telemetry traces:
+1. Click the **Data** button in the top navigation bar to open the Data Panel.
+2. In the catalog, select any dataset:
+   - `Real 5G-NIDD Testbed Telemetry` (real recorded NetFlow trace with assigned slices)
+   - `Real-Backbone Hidden Ramp (Semi-Synthetic)` (real 5G-NIDD backbone with real SYNFlood injection)
+   - `Simulated Twin` streams (`stable_benign`, `legitimate_growth`, `slow_attack_ramp`, etc.)
+   - `Live Open5GS Lab Telemetry` (if live lab file is present)
+3. Review the top 20 canonical windows in the interactive collapsible JSON preview and click **Copy JSON**.
+4. Click **Download JSON** to export `commshield_<name>_<source>_seed<seed>.json` (capped at 20MB) starting with a structured `metadata` block and verified zero identifier leakage.
+5. Enter a custom random seed (e.g. `101`, `2024`) and click **Generate** to verify deterministic in-memory stream synthesis without altering stored files.
+

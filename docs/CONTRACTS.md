@@ -106,6 +106,47 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | `GET` | `/api/v1/replay/status` | Current tick and replay state | None | `ReplayStatusResponse` |
 | `GET` | `/api/v1/replay/stream` | Server-Sent Events stream of replay windows | None (SSE query params: `speed=1`) | Event Stream (`WindowReplayEvent`) |
 
+### Telemetry Data Catalog & Export Endpoints
+
+| Method | Route | Description | Request Payload | Response Payload |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/data/datasets` | List available datasets with metadata block, record count, size, seed, config version, and source tag | None | `DatasetCatalogResponse` |
+| `GET` | `/api/data/{name}/preview` | Preview top canonical windows (default limit 20) with hashed IDs and aggregates (no raw IPs/payload) | Query params: `limit=20` (max 100) | `DataPreviewResponse` |
+| `GET` | `/api/data/{name}/download` | Download full JSON attachment named `commshield_<name>_<source>_seed<seed>.json` (capped at 20MB) | Query params: `seed` (optional) | Application/JSON Attachment with structured `metadata` block |
+| `POST` | `/api/data/generate` | Run deterministic in-memory generator for one stream with seed bounds without altering stored files | `GenerateDataRequest` (`stream, seed`) | `GenerateDataResponse` |
+
+#### Data API JSON Schemas
+
+```json
+{
+  "GenerateDataRequest": {
+    "stream": "stable_benign",
+    "seed": 42
+  },
+  "DataPreviewResponse": {
+    "name": "stable_benign",
+    "source": "simulated_twin",
+    "seed": 42,
+    "config_version": "v1.0.0",
+    "limit": 20,
+    "total_records": 60,
+    "metadata": {
+      "dataset_name": "stable_benign",
+      "source": "simulated_twin",
+      "seed": 42,
+      "config_version": "v1.0.0",
+      "total_records": 60,
+      "preview_records": 20,
+      "window_duration_sec": 60,
+      "slices_assigned": false,
+      "anonymized": true,
+      "no_raw_identifiers": true
+    },
+    "windows": [ ... ]
+  }
+}
+```
+
 #### Replay API JSON Schemas
 
 ```json

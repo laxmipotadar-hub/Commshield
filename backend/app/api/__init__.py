@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from .attribution import router as attribution_router
+from .data import router as data_router
 from .datasets import router as datasets_router
 from .demo import router as demo_router
 from .detection import router as detection_router
@@ -13,6 +14,7 @@ from .windows import router as windows_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(datasets_router)
+api_router.include_router(data_router)
 api_router.include_router(replay_router)
 api_router.include_router(windows_router)
 api_router.include_router(governance_router)

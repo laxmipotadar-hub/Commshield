@@ -839,3 +839,92 @@ export interface DigitalTwinResponse {
     aggregate_device_counts: Record<string, number>;
   };
 }
+
+export interface DataDatasetItem {
+  name: string;
+  display_name: string;
+  source: string;
+  seed: number;
+  config_version: string;
+  record_count: number;
+  size_bytes: number;
+  slices_assigned: boolean;
+  description: string;
+  metadata: Record<string, any>;
+}
+
+export interface DataPreviewResponse {
+  name: string;
+  source: string;
+  seed: number;
+  config_version: string;
+  limit: number;
+  total_records: number;
+  metadata: Record<string, any>;
+  windows: any[];
+}
+
+export async function fetchDataDatasets(): Promise<{ datasets: DataDatasetItem[]; total: number }> {
+  try {
+    return await request<{ datasets: DataDatasetItem[]; total: number }>('/api/data/datasets');
+  } catch (err) {
+    return {
+      datasets: [
+        {
+          name: 'stable_benign',
+          display_name: 'Stable Benign Core Telemetry (Offline Fallback)',
+          source: 'simulated_twin',
+          seed: 42,
+          config_version: 'v1.0.0',
+          record_count: 60,
+          size_bytes: 84188,
+          slices_assigned: false,
+          description: 'Clean operational 5G telemetry across slices with stationary diurnal variations.',
+          metadata: { anonymized: true, no_raw_identifiers: true, source: 'simulated_twin', seed: 42 },
+        },
+        {
+          name: 'semi_synthetic_real_ramp',
+          display_name: 'Real-Backbone Hidden Ramp (Offline Fallback)',
+          source: 'semi_synthetic',
+          seed: 42,
+          config_version: 'v1.0.0-real-ramp',
+          record_count: 40,
+          size_bytes: 58000,
+          slices_assigned: true,
+          description: 'Semi-synthetic stream combining real 5G-NIDD test traffic with real SYNFlood attack injection.',
+          metadata: { anonymized: true, no_raw_identifiers: true, source: 'semi_synthetic', seed: 42 },
+        },
+        {
+          name: 'fiveg_nidd',
+          display_name: 'Real 5G-NIDD Testbed Telemetry (Offline Fallback)',
+          source: 'real_recorded',
+          seed: 42,
+          config_version: 'v1.0.0',
+          record_count: 80,
+          size_bytes: 110000,
+          slices_assigned: true,
+          description: 'Real recorded 5G testbed traffic with topology-assigned slices (BS1: eMBB, BS2: URLLC).',
+          metadata: { anonymized: true, no_raw_identifiers: true, source: 'real_recorded', seed: 42 },
+        },
+      ],
+      total: 3,
+    };
+  }
+}
+
+export async function fetchDataPreview(name: string, limit: number = 20): Promise<DataPreviewResponse> {
+  return request<DataPreviewResponse>(`/api/data/${name}/preview?limit=${limit}`);
+}
+
+export function getDownloadUrl(name: string, seed?: number): string {
+  const seedParam = seed !== undefined ? `?seed=${seed}` : '';
+  return `${API_BASE_URL}/api/data/${name}/download${seedParam}`;
+}
+
+export async function generateDataStream(stream: string, seed: number): Promise<any> {
+  return request<any>('/api/data/generate', {
+    method: 'POST',
+    body: JSON.stringify({ stream, seed }),
+  });
+}
+

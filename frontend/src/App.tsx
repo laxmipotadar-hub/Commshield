@@ -24,7 +24,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { StatusBadge, DemoControlBar, DemoEventBanner, DataProvenanceStrip } from './components';
+import { StatusBadge, DemoControlBar, DemoEventBanner, DataProvenanceStrip, DataPanelModal } from './components';
 import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitoringPage } from './pages/MonitoringPage';
@@ -76,6 +76,7 @@ const AppLayout: React.FC = () => {
 
   const isRunning = status === 'RUNNING';
   const [showSettings, setShowSettings] = React.useState(false);
+  const [showDataPanel, setShowDataPanel] = React.useState(false);
   const [tokenInput, setTokenInput] = React.useState('');
   const [tokenSaved, setTokenSaved] = React.useState(false);
 
@@ -276,6 +277,16 @@ const AppLayout: React.FC = () => {
                 dot
               />
             </div>
+
+            {/* Telemetry Data Catalog & Export Modal Button */}
+            <button
+              onClick={() => setShowDataPanel(true)}
+              className="flex items-center gap-1.5 bg-bg hover:bg-slate/30 text-xs font-semibold text-text px-2.5 py-1.5 rounded-lg border border-border transition-colors cursor-pointer shadow-xs ml-1"
+              title="Telemetry Data Catalog, Anonymized Preview & Live JSON Downloads"
+            >
+              <Database className="w-3.5 h-3.5 text-blue" />
+              <span>Data</span>
+            </button>
           </div>
         </header>
 
@@ -303,6 +314,12 @@ const AppLayout: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Telemetry Data Catalog & Export Panel */}
+      <DataPanelModal
+        isOpen={showDataPanel}
+        onClose={() => setShowDataPanel(false)}
+      />
 
       {/* Settings Modal */}
       {showSettings && (

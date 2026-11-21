@@ -9,5 +9,6 @@ export * from './DataSourceBadge';
 export * from './DemoControlBar';
 export * from './DemoEventBanner';
 export * from './DataProvenanceStrip';
+export * from './DataPanelModal';
 
 
