@@ -11,7 +11,7 @@ import re
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 # Documented valid values
-VALID_SOURCES: Set[str] = {"simulated_twin", "lab", "real_recorded"}
+VALID_SOURCES: Set[str] = {"simulated_twin", "lab", "real_recorded", "semi_synthetic"}
 VALID_DEVICE_CLASSES: Set[str] = {"sensor", "camera", "AGV"}
 VALID_LABELS: Set[str] = {"benign", "attack"}
 

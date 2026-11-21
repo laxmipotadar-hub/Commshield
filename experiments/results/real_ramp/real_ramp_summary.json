@@ -1,0 +1,106 @@
+{
+  "scenario": "semi_synthetic_real_ramp",
+  "source": "semi_synthetic",
+  "slices_assigned": true,
+  "config_version": "v1.0.0-real-ramp",
+  "backbone_dataset": "5g_nidd_test",
+  "tuning_policy": "Validation data only used for tuning; zero test-period tuning.",
+  "seeds": [
+    42,
+    101,
+    2024,
+    777,
+    999
+  ],
+  "window_counts": {
+    "total_windows": 40,
+    "attack_windows": 15,
+    "benign_windows": 25
+  },
+  "arms": {
+    "arm_a_static": {
+      "recall_mean": 0.0,
+      "recall_std": 0.0,
+      "recall_n": 15,
+      "recall_ci": [
+        0.0,
+        0.2039
+      ],
+      "recall_ci_text": "[0.0%, 20.4%]",
+      "fpr_mean": 0.0,
+      "fpr_std": 0.0,
+      "fpr_n": 25,
+      "fpr_ci": [
+        0.0,
+        0.1332
+      ],
+      "fpr_ci_text": "[0.0%, 13.3%]",
+      "contamination_mean": 0.0,
+      "contamination_std": 0.0,
+      "contamination_n": 15,
+      "contamination_ci": [
+        0.0,
+        0.2039
+      ],
+      "contamination_ci_text": "[0.0%, 20.4%]",
+      "adaptations_mean": 0.0,
+      "quarantined_mean": 0.0
+    },
+    "arm_b_naive": {
+      "recall_mean": 0.0667,
+      "recall_std": 0.0,
+      "recall_n": 15,
+      "recall_ci": [
+        0.0119,
+        0.2982
+      ],
+      "recall_ci_text": "[1.2%, 29.8%]",
+      "fpr_mean": 0.04,
+      "fpr_std": 0.0,
+      "fpr_n": 25,
+      "fpr_ci": [
+        0.0071,
+        0.1954
+      ],
+      "fpr_ci_text": "[0.7%, 19.5%]",
+      "contamination_mean": 0.3362,
+      "contamination_std": 0.0,
+      "contamination_n": 15,
+      "contamination_ci": [
+        0.1518,
+        0.5829
+      ],
+      "contamination_ci_text": "[15.2%, 58.3%]",
+      "adaptations_mean": 6.0,
+      "quarantined_mean": 0.0
+    },
+    "arm_c_commshield": {
+      "recall_mean": 0.0,
+      "recall_std": 0.0,
+      "recall_n": 15,
+      "recall_ci": [
+        0.0,
+        0.2039
+      ],
+      "recall_ci_text": "[0.0%, 20.4%]",
+      "fpr_mean": 0.0,
+      "fpr_std": 0.0,
+      "fpr_n": 25,
+      "fpr_ci": [
+        0.0,
+        0.1332
+      ],
+      "fpr_ci_text": "[0.0%, 13.3%]",
+      "contamination_mean": 0.0,
+      "contamination_std": 0.0,
+      "contamination_n": 15,
+      "contamination_ci": [
+        0.0,
+        0.2039
+      ],
+      "contamination_ci_text": "[0.0%, 20.4%]",
+      "adaptations_mean": 0.0,
+      "quarantined_mean": 40.0
+    }
+  }
+}

@@ -180,7 +180,24 @@ Evaluation across test streams and 5 random seeds ([42, 101, 2024, 777, 999]) re
 
 ---
 
-## Device Model Findings and Limitations
+## Semi-Synthetic Real-Backbone Hidden Ramp Experiment
+
+This experiment evaluates the three arms on a semi-synthetic stream (`source: "semi_synthetic"`) constructed directly from the real **5G-NIDD test benign windows** (disjoint from training and validation), simulating approved volumetric onboarding (2.0x device growth) with a stealthy real-attack ramp (`SYNFlood`) injected into windows 20–34.
+
+### Multi-Seed Empirical Results (5 Seeds: 42, 101, 2024, 777, 999)
+
+| Arm | Attack Recall (Mean, 95% Wilson CI) | Benign FPR (Mean, 95% Wilson CI) | Baseline Contamination (Mean, 95% Wilson CI) | Mean Adaptations | Mean Quarantined |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Arm A (Static Anchor)** | 0.0% [0.0%, 20.4%] | 0.0% [0.0%, 13.3%] | 0.0% [0.0%, 20.4%] | 0.0 | 0.0 |
+| **Arm B (Naive Adaptation)** | 6.7% [1.2%, 29.8%] | 4.0% [0.7%, 19.5%] | 33.62% [15.2%, 58.3%] | 6.0 | 0.0 |
+| **Arm C (CommShield Gated)** | 0.0% [0.0%, 20.4%] | 0.0% [0.0%, 13.3%] | **0.0%** [0.0%, 20.4%] | 0.0 | 40.0 |
+
+### Where CommShield is NOT Better
+
+1. **Adaptation Inertia / Zero Adaptations**: CommShield performed **0 adaptations** during the real-backbone hidden ramp, whereas naive retraining adapted 6.0 times. When real attack traffic distorted slice ratio distributions during onboarding, zero-trust attribution classified the drifted windows as non-proportional or uncertain, routing them to quarantine (mean 40.0 windows). CommShield prioritized safety and zero contamination over automatic adaptation.
+2. **Low-Rate Slice-Level Recall Under Scaled Traffic**: In the aggregate slice window, subtle SYN flood trickle rates (50–200 pkt/s) embedded within high-volume real testbed flows (thousands of pkt/s) failed to exceed global aggregate anomaly thresholds for Arm A and Arm C (0.0% recall [0.0%, 20.4%]), while Arm B achieved only 6.7% recall [1.2%, 29.8%] due to threshold jitter from retrained baselines.
+3. **Operational Quarantine Burden**: By quarantining 100% of drift-affected windows (40.0 windows), CommShield successfully prevented 33.62% training contamination, but leaves the operational baseline frozen until security analysts inspect and approve candidate windows.
+
 
 This section documents the empirical findings, calibration results, and operational limitations of the per-device-class behavior models with split-conformal abstention evaluated on simulated Digital Twin streams (`simulated_twin`).
 
