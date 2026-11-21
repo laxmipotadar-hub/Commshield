@@ -16,6 +16,7 @@ from .api.investigation import router as investigation_router
 from .api.real import router as real_router
 from .api.replay import router as replay_router
 from .api.twin import router as twin_router
+from .api.twin_v2 import router as twin_v2_router
 from .api.validation import router as validation_router
 from .api.windows import list_windows
 from .database import Base, engine, get_db
@@ -53,10 +54,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for the operator dashboard
+# Enable CORS for the operator dashboard and remote Windows frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
+    allow_origin_regex=r"^https?://.*$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,6 +81,7 @@ app.include_router(investigation_router, prefix="/api")
 app.include_router(experiments_router, prefix="/api")
 app.include_router(demo_router, prefix="/api")
 app.include_router(twin_router, prefix="/api")
+app.include_router(twin_v2_router, prefix="/api")
 app.include_router(data_router, prefix="/api")
 app.include_router(real_router, prefix="/api")
 app.include_router(validation_router, prefix="/api")
