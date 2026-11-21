@@ -705,4 +705,132 @@ export const api = {
 
   // Demo Mode
   getDemoScenarios: () => request<DemoScenariosResponse>('/api/demo/scenarios'),
+
+  // Digital Twin
+  getDigitalTwinData: (scenario = 'approved_onboarding', source?: string, timeStep = 15) => {
+    const params = new URLSearchParams();
+    if (scenario) params.set('scenario', scenario);
+    if (source) params.set('source', source);
+    if (timeStep !== undefined) params.set('time_step', timeStep.toString());
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return request<DigitalTwinResponse>(`/api/digital-twin${qs}`);
+  },
 };
+
+export interface DigitalTwinNode {
+  id: string;
+  label: string;
+  type: string;
+  x: number;
+  y: number;
+  role: string;
+}
+
+export interface DigitalTwinLink {
+  source: string;
+  target: string;
+  label: string;
+  type: string;
+}
+
+export interface DigitalTwinSliceZone {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+}
+
+export interface DigitalTwinSlice {
+  slice_id: string;
+  name: string;
+  device_class: string;
+  color: string;
+  packet_rate_pps: number;
+  zone: DigitalTwinSliceZone;
+}
+
+export interface DigitalTwinDevice {
+  id: string;
+  device_id_hash: string;
+  device_class: 'sensor' | 'camera' | 'AGV' | string;
+  slice_id: string;
+  x: number;
+  y: number;
+  rate_pps: number;
+  verdict: 'benign' | 'attack' | 'uncertain' | 'quarantined';
+  action: 'none' | 'quarantine' | 'alert';
+  status_label: string;
+  is_onboarded: boolean;
+  visible: boolean;
+  is_provisioned: boolean;
+}
+
+export interface DigitalTwinBatchEvent {
+  batch_id: string;
+  start?: number;
+  end?: number;
+  count: number;
+  slice: string;
+}
+
+export interface DigitalTwinProvisioningCard {
+  total_catalog_sims: number;
+  total_batches: number;
+  batches: DigitalTwinBatchEvent[];
+  provisioned_share: number;
+  is_provisioned: boolean;
+  matched_event: DigitalTwinBatchEvent | null;
+  fitting_volume: boolean;
+  verdict: string;
+  action: string;
+  action_description: string;
+}
+
+export interface ContaminationMeterData {
+  name: string;
+  contamination_mean: number;
+  contamination_ci_95: [number, number];
+  fpr_mean: number;
+  onboardings_adapted: number;
+}
+
+export interface DigitalTwinDecisionStep {
+  step: number;
+  name: string;
+  result: string;
+  status: string;
+}
+
+export interface DigitalTwinResponse {
+  generated_at: string;
+  source: 'simulated_twin' | 'lab' | 'real_recorded' | string;
+  source_badge: 'Simulated twin' | 'Live lab' | 'Real recorded' | string;
+  lab_validated: boolean;
+  scenario: string;
+  available_scenarios: string[];
+  time_step: number;
+  topology: {
+    nodes: DigitalTwinNode[];
+    links: DigitalTwinLink[];
+  };
+  slices: DigitalTwinSlice[];
+  devices: DigitalTwinDevice[];
+  provisioning_card: DigitalTwinProvisioningCard;
+  contamination_meters: {
+    naive: ContaminationMeterData;
+    commshield_base: ContaminationMeterData;
+    commshield_twin: ContaminationMeterData;
+  };
+  decision_trace: DigitalTwinDecisionStep[];
+  saved_metrics_reference: {
+    summary_file: string;
+    window_counts_file: string;
+    provisioning_file: string;
+    change_events_file: string;
+    aggregate_windows: number;
+    device_windows: number;
+    slice_windows: number;
+    aggregate_device_counts: Record<string, number>;
+  };
+}

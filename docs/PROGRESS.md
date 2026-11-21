@@ -272,6 +272,38 @@ Split-conformal calibration has been integrated into the attribution layer to pr
 5. **Automated Unit Tests (`lab/test_adapter.py`)**:
    - 6 automated unit tests passing using sample logs only (never a running core).
 
+## Milestone Status: 5G Slice Digital Twin & Floor Map Telemetry Route
+
+1. **Digital Twin API (`backend/app/api/twin.py`)**:
+   - Implemented `GET /api/v1/digital-twin` (and `/api/digital-twin`) serving floor map topology, device coordinates, packet rates, split-conformal verdicts, provisioning evidence, contamination meters, and decision traces.
+   - Sourced all metrics strictly from saved result files (`experiments/results/twin/three_arm_twin_summary.json`, `data/twin/provisioning.json`, `data/twin/change_events.json`, `experiments/results/twin/window_counts.json`) with zero invented figures.
+   - Dynamically validates `data/lab/windows.jsonl` via `ml_engine.provisioning.schema.validate_window()`, displaying "Live lab" badge only when validated, otherwise "Simulated twin" or "Real recorded".
+
+2. **Interactive Floor Map & Device Visualization (`frontend/src/views/DigitalTwinView.tsx`)**:
+   - Interactive SVG floor map displaying devices grouped across three network slices: Camera Array (eMBB), Autonomous Vehicle Track (URLLC), and Industrial Sensor Mesh (mMTC).
+   - Core 5G infrastructure nodes: `gNodeB-01` (RAN), `AMF-01` (Access & Mobility Control), `SMF-01` (Session Management Control), and `UPF-01` (GTP-U User Plane Gateway) interconnected via N2, N3, N11, and N4 links.
+   - Device node color-coded by verdict: `benign` (#10B981 emerald), `attack` (#EF4444 red), `uncertain` (#F59E0B amber), and `quarantined` (#8B5CF6 purple).
+
+3. **Packet Flow Animation, Batch Onboarding & Quarantine Effects**:
+   - Packet particle animation along links running at device class rates (sensors: 10 pps, cameras: 41.25 pps, AGVs: 80.0 pps).
+   - Dynamic onboarding progression across 30 replay steps: newly onboarded devices appear at $t=10\text{m}$ (Batch 1) and $t=20\text{m}$ (Batch 2) with arrival pulses.
+   - Quarantine isolation effect: pulsing containment ring and lock glyph on flagged/abstained devices.
+   - Full accessibility support: respects `@media (prefers-reduced-motion: reduce)` and includes an interactive Reduced Motion toggle that halts particles and pulsing rings.
+
+4. **Provisioning Card, Contamination Meters & Decision Trace**:
+   - Provisioning card: displays total catalog SIMs (200), active provisioned share, matched change event batch ID and scheduled volume, volume scaling consistency, and gate verdict.
+   - Two contamination meters: side-by-side visual gauges comparing Naive Retraining vs CommShield Twin with exact mean and 95% bootstrap confidence intervals.
+   - 5-step sequential decision trace detailing volume scaling multiplier $k$, JSD divergence, provisioning catalog check, per-device conformal bounds, and governance gate action.
+
+5. **Verification & Tests (`backend/tests/test_digital_twin_api.py`)**:
+   - Verified that the API supplies every single number displayed on the frontend page directly from saved result files.
+   - Verified dynamic source badge logic under simulated twin and live lab modes.
+   - Verified frontend production build compiles cleanly without errors (`tsc && vite build`).
+   - Execution commands:
+     - PowerShell: `python -m unittest backend\tests\test_digital_twin_api.py -v; cd frontend; npm run build`
+     - Bash: `python3 -m unittest backend/tests/test_digital_twin_api.py -v && npm --prefix frontend run build`
+
+
 
 
 

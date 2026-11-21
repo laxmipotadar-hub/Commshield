@@ -8,6 +8,7 @@ import {
 import {
   AlertOctagon,
   Check,
+  Cpu,
   Database,
   GitBranch,
   Key,
@@ -32,6 +33,7 @@ import { AttributionView } from './views/AttributionView';
 import { GovernanceView } from './views/GovernanceView';
 import { InvestigationView } from './views/InvestigationView';
 import { ExperimentsView } from './views/ExperimentsView';
+import { DigitalTwinView } from './views/DigitalTwinView';
 import { ReplayProvider, SCENARIOS, ScenarioId, useReplay } from './context/ReplayContext';
 import { DemoProvider } from './context/DemoContext';
 
@@ -49,6 +51,7 @@ const navItems: NavItem[] = [
   { name: 'Baseline Governance', to: '/governance', icon: <ShieldCheck className="w-4 h-4" /> },
   { name: 'Investigation', to: '/investigation', icon: <Search className="w-4 h-4" /> },
   { name: 'Experiment Comparison', to: '/experiments', icon: <Sliders className="w-4 h-4" /> },
+  { name: 'Digital Twin', to: '/digital-twin', icon: <Cpu className="w-4 h-4" /> },
 ];
 
 const AppLayout: React.FC = () => {
@@ -291,6 +294,7 @@ const AppLayout: React.FC = () => {
               <Route path="/investigation" element={<InvestigationView />} />
               <Route path="/investigation/:id" element={<InvestigationView />} />
               <Route path="/experiments" element={<ExperimentsView />} />
+              <Route path="/digital-twin" element={<DigitalTwinView />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

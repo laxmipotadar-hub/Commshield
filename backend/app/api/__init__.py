@@ -8,6 +8,7 @@ from .experiments import router as experiments_router
 from .governance import router as governance_router
 from .investigation import router as investigation_router
 from .replay import router as replay_router
+from .twin import router as twin_router
 from .windows import router as windows_router
 
 api_router = APIRouter(prefix="/api/v1")
@@ -20,5 +21,6 @@ api_router.include_router(attribution_router)
 api_router.include_router(investigation_router)
 api_router.include_router(experiments_router)
 api_router.include_router(demo_router)
+api_router.include_router(twin_router)
 
 __all__ = ["api_router"]

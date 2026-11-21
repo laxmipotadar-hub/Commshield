@@ -13,6 +13,7 @@ from .api.experiments import router as experiments_router
 from .api.governance import router as governance_router
 from .api.investigation import router as investigation_router
 from .api.replay import router as replay_router
+from .api.twin import router as twin_router
 from .api.windows import list_windows
 from .database import Base, engine, get_db
 from .schemas import PaginatedWindowsResponse
@@ -69,6 +70,7 @@ app.include_router(attribution_router, prefix="/api")
 app.include_router(investigation_router, prefix="/api")
 app.include_router(experiments_router, prefix="/api")
 app.include_router(demo_router, prefix="/api")
+app.include_router(twin_router, prefix="/api")
 app.get("/api/traffic/windows", response_model=PaginatedWindowsResponse, tags=["Windows & Detection"])(list_windows)
 
 
