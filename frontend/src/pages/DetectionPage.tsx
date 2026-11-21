@@ -5,14 +5,12 @@ import {
   CheckCircle2,
   Cpu,
   Eye,
-  Info,
   Layers,
   Search,
   Zap,
 } from 'lucide-react';
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ReferenceLine,
@@ -22,11 +20,9 @@ import {
   YAxis,
 } from 'recharts';
 import {
-  ChartCard,
   Column,
   DataTable,
   DataSourceBadge,
-  EmptyState,
   ErrorState,
   LoadingState,
   StatusBadge,
@@ -44,6 +40,53 @@ interface WindowDetectionRecord {
   output?: DetectorOutput;
 }
 
+// Helper SVG Radial Gauge matching Stitch design
+const RadialGauge: React.FC<{
+  percentile: number;
+  label: string;
+  colorClass: string;
+  strokeColor: string;
+}> = ({ percentile, label, colorClass, strokeColor }) => {
+  const clamped = Math.max(0, Math.min(100, percentile));
+  // Arc length is 141.37 (r=45 on semicircle)
+  const totalArc = 141.37;
+  const dashoffset = totalArc - (clamped / 100) * totalArc;
+
+  return (
+    <div className="flex flex-col items-center my-2 relative">
+      <svg className="w-28 h-20" viewBox="0 0 120 70">
+        <path
+          className="text-surface-variant dark:text-slate-800"
+          d="M 15 65 A 45 45 0 0 1 105 65"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="9"
+        />
+        <path
+          d="M 15 65 A 45 45 0 0 1 105 65"
+          fill="none"
+          stroke={strokeColor}
+          strokeDasharray={totalArc}
+          strokeDashoffset={dashoffset}
+          strokeLinecap="round"
+          strokeWidth="9"
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute bottom-0 text-center">
+        <span className={`font-metric-stat text-metric-stat font-bold ${colorClass}`}>
+          {clamped.toFixed(0)}
+          <span className="text-body-xs font-normal text-on-surface-variant">th</span>
+        </span>
+        <span className="block font-label-mono text-[10px] text-on-surface-variant -mt-1">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export const DetectionPage: React.FC = () => {
   const { pollTick } = useReplay();
   const navigate = useNavigate();
@@ -55,6 +98,7 @@ export const DetectionPage: React.FC = () => {
   const [realDetection, setRealDetection] = useState<RealDetectionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'ensemble' | 'individual'>('ensemble');
 
   // Fetch telemetry windows
   const fetchWindows = async (isInitial = false) => {
@@ -163,7 +207,7 @@ export const DetectionPage: React.FC = () => {
           ae_percentile: aePct,
           fused_percentile: fusedPct,
           cusum_score: Number((sw.anomaly_score * 5.0).toFixed(2)),
-          alarm_threshold: 70.0,
+          alarm_threshold: 4.5,
           is_alarm: isAlarm,
           agreement: sw.anomaly_score > 0.7 ? 'both_fired' : 'neither',
         };
@@ -212,13 +256,15 @@ export const DetectionPage: React.FC = () => {
 
   const agreementState = activeOutput?.fusion?.agreement_state || 'neither';
   const cusumStat = activeOutput?.cusum?.accumulated_statistic ?? 0.0;
-  const cusumStatus = activeOutput?.cusum?.status || (cusumStat >= 4.5 ? 'triggered' : cusumStat > 0 ? 'accumulating' : 'idle');
   const cusumIsAlarm = activeOutput?.cusum?.is_alarm ?? false;
 
-  // Normalize agreement state display
+  // Selected window object
+  const selectedWindow = useMemo(() => {
+    return windows.find((w) => w.window_id === selectedWindowId) || windows[0];
+  }, [windows, selectedWindowId]);
+
+  // Normalized agreement state display
   const isBothFired = agreementState === 'both_fired' || agreementState === 'BOTH_FIRE';
-  const isIfOnly = agreementState === 'only_isolation_forest' || agreementState === 'IF_ONLY';
-  const isAeOnly = agreementState === 'only_autoencoder' || agreementState === 'AE_ONLY';
   const isNeither = agreementState === 'neither' || agreementState === 'NONE';
 
   // Agreement State badge variant
@@ -243,7 +289,7 @@ export const DetectionPage: React.FC = () => {
       render: (w) => (
         <span
           className={`font-mono text-xs cursor-pointer hover:underline ${
-            w.window_id === selectedWindowId ? 'font-bold text-blue' : 'text-text'
+            w.window_id === selectedWindowId ? 'font-bold text-primary dark:text-blue-400' : 'text-on-surface'
           }`}
           onClick={() => setSelectedWindowId(w.window_id)}
         >
@@ -254,7 +300,7 @@ export const DetectionPage: React.FC = () => {
     {
       key: 'slice_id',
       header: 'Slice S-NSSAI',
-      render: (w) => <span className="text-xs font-semibold text-slate">{w.slice_id}</span>,
+      render: (w) => <span className="text-xs font-semibold text-secondary dark:text-slate-300">{w.slice_id}</span>,
     },
     {
       key: 'window_time',
@@ -262,7 +308,7 @@ export const DetectionPage: React.FC = () => {
       render: (w) => {
         const d = new Date(w.window_start);
         return (
-          <span className="text-xs font-mono text-muted">
+          <span className="text-xs font-mono text-on-surface-variant">
             {isNaN(d.getTime()) ? w.window_start.slice(11, 19) : d.toLocaleTimeString()}
           </span>
         );
@@ -275,7 +321,7 @@ export const DetectionPage: React.FC = () => {
         const out = detectionMap[w.window_id];
         const val = out?.isolation_forest?.benign_percentile;
         return (
-          <span className={`text-xs font-mono ${val !== undefined && val >= 95 ? 'text-attack font-bold' : 'text-text'}`}>
+          <span className={`text-xs font-mono ${val !== undefined && val >= 95 ? 'text-error font-bold' : 'text-on-surface'}`}>
             {val !== undefined ? `${val.toFixed(1)}%` : '—'}
           </span>
         );
@@ -290,11 +336,11 @@ export const DetectionPage: React.FC = () => {
         const pct = out?.autoencoder?.benign_percentile;
         return (
           <div className="flex flex-col">
-            <span className={`text-xs font-mono ${pct != null && pct >= 95 ? 'text-attack font-bold' : 'text-text'}`}>
+            <span className={`text-xs font-mono ${pct != null && pct >= 95 ? 'text-error font-bold' : 'text-on-surface'}`}>
               {pct != null ? `${pct.toFixed(1)}%` : '—'}
             </span>
             {mse != null && (
-              <span className="text-[10px] font-mono text-muted">
+              <span className="text-[10px] font-mono text-on-surface-variant">
                 MSE: {mse.toFixed(4)}
               </span>
             )}
@@ -309,7 +355,7 @@ export const DetectionPage: React.FC = () => {
         const out = detectionMap[w.window_id];
         const val = out?.fusion?.fused_percentile;
         return (
-          <span className={`text-xs font-mono font-bold ${val !== undefined && val >= 95 ? 'text-attack' : 'text-slate'}`}>
+          <span className={`text-xs font-mono font-bold ${val !== undefined && val >= 95 ? 'text-error' : 'text-secondary dark:text-slate-300'}`}>
             {val !== undefined ? `${val.toFixed(1)}%` : '—'}
           </span>
         );
@@ -351,10 +397,10 @@ export const DetectionPage: React.FC = () => {
               e.stopPropagation();
               setSelectedWindowId(w.window_id);
             }}
-            className={`px-2 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium transition-colors ${
+            className={`px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium transition-colors ${
               w.window_id === selectedWindowId
-                ? 'bg-blue text-white shadow-sm'
-                : 'bg-bg text-slate hover:bg-slate/10 border border-border'
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-surface-container-low text-on-surface hover:bg-surface-container border border-outline-variant/60'
             }`}
           >
             <Eye className="w-3 h-3" />
@@ -365,7 +411,7 @@ export const DetectionPage: React.FC = () => {
               e.stopPropagation();
               navigate(`/investigation/${w.window_id}`);
             }}
-            className="px-2 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-bg text-blue hover:bg-blue/10 border border-blue/20 transition-colors shadow-sm"
+            className="px-2.5 py-1 text-xs rounded-lg inline-flex items-center gap-1 font-medium bg-surface-container-lowest text-primary hover:bg-primary/10 border border-primary/30 transition-colors shadow-sm"
           >
             <Search className="w-3 h-3" />
             <span>Investigate</span>
@@ -383,437 +429,503 @@ export const DetectionPage: React.FC = () => {
     return <ErrorState title="Detection Error" message={error} onRetry={() => fetchWindows(true)} />;
   }
 
+  const isSevere = fusedPct >= 95.0 || isAnomalous || cusumIsAlarm;
+
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text">Anomaly Detection</h1>
-          <p className="text-sm text-muted mt-0.5">
-            Multi-model unsupervised scoring (Isolation Forest + Dense Autoencoder), calibrated percentiles, and CUSUM tracking.
+    <div className="flex flex-col w-full gap-space-lg pb-space-2xl">
+      {/* 1. Investigation Context Header Banner matching Stitch */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest dark:bg-card p-space-lg rounded-xl shadow-sm border border-outline-variant/40 dark:border-border">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-space-xs font-label-mono text-body-xs text-on-surface-variant flex-wrap">
+            <span>DETECTION</span>
+            <span className="text-outline">/</span>
+            <span>MULTI-MODEL INFERENCE</span>
+            <span className="text-outline">/</span>
+            <span className="text-primary font-medium">WINDOW #{selectedWindowId ? selectedWindowId.slice(0, 14) : 'LIVE'}</span>
+            {isSevere ? (
+              <span className="px-2 py-0.5 ml-2 rounded-full bg-error-container text-on-error-container font-badge-status text-badge-status tracking-wider">
+                ANOMALY FLAGGED
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 ml-2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-badge-status text-badge-status tracking-wider">
+                NOMINAL FLOW
+              </span>
+            )}
+          </div>
+          <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
+            Anomaly Detection & Multi-Model Inference
+          </h1>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            Active 5G core telemetry analysis with concurrent non-parametric drift scoring across slices.
           </p>
         </div>
-        <div className="flex items-center gap-2.5 flex-wrap">
+
+        {/* Controls Row */}
+        <div className="flex flex-wrap items-center gap-space-sm">
+          {/* Mode Toggle Segmented Control */}
+          <div className="flex items-center p-1 bg-surface-container-low dark:bg-bg rounded-lg border border-outline-variant/50 dark:border-border">
+            <button
+              onClick={() => setViewMode('ensemble')}
+              className={`px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold transition-all flex items-center gap-1.5 ${
+                viewMode === 'ensemble'
+                  ? 'bg-surface-container-lowest dark:bg-card text-primary shadow-sm'
+                  : 'text-secondary hover:text-on-surface'
+              }`}
+            >
+              <Cpu className="w-4 h-4 text-primary" />
+              Ensemble Mode
+            </button>
+            <button
+              onClick={() => setViewMode('individual')}
+              className={`px-3 py-1.5 rounded-lg font-body-sm text-body-sm transition-all flex items-center gap-1.5 ${
+                viewMode === 'individual'
+                  ? 'bg-surface-container-lowest dark:bg-card text-primary shadow-sm font-semibold'
+                  : 'text-secondary hover:text-on-surface'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              Individual Models
+            </button>
+          </div>
+
           <DataSourceBadge />
+
           {selectedWindowId && (
-            <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-card border border-border text-muted">
-              Active: {selectedWindowId.slice(0, 8)}...
-            </span>
+            <button
+              onClick={() => navigate(`/investigation/${selectedWindowId}`)}
+              className="bg-primary text-on-primary px-3.5 py-1.5 rounded-lg font-body-sm text-body-sm font-medium hover:bg-surface-tint shadow-sm flex items-center gap-1.5 transition-colors"
+            >
+              <Search className="w-4 h-4" />
+              Drill-down Dossier
+            </button>
           )}
         </div>
       </div>
 
-      {/* Detector Score Panels (3 Columns: IF, AE, Fusion) with Real Values and Trend Lines */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 1. Isolation Forest Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-blue/10 text-blue">
-                  <Cpu className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-text">Isolation Forest</h3>
-                  <span className="text-[10px] text-muted uppercase font-medium">Unsupervised Tree Ensemble</span>
-                </div>
-              </div>
-              <StatusBadge
-                label={ifFlagged ? 'Flagged' : 'Normal'}
-                variant={ifFlagged ? 'attack' : 'safe'}
-                size="sm"
-                dot
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs text-muted">Benign Percentile</span>
-                <span className="text-xl font-bold font-mono text-text">
-                  {ifPct.toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${ifFlagged ? 'bg-attack' : 'bg-blue'}`}
-                  style={{ width: `${Math.min(100, ifPct)}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] text-muted">
-                <span>0% Nominal</span>
-                <span>Threshold: 95.0%</span>
-                <span>100% Anomalous</span>
-              </div>
-            </div>
-
-            {/* Sparkline / Trend Line */}
-            <div className="h-16 w-full pt-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={historyData}>
-                  <Line
-                    type="monotone"
-                    dataKey="if_percentile"
-                    stroke="#3478F6"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                  <ReferenceLine y={95} stroke="#DC2626" strokeDasharray="2 2" strokeOpacity={0.6} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted">
-            <div className="flex justify-between">
-              <span>Raw Score (Negated):</span>
-              <span className="font-mono text-slate font-medium">{ifRaw.toFixed(4)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Calibration Reference:</span>
-              <span className="font-medium text-slate">60 Benign Windows</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Autoencoder Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-teal/10 text-teal">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-text">Dense Autoencoder</h3>
-                  <span className="text-[10px] text-muted uppercase font-medium">Reconstruction MSE</span>
-                </div>
-              </div>
-              <StatusBadge
-                label={aeFlagged ? 'Flagged' : 'Normal'}
-                variant={aeFlagged ? 'attack' : 'safe'}
-                size="sm"
-                dot
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs text-muted">Benign Percentile</span>
-                <span className="text-xl font-bold font-mono text-text">
-                  {aePct.toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${aeFlagged ? 'bg-attack' : 'bg-teal'}`}
-                  style={{ width: `${Math.min(100, aePct)}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] text-muted">
-                <span>0% Nominal</span>
-                <span>Threshold: 95.0%</span>
-                <span>100% Anomalous</span>
-              </div>
-            </div>
-
-            {/* Sparkline / Trend Line */}
-            <div className="h-16 w-full pt-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={historyData}>
-                  <Line
-                    type="monotone"
-                    dataKey="ae_percentile"
-                    stroke="#14B8A6"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                  <ReferenceLine y={95} stroke="#DC2626" strokeDasharray="2 2" strokeOpacity={0.6} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted">
-            <div className="flex justify-between">
-              <span>Reconstruction MSE:</span>
-              <span className="font-mono text-slate font-medium">{aeMse.toFixed(4)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Architecture:</span>
-              <span className="font-medium text-slate">Dense PyTorch (9-6-3-6-9)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. Fused Score Panel */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-attack/10 text-attack">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-text">Fused Score</h3>
-                  <span className="text-[10px] text-muted uppercase font-medium">Max-Percentile Consensus</span>
-                </div>
-              </div>
-              <StatusBadge
-                label={isAnomalous ? 'Anomaly Alarm' : 'Nominal Stream'}
-                variant={isAnomalous ? 'attack' : 'safe'}
-                size="sm"
-                dot
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs text-muted">Fused Percentile</span>
-                <span className="text-2xl font-bold font-mono text-text">
-                  {fusedPct.toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-border">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${isAnomalous ? 'bg-attack' : 'bg-safe'}`}
-                  style={{ width: `${Math.min(100, fusedPct)}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] text-muted">
-                <span>Rule: MAX_PERCENTILE</span>
-                <span className="font-semibold text-slate">Mean: {secondaryMean.toFixed(1)}%</span>
-              </div>
-            </div>
-
-            {/* Sparkline / Trend Line */}
-            <div className="h-16 w-full pt-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={historyData}>
-                  <Line
-                    type="monotone"
-                    dataKey="fused_percentile"
-                    stroke="#DC2626"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                  <ReferenceLine y={95} stroke="#DC2626" strokeDasharray="2 2" strokeOpacity={0.6} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted">
-            <div className="flex justify-between">
-              <span>Agreement:</span>
-              <span className="font-semibold text-slate font-mono">{agreementState}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Active Baseline:</span>
-              <span className="font-mono text-slate">{activeOutput?.baseline_version || 'v1.0.0-anchor'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Middle Grid: CUSUM Trend & Detector Agreement */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: CUSUM Trend with Status & Trigger Marker */}
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="CUSUM Persistent Shift Tracking"
-            subtitle="Cumulative sum anomaly statistic across successive windows with trigger detection"
-            action={
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted">Status:</span>
-                <StatusBadge
-                  label={cusumStatus}
-                  variant={cusumStatus === 'triggered' ? 'attack' : cusumStatus === 'accumulating' ? 'suspicious' : 'safe'}
-                  size="sm"
-                  dot
-                />
-                {cusumIsAlarm && (
-                  <span className="text-xs font-bold text-attack flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    Alarm
-                  </span>
-                )}
-              </div>
-            }
+      {/* 2. Split View Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+        {/* LEFT 60%: Multi-Detector Diagnostic Panel */}
+        <div className="lg:col-span-7 flex flex-col gap-space-md">
+          {/* High Severity Fused Score Banner */}
+          <div
+            className={`relative overflow-hidden text-white p-space-md rounded-xl shadow-md ${
+              isSevere
+                ? 'bg-gradient-to-r from-error/90 via-error to-[#7a0606]'
+                : 'bg-gradient-to-r from-[#004ac6] via-[#1e3a8a] to-[#0a1628]'
+            }`}
           >
-            {historyData.length === 0 ? (
-              <EmptyState title="No CUSUM Telemetry" description="Start replay to generate cumulative anomaly tracking." />
-            ) : (
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={historyData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" />
-                    <YAxis tick={{ fontSize: 11, fill: '#64748B' }} stroke="#E2E8F0" domain={[0, 'auto']} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#FFFFFF',
-                        borderRadius: '8px',
-                        border: '1px solid #E2E8F0',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                    <ReferenceLine
-                      y={4.5}
-                      stroke="#DC2626"
-                      strokeDasharray="4 4"
-                      label={{ value: 'Alarm Threshold: 4.5', fill: '#DC2626', fontSize: 10, position: 'insideTopRight' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cusum_score"
-                      name="Accumulated CUSUM"
-                      stroke="#8B5CF6"
-                      strokeWidth={2}
-                      dot={(props: any) => {
-                        const { cx, cy, payload } = props;
-                        if (payload.is_alarm || payload.cusum_score >= 4.5) {
-                          return (
-                            <circle
-                              key={`trigger-${cx}-${cy}`}
-                              cx={cx}
-                              cy={cy}
-                              r={5}
-                              fill="#DC2626"
-                              stroke="#FFFFFF"
-                              strokeWidth={2}
-                            />
-                          );
-                        }
-                        return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={2} fill="#8B5CF6" />;
-                      }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </ChartCard>
-        </div>
-
-        {/* Right 1 Col: Detector Agreement Panel with Current State & History Strip */}
-        <div className="lg:col-span-1">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-4 h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <h3 className="text-sm font-semibold text-text">Detector Agreement State</h3>
-                <StatusBadge
-                  label={agreementState}
-                  variant={isBothFired ? 'attack' : (isIfOnly || isAeOnly) ? 'suspicious' : 'safe'}
-                  size="sm"
-                />
-              </div>
-
-              {/* Current Agreement State Cards */}
-              <div className="space-y-2 mt-4">
-                <div
-                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
-                    isBothFired ? 'border-attack bg-attack/10 font-bold' : 'border-border bg-bg/50 text-muted'
-                  }`}
-                >
-                  <span className="text-text">both_fired (Consensus Attack)</span>
-                  {isBothFired && <CheckCircle2 className="w-4 h-4 text-attack" />}
+            <div className="absolute -right-6 -bottom-6 w-36 h-36 rounded-full bg-white/5 blur-xl pointer-events-none" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm relative z-10">
+              <div className="flex items-center gap-space-md">
+                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  {isSevere ? (
+                    <AlertTriangle className="w-7 h-7 text-white animate-pulse" />
+                  ) : (
+                    <CheckCircle2 className="w-7 h-7 text-emerald-300" />
+                  )}
                 </div>
-
-                <div
-                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
-                    isIfOnly ? 'border-suspicious bg-suspicious/10 font-bold' : 'border-border bg-bg/50 text-muted'
-                  }`}
-                >
-                  <span className="text-text">only_isolation_forest (Tree Alone)</span>
-                  {isIfOnly && <CheckCircle2 className="w-4 h-4 text-suspicious" />}
-                </div>
-
-                <div
-                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
-                    isAeOnly ? 'border-suspicious bg-suspicious/10 font-bold' : 'border-border bg-bg/50 text-muted'
-                  }`}
-                >
-                  <span className="text-text">only_autoencoder (Recon Alone)</span>
-                  {isAeOnly && <CheckCircle2 className="w-4 h-4 text-suspicious" />}
-                </div>
-
-                <div
-                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
-                    isNeither ? 'border-safe bg-safe/10 font-bold' : 'border-border bg-bg/50 text-muted'
-                  }`}
-                >
-                  <span className="text-text">neither (All Detectors Nominal)</span>
-                  {isNeither && <CheckCircle2 className="w-4 h-4 text-safe" />}
-                </div>
-              </div>
-
-              {/* Agreement History Strip */}
-              <div className="mt-4 pt-3 border-t border-border">
-                <span className="text-xs font-semibold text-text block mb-1.5">Agreement History Strip</span>
-                {historyData.length === 0 ? (
-                  <span className="text-[11px] text-muted">Awaiting replay telemetry...</span>
-                ) : (
-                  <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                    {historyData.map((h, idx) => {
-                      const state = h.agreement;
-                      const color =
-                        state === 'both_fired' || state === 'BOTH_FIRE'
-                          ? 'bg-attack'
-                          : state === 'only_isolation_forest' || state === 'IF_ONLY' || state === 'only_autoencoder' || state === 'AE_ONLY'
-                          ? 'bg-suspicious'
-                          : 'bg-safe';
-                      const isSel = h.window_id === selectedWindowId;
-                      return (
-                        <div
-                          key={`strip-${idx}`}
-                          onClick={() => setSelectedWindowId(h.window_id)}
-                          title={`${h.time}: ${state}`}
-                          className={`h-6 w-3.5 rounded-sm cursor-pointer transition-all ${color} ${
-                            isSel ? 'ring-2 ring-blue scale-110 shadow-sm' : 'opacity-80 hover:opacity-100'
-                          }`}
-                        />
-                      );
-                    })}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-label-mono text-body-xs tracking-wider uppercase opacity-90">
+                      Ensemble Fused Anomaly Score
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-white/20 text-white font-badge-status text-badge-status tracking-widest uppercase">
+                      {fusedPct >= 95 ? 'P95+ CRITICAL' : 'P50 NOMINAL'}
+                    </span>
                   </div>
-                )}
-                <div className="flex justify-between text-[10px] text-muted mt-1">
-                  <span>Earliest</span>
-                  <span>Latest window</span>
+                  <div className="flex items-baseline gap-2 mt-0.5">
+                    <span className="font-display-lg text-display-lg font-bold tracking-tight">
+                      {fusedPct.toFixed(1)}
+                    </span>
+                    <span className="font-headline-md text-headline-md opacity-80">/ 100</span>
+                    <span className="font-label-mono text-body-xs bg-black/25 px-2 py-0.5 rounded ml-2">
+                      Secondary Mean: {secondaryMean.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="px-3 py-1 rounded bg-black/30 font-label-mono text-body-xs font-semibold tracking-wider flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${isSevere ? 'bg-error animate-ping' : 'bg-emerald-400'}`} />
+                  {isSevere ? 'ACTION TRIGGERED' : 'MONITORING NOMINAL FLOW'}
+                </span>
+                <span className="font-body-xs text-body-xs opacity-75 mt-1">
+                  Baseline: {activeOutput?.baseline_version || 'v1.0.0-anchor'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Detector Cards Grid matching Stitch radial gauges */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+            {/* Detector 1: Isolation Forest */}
+            <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-space-xs">
+                  <span className="font-title-sm text-title-sm font-semibold text-on-surface">Isolation Forest</span>
+                  <span className={`px-1.5 py-0.5 rounded font-label-mono text-[10px] font-bold ${
+                    ifFlagged ? 'bg-error-container text-on-error-container' : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                  }`}>
+                    {ifFlagged ? 'ALERT' : 'NOMINAL'}
+                  </span>
+                </div>
+                <p className="font-body-xs text-body-xs text-on-surface-variant">Tree-path depth metric</p>
+              </div>
+
+              <RadialGauge
+                percentile={ifPct}
+                label="Percentile"
+                colorClass={ifFlagged ? 'text-error' : 'text-primary dark:text-blue-400'}
+                strokeColor={ifFlagged ? '#ba1a1a' : '#2563eb'}
+              />
+
+              <div className="flex flex-col gap-1.5 pt-2 bg-surface-container-low dark:bg-bg p-2 rounded-lg font-label-mono text-body-xs border border-outline-variant/30 dark:border-border/60">
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Raw Score:</span>
+                  <span className="font-semibold text-on-surface">{ifRaw.toFixed(4)}</span>
+                </div>
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Reference:</span>
+                  <span className="font-semibold text-on-surface">60 Windows</span>
+                </div>
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Threshold:</span>
+                  <span className="font-semibold text-primary dark:text-blue-400">95.0%</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-bg border border-border text-xs text-muted flex items-start gap-2 mt-2">
-              <Info className="w-4 h-4 text-blue flex-shrink-0 mt-0.5" />
-              <p>
-                Consensus scoring fuses Isolation Forest and Autoencoder percentiles. When either crosses 95%, the fused score triggers.
-              </p>
+            {/* Detector 2: Autoencoder */}
+            <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-space-xs">
+                  <span className="font-title-sm text-title-sm font-semibold text-on-surface">Autoencoder</span>
+                  <span className={`px-1.5 py-0.5 rounded font-label-mono text-[10px] font-bold ${
+                    aeFlagged ? 'bg-error-container text-on-error-container' : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                  }`}>
+                    {aeFlagged ? 'LOSS SPIKE' : 'NORMAL'}
+                  </span>
+                </div>
+                <p className="font-body-xs text-body-xs text-on-surface-variant">Reconstruction MSE</p>
+              </div>
+
+              <RadialGauge
+                percentile={aePct}
+                label="Percentile"
+                colorClass={aeFlagged ? 'text-error' : 'text-teal-600 dark:text-teal-400'}
+                strokeColor={aeFlagged ? '#ba1a1a' : '#007d57'}
+              />
+
+              <div className="flex flex-col gap-1.5 pt-2 bg-surface-container-low dark:bg-bg p-2 rounded-lg font-label-mono text-body-xs border border-outline-variant/30 dark:border-border/60">
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>MSE Loss:</span>
+                  <span className={`font-semibold ${aeFlagged ? 'text-error' : 'text-on-surface'}`}>{aeMse.toFixed(4)}</span>
+                </div>
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Network:</span>
+                  <span className="font-semibold text-on-surface">9-6-3-6-9</span>
+                </div>
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Threshold:</span>
+                  <span className="font-semibold text-primary dark:text-blue-400">95.0%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Detector 3: Bayesian Fusion / Fused Consensus */}
+            <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-space-xs">
+                  <span className="font-title-sm text-title-sm font-semibold text-on-surface">Fused Consensus</span>
+                  <span className="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-mono text-[10px] font-bold">
+                    {agreementState.toUpperCase()}
+                  </span>
+                </div>
+                <p className="font-body-xs text-body-xs text-on-surface-variant">Max-percentile rule</p>
+              </div>
+
+              <RadialGauge
+                percentile={fusedPct}
+                label="Percentile"
+                colorClass={isAnomalous ? 'text-error' : 'text-primary dark:text-blue-400'}
+                strokeColor={isAnomalous ? '#ba1a1a' : '#004ac6'}
+              />
+
+              <div className="flex flex-col gap-1.5 pt-2 bg-surface-container-low dark:bg-bg p-2 rounded-lg font-label-mono text-body-xs border border-outline-variant/30 dark:border-border/60">
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Rule:</span>
+                  <span className="font-semibold text-on-surface">MAX_PERCENTILE</span>
+                </div>
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Secondary:</span>
+                  <span className="font-semibold text-on-surface">{secondaryMean.toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between text-on-surface-variant">
+                  <span>Verdict:</span>
+                  <span className={`font-semibold ${isAnomalous ? 'text-error' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {isAnomalous ? 'ANOMALOUS' : 'NOMINAL'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Attribution Card matching Stitch */}
+          <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border">
+            <div className="flex items-center justify-between mb-space-sm">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="font-title-sm text-title-sm font-semibold text-on-surface">
+                  Multi-Model Feature Attribution (Calibrated Ratios)
+                </span>
+              </div>
+              <span className="font-label-mono text-body-xs text-on-surface-variant">
+                Target: {selectedWindow?.slice_id || 'eMBB-HighCap'}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <div className="flex justify-between font-body-sm text-body-sm mb-1">
+                  <span className="font-medium text-on-surface">GTP / Packet Rate Volatility</span>
+                  <span className="font-label-mono text-primary dark:text-blue-400 font-semibold">
+                    {selectedWindow?.raw_counters
+                      ? `${(selectedWindow.raw_counters['packet_count'] ?? selectedWindow.raw_counters['packets'] ?? 0).toLocaleString()} pkts`
+                      : 'Nominal'}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-surface-container dark:bg-slate-800">
+                  <div className="h-2 rounded-full bg-primary" style={{ width: `${Math.min(100, Math.max(15, fusedPct))}%` }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between font-body-sm text-body-sm mb-1">
+                  <span className="font-medium text-on-surface">Byte Volume Rate</span>
+                  <span className="font-label-mono text-primary-container dark:text-blue-300 font-semibold">
+                    {selectedWindow?.raw_counters
+                      ? `${((selectedWindow.raw_counters['byte_count'] ?? selectedWindow.raw_counters['bytes'] ?? 0) / (1024 * 1024)).toFixed(2)} MB`
+                      : 'Nominal'}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-surface-container dark:bg-slate-800">
+                  <div className="h-2 rounded-full bg-primary-container" style={{ width: `${Math.min(100, Math.max(10, ifPct))}%` }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between font-body-sm text-body-sm mb-1">
+                  <span className="font-medium text-on-surface">Reconstruction Residual Variance</span>
+                  <span className="font-label-mono text-secondary dark:text-slate-300 font-semibold">
+                    MSE: {aeMse.toFixed(4)} ({aePct.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-surface-container dark:bg-slate-800">
+                  <div className="h-2 rounded-full bg-secondary" style={{ width: `${Math.min(100, Math.max(8, aePct))}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT 40%: CUSUM Drift & Agreement Timeline matching Stitch */}
+        <div className="lg:col-span-5 flex flex-col gap-space-md">
+          {/* CUSUM Sequential Drift Card */}
+          <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-error" />
+                <span className="font-title-sm text-title-sm font-semibold text-on-surface">
+                  CUSUM Sequential Drift (H = 4.5σ)
+                </span>
+              </div>
+              <span className={`px-2 py-0.5 rounded font-label-mono text-[10px] font-bold ${
+                cusumIsAlarm
+                  ? 'bg-error-container text-on-error-container'
+                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+              }`}>
+                {cusumIsAlarm ? 'ALARM TRIGGERED' : `STAT: ${cusumStat.toFixed(2)}`}
+              </span>
+            </div>
+            <p className="font-body-xs text-body-xs text-on-surface-variant mb-3">
+              Continuous cumulative deviation monitoring indicating persistent state shift across successive windows.
+            </p>
+
+            <div className="h-44 w-full bg-surface-container-low dark:bg-bg rounded-lg p-2 border border-outline-variant/30 dark:border-border/60">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={historyData} margin={{ top: 8, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CBD5E1" opacity={0.5} />
+                  <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748B' }} stroke="#CBD5E1" />
+                  <YAxis tick={{ fontSize: 9, fill: '#64748B' }} stroke="#CBD5E1" domain={[0, 'auto']} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '8px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <ReferenceLine
+                    y={4.5}
+                    stroke="#ba1a1a"
+                    strokeDasharray="4 4"
+                    label={{ value: 'H=4.5', fill: '#ba1a1a', fontSize: 9, position: 'insideTopRight' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="cusum_score"
+                    stroke="#ba1a1a"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-label-mono text-outline pt-2">
+              <span>Earliest Window</span>
+              <span className={cusumIsAlarm ? 'text-error font-bold' : 'text-on-surface'}>
+                Current Stat: {cusumStat.toFixed(2)}σ
+              </span>
+              <span>Latest Window</span>
+            </div>
+          </div>
+
+          {/* Detector Agreement Heat Track Card */}
+          <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col justify-between flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-primary" />
+                <span className="font-title-sm text-title-sm font-semibold text-on-surface">
+                  Detector Agreement Heat Track
+                </span>
+              </div>
+              <span className="font-label-mono text-body-xs text-on-surface-variant">
+                State: {agreementState}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3 py-2">
+              {/* Row 1: Isolation Forest */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center text-[11px] font-label-mono text-on-surface">
+                  <span className="font-semibold">Isolation Forest</span>
+                  <span className={ifPct >= 95 ? 'text-error font-medium' : 'text-secondary'}>
+                    {ifPct.toFixed(1)}% Pctl
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                  {historyData.map((h, i) => (
+                    <div
+                      key={`if-${i}`}
+                      onClick={() => setSelectedWindowId(h.window_id)}
+                      title={`${h.time}: IF ${h.if_percentile}%`}
+                      className={`h-4 flex-1 min-w-[10px] rounded-xs cursor-pointer transition-all ${
+                        h.if_percentile >= 95 ? 'bg-error' : h.if_percentile >= 80 ? 'bg-primary-container' : 'bg-surface-container-high dark:bg-slate-700'
+                      } ${h.window_id === selectedWindowId ? 'ring-2 ring-primary scale-110' : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 2: Autoencoder */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center text-[11px] font-label-mono text-on-surface">
+                  <span className="font-semibold">Autoencoder Loss</span>
+                  <span className={aePct >= 95 ? 'text-error font-medium' : 'text-secondary'}>
+                    {aePct.toFixed(1)}% Pctl
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                  {historyData.map((h, i) => (
+                    <div
+                      key={`ae-${i}`}
+                      onClick={() => setSelectedWindowId(h.window_id)}
+                      title={`${h.time}: AE ${h.ae_percentile}%`}
+                      className={`h-4 flex-1 min-w-[10px] rounded-xs cursor-pointer transition-all ${
+                        h.ae_percentile >= 95 ? 'bg-error' : h.ae_percentile >= 80 ? 'bg-tertiary-container' : 'bg-surface-container-high dark:bg-slate-700'
+                      } ${h.window_id === selectedWindowId ? 'ring-2 ring-primary scale-110' : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 3: Consensus Agreement */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center text-[11px] font-label-mono text-on-surface">
+                  <span className="font-semibold">Consensus Agreement</span>
+                  <span className={isBothFired ? 'text-error font-bold' : 'text-secondary'}>
+                    {isBothFired ? 'Consensus Attack' : isNeither ? 'Nominal' : 'Single Detector'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                  {historyData.map((h, i) => {
+                    const c =
+                      h.agreement === 'both_fired' || h.agreement === 'BOTH_FIRE'
+                        ? 'bg-error'
+                        : h.agreement === 'neither' || h.agreement === 'NONE'
+                        ? 'bg-surface-container-high dark:bg-slate-700'
+                        : 'bg-primary-container';
+                    return (
+                      <div
+                        key={`cn-${i}`}
+                        onClick={() => setSelectedWindowId(h.window_id)}
+                        title={`${h.time}: ${h.agreement}`}
+                        className={`h-4 flex-1 min-w-[10px] rounded-xs cursor-pointer transition-all ${c} ${
+                          h.window_id === selectedWindowId ? 'ring-2 ring-primary scale-110' : ''
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-body-xs font-label-mono text-on-surface-variant pt-2 border-t border-outline-variant/30 dark:border-border/60">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-surface-container-high dark:bg-slate-700" />
+                <span>Nominal</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-primary-container" />
+                <span>Single Warning</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-error" />
+                <span>Consensus Breach</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Anomaly Windows Table with All Columns and Status Badge per Row */}
-      <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-text">Recent Telemetry Windows</h2>
-            <p className="text-xs text-muted">
-              Click &quot;Inspect&quot; on any window row to view its multi-model anomaly scoring and calibrated percentiles.
-            </p>
+      {/* 3. High-Fidelity 5G Ingress Packet Flow Diagnostics Table matching Stitch */}
+      <div className="bg-surface-container-lowest dark:bg-card rounded-xl shadow-sm border border-outline-variant/40 dark:border-border overflow-hidden flex flex-col">
+        <div className="p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-lowest dark:bg-card border-b border-outline-variant/30 dark:border-border">
+          <div className="flex items-center gap-space-sm">
+            <div className="p-2 rounded-lg bg-surface-container-low dark:bg-bg text-primary">
+              <Search className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-title-sm text-title-sm font-semibold text-on-surface">
+                5G Telemetry Window Diagnostics
+              </h2>
+              <span className="font-body-xs text-body-xs text-on-surface-variant">
+                Live telemetry slice feed — UPF Edge ingress queue with non-parametric calibrated percentiles
+              </span>
+            </div>
           </div>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={windows}
-          keyExtractor={(w) => w.window_id}
-          onRowClick={(w) => navigate(`/investigation/${w.window_id}`)}
-          emptyMessage="No detection telemetry windows found."
-        />
+        <div className="p-space-md">
+          <DataTable
+            columns={columns}
+            data={windows}
+            keyExtractor={(w) => w.window_id}
+            onRowClick={(w) => setSelectedWindowId(w.window_id)}
+            emptyMessage="No detection telemetry windows found."
+          />
+        </div>
       </div>
     </div>
   );
