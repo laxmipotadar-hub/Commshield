@@ -1,7 +1,19 @@
 # CommShield Data Presentation Scan & Audit Report
 
-**Generated:** 2026-11-21T14:49:10.890202+00:00
-**Total Flagged Items:** 104
+**Generated:** 2026-11-21T15:37:36.440826+00:00
+
+## Audit Counts: Before vs After Remediation
+
+- **Raw Assets Flagged (Before):** 104 items
+- **Unhandled Presentation Defects (After):** 0 items
+- **Remediation Status:** Complete across DP1, DP2, DP4; DP3 stopped per strict switch rule (Windows difference 0.0084 > 1e-6; existing results preserved).
+
+### Scope & Cut Line Notes
+- **DP1 (Scan & Report):** DONE (104 items identified across 4 core pages).
+- **DP2 (Display Fixes):** DONE (Missing data formatted as 'no data', percentiles show raw-to-threshold log ratio, proportions show Wilson CI).
+- **DP4 (Scenario Charts & Captions):** DONE (Stable benign band, approved growth volume vs ratio & JSD bar, slow ramp CUSUM, bullet bars, 2x2 agreement matrix; all charts have title, units, n, source badge, and two-line captions).
+- **DP3 (Regenerated Data):** PARTIAL / STOPPED (Windows re-run produced max diff 0.0084 > 1e-6 vs Ubuntu results; per switch rule, stopped step, kept old results in use).
+- **DP5 (Guard Tests):** DONE (`tools/test_data_presentation_guard.py` verifies zero hardcoded literals, captions, badges, and statistical intervals).
 
 ## Consolidated Findings and Remediation Table
 
