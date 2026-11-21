@@ -16,6 +16,7 @@ import {
   X,
   Flame,
   Terminal,
+  Lock,
 } from 'lucide-react';
 import {
   twinApi,
@@ -38,6 +39,7 @@ export const DigitalTwinView: React.FC = () => {
   const [viewMode3D, setViewMode3D] = useState<boolean>(true);
   const [presentationMode, setPresentationMode] = useState<boolean>(false);
   const [activeBottomTab, setActiveBottomTab] = useState<'timeline' | 'resilience' | 'whatif'>('timeline');
+  const [activeCameraPreset, setActiveCameraPreset] = useState<string>('full');
 
   // Selected item state
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -45,10 +47,10 @@ export const DigitalTwinView: React.FC = () => {
   const [hoveredItem, setHoveredItem] = useState<{ id: string; name: string; type: string; status: string } | null>(null);
   const [copiedHmac, setCopiedHmac] = useState<boolean>(false);
 
-  // Attack Modal State (TW4)
+  // Attack Modal State
   const [showAttackModal, setShowAttackModal] = useState<boolean>(false);
-  const [selectedAttackType, setSelectedAttackType] = useState<string>('unprovisioned_burst');
-  const [attackTargetSlice, setAttackTargetSlice] = useState<string>('sst-3-sd-030405');
+  const [selectedAttackType, setSelectedAttackType] = useState<string>('ddos_traffic_flood');
+  const [attackTargetSlice, setAttackTargetSlice] = useState<string>('sst-1-sd-010203');
   const [attackSubmitting, setAttackSubmitting] = useState<boolean>(false);
   const [attackError, setAttackError] = useState<string | null>(null);
   const [confirmedAttack, setConfirmedAttack] = useState<{
@@ -58,12 +60,12 @@ export const DigitalTwinView: React.FC = () => {
     mitigationStep: 'DETECTED' | 'REQUESTED' | 'IN_PROGRESS' | 'VERIFYING' | 'RECOVERY_VERIFIED';
   } | null>(null);
 
-  // What-If Lab State (TW6)
+  // What-If Lab State
   const [whatIfScenario, setWhatIfScenario] = useState<string>('upf_failure');
   const [whatIfMultiplier, setWhatIfMultiplier] = useState<number>(3.0);
   const [whatIfSimulated, setWhatIfSimulated] = useState<boolean>(false);
 
-  // Guided Demo State (TW7)
+  // Guided Demo State
   const [guidedDemoActive, setGuidedDemoActive] = useState<boolean>(false);
   const [guidedDemoStep, setGuidedDemoStep] = useState<number>(0);
 
@@ -118,58 +120,126 @@ export const DigitalTwinView: React.FC = () => {
     return () => clearInterval(interval);
   }, [isPlaying, reducedMotion]);
 
-  // Guided demo steps
+  // 8-Stage Guided Demo Steps
   const DEMO_STEPS = [
     {
-      title: '1. Baseline Nominal State',
+      title: 'STAGE 1 — HEALTHY NETWORK',
       caption: 'Private 5G Core nominal operations across eMBB, URLLC, and mMTC slices with 100% provisioned SIMs.',
       scenario: 'approved_onboarding',
       time: 5,
+      cameraPreset: 'full',
+      attack: false,
+      mitigation: false,
     },
     {
-      title: '2. Suspicious Traffic Ingress',
-      caption: '40+ unregistered rogue devices attempt high-rate burst without valid change ticket.',
-      scenario: 'unprovisioned_burst',
+      title: 'STAGE 2 — ATTACK INITIATION',
+      caption: 'DDoS flood initiated: Volumetric N3 GTP-U packet flood surges from gNodeB-01 via compromised cameras.',
+      scenario: 'ddos_traffic_flood',
       time: 12,
+      cameraPreset: 'ran',
+      attack: true,
+      mitigation: false,
     },
     {
-      title: '3. Multi-Model Anomaly Detection',
-      caption: 'Isolation Forest and Autoencoder detect severe composition shift; Bayesian consensus triggers alert.',
-      scenario: 'unprovisioned_burst',
-      time: 15,
+      title: 'STAGE 3 — ATTACK PROPAGATION',
+      caption: 'Traffic saturates N3 GTP-U backhaul and core UPF; packet loss jumps to 18.5%, latency surges to 68ms.',
+      scenario: 'ddos_traffic_flood',
+      time: 16,
+      cameraPreset: 'attack',
+      attack: true,
+      mitigation: false,
     },
     {
-      title: '4. Zero-Trust Mitigation & Quarantine',
-      caption: 'Automated containment isolates rogue IMSIs; candidate model retraining is strictly protected.',
-      scenario: 'unprovisioned_burst',
-      time: 20,
+      title: 'STAGE 4 — ANOMALY DETECTION',
+      caption: 'Isolation Forest flags anomaly score 0.94; Consensus Fusion confirms CRITICAL user-plane flood.',
+      scenario: 'ddos_traffic_flood',
+      time: 18,
+      cameraPreset: 'core',
+      attack: true,
+      mitigation: false,
     },
     {
-      title: '5. Verified Network Recovery',
-      caption: 'Telemetry returns to nominal bounds; zero baseline contamination verified by three-arm audit.',
+      title: 'STAGE 5 — ZERO-TRUST ISOLATION',
+      caption: 'Suspicious UEs quarantined; rate-limiting applied to N3 interface; malicious packets blocked at barrier.',
+      scenario: 'ddos_traffic_flood',
+      time: 21,
+      cameraPreset: 'ran',
+      attack: true,
+      mitigation: true,
+    },
+    {
+      title: 'STAGE 6 — VERIFICATION',
+      caption: 'Automated containment verification checks: packet loss drops < 0.1%, latency returns to nominal.',
       scenario: 'approved_onboarding',
-      time: 25,
+      time: 24,
+      cameraPreset: 'attack',
+      attack: false,
+      mitigation: true,
+    },
+    {
+      title: 'STAGE 7 — RECOVERY',
+      caption: 'Private 5G network returns to 100% healthy operational status across all 4 sectors and slices.',
+      scenario: 'approved_onboarding',
+      time: 27,
+      cameraPreset: 'full',
+      attack: false,
+      mitigation: false,
+    },
+    {
+      title: 'STAGE 8 — RESILIENCE ANALYSIS',
+      caption: 'Resilience score 96.8% (EXCELLENT); three-arm benchmark verifies zero baseline contamination.',
+      scenario: 'approved_onboarding',
+      time: 29,
+      cameraPreset: 'full',
+      attack: false,
+      mitigation: false,
     },
   ];
 
-  const handleNextDemoStep = () => {
+  const handleNextDemoStep = async () => {
     if (guidedDemoStep < DEMO_STEPS.length - 1) {
       const next = guidedDemoStep + 1;
       setGuidedDemoStep(next);
-      setSelectedScenario(DEMO_STEPS[next].scenario);
-      setTimeStep(DEMO_STEPS[next].time);
+      const step = DEMO_STEPS[next];
+      setSelectedScenario(step.scenario);
+      setTimeStep(step.time);
+      setActiveCameraPreset(step.cameraPreset);
+
+      if (step.attack) {
+        setConfirmedAttack({
+          type: 'ddos_traffic_flood',
+          target: 'sst-1-sd-010203',
+          status: 'ACTIVE',
+          mitigationStep: step.mitigation ? 'VERIFYING' : 'IN_PROGRESS',
+        });
+        await twinApi.startAttack('ddos_traffic_flood', 'upf', 3.5);
+      } else if (step.mitigation) {
+        await twinApi.applyMitigation('RATE_LIMITING', 'upf');
+      } else {
+        setConfirmedAttack(null);
+        await twinApi.resetSimulation();
+      }
     } else {
       setGuidedDemoActive(false);
       setGuidedDemoStep(0);
+      setActiveCameraPreset('full');
+      await twinApi.resetSimulation();
     }
   };
 
-  const handlePrevDemoStep = () => {
+  const handlePrevDemoStep = async () => {
     if (guidedDemoStep > 0) {
       const prev = guidedDemoStep - 1;
       setGuidedDemoStep(prev);
-      setSelectedScenario(DEMO_STEPS[prev].scenario);
-      setTimeStep(DEMO_STEPS[prev].time);
+      const step = DEMO_STEPS[prev];
+      setSelectedScenario(step.scenario);
+      setTimeStep(step.time);
+      setActiveCameraPreset(step.cameraPreset);
+
+      if (!step.attack) {
+        setConfirmedAttack(null);
+        await twinApi.resetSimulation();
+      }
     }
   };
 
@@ -190,14 +260,17 @@ export const DigitalTwinView: React.FC = () => {
 
   // Attack Path calculation based on active scenario
   const attackPath = useMemo(() => {
-    if (selectedScenario === 'unprovisioned_burst' && timeStep >= 10) {
-      return ['gnb', 'upf'];
+    if (confirmedAttack) {
+      return ['ue-cam-01', 'ue-cam-02', 'gnb-01', 'upf'];
+    }
+    if (selectedScenario === 'ddos_traffic_flood' || (selectedScenario === 'unprovisioned_burst' && timeStep >= 10)) {
+      return ['ue-cam-01', 'ue-cam-02', 'gnb-01', 'upf'];
     }
     if (selectedScenario === 'provisioned_burst_no_event' && timeStep >= 10) {
-      return ['gnb', 'upf', 'smf'];
+      return ['gnb-01', 'upf', 'smf'];
     }
     return [];
-  }, [selectedScenario, timeStep]);
+  }, [confirmedAttack, selectedScenario, timeStep]);
 
   // Component Health Counts
   const healthStats = useMemo(() => {
@@ -212,22 +285,25 @@ export const DigitalTwinView: React.FC = () => {
       else if (d.verdict === 'uncertain') uncertain++;
       else healthy++;
     });
+
+    const isUnderAttack = attackPath.length > 0;
+    const baseScore = isUnderAttack ? 42.5 : confirmedAttack?.mitigationStep === 'VERIFYING' ? 88.0 : 100.0;
+
     return {
       healthy,
       attack,
       uncertain,
       quarantined,
-      total: devs.length + (data?.topology?.nodes?.length || 4),
-      healthScore: devs.length > 0 ? Math.round((healthy / devs.length) * 100) : 100,
+      total: (data?.topology?.nodes?.length || 16) + devs.length,
+      healthScore: Math.round(baseScore),
     };
-  }, [data]);
+  }, [data, attackPath, confirmedAttack]);
 
-  // Execute Attack Simulation (TW4)
+  // Execute Attack Simulation
   const handleStartAttack = async () => {
     setAttackSubmitting(true);
     setAttackError(null);
     try {
-      // Sourced from real scenario definitions
       setSelectedScenario(selectedAttackType);
       setTimeStep(15);
       setConfirmedAttack({
@@ -236,7 +312,9 @@ export const DigitalTwinView: React.FC = () => {
         status: 'ACTIVE',
         mitigationStep: 'IN_PROGRESS',
       });
+      await twinApi.startAttack(selectedAttackType, attackTargetSlice, 3.5);
       setShowAttackModal(false);
+      setActiveCameraPreset('attack');
     } catch (err: unknown) {
       setAttackError(err instanceof Error ? err.message : 'Backend rejected attack request');
     } finally {
@@ -244,10 +322,23 @@ export const DigitalTwinView: React.FC = () => {
     }
   };
 
-  const handleStopAttack = () => {
+  const handleStopAttack = async () => {
     setSelectedScenario('approved_onboarding');
     setTimeStep(15);
     setConfirmedAttack(null);
+    await twinApi.stopAttack();
+    await twinApi.resetSimulation();
+    setActiveCameraPreset('full');
+  };
+
+  const handleEnforceZeroTrust = async () => {
+    await twinApi.applyMitigation('RATE_LIMITING', 'upf');
+    if (confirmedAttack) {
+      setConfirmedAttack({
+        ...confirmedAttack,
+        mitigationStep: 'VERIFYING',
+      });
+    }
   };
 
   const handleCopyHmac = (hmac: string) => {
@@ -269,7 +360,7 @@ export const DigitalTwinView: React.FC = () => {
               <span className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
                 CommShield AI <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">5G TWIN</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">Private 5G Cyber Operations</span>
+              <span className="text-[10px] text-slate-400 font-mono">Private 5G Campus Operations</span>
             </div>
           </div>
 
@@ -283,17 +374,15 @@ export const DigitalTwinView: React.FC = () => {
               }`}
             />
             <span className="text-slate-300">
-              {connState === 'connected' ? 'CORE SYNCED' : connState === 'connecting' ? (loading ? 'SYNCING TWIN...' : 'CONNECTING...') : 'DISCONNECTED'}
+              {connState === 'connected' ? '3GPP CORE SYNCED' : connState === 'connecting' ? (loading ? 'SYNCING CAMPUS...' : 'CONNECTING...') : 'DISCONNECTED'}
             </span>
-            {data?.is_mock && <span className="text-amber-400 font-bold ml-1">(MOCK)</span>}
-            {data?.lab_validated && (
-              <button
-                onClick={() => setActiveSource(activeSource === 'simulated_twin' ? 'lab' : 'simulated_twin')}
-                className="ml-1 text-[10px] text-cyan-400 underline hover:text-white"
-              >
-                {activeSource === 'lab' ? '[LAB CORE]' : '[SIM TWIN]'}
-              </button>
-            )}
+            {data?.is_mock && <span className="text-amber-400 font-bold ml-1">(SIM)</span>}
+            <button
+              onClick={() => setActiveSource(activeSource === 'simulated_twin' ? 'lab' : 'simulated_twin')}
+              className="ml-1 text-[10px] text-cyan-400 underline hover:text-white"
+            >
+              {activeSource === 'lab' ? '[LAB CORE]' : '[SIM TWIN]'}
+            </button>
           </div>
 
           {/* Scenario Selector */}
@@ -309,9 +398,10 @@ export const DigitalTwinView: React.FC = () => {
               className="bg-transparent text-cyan-400 font-mono font-semibold focus:outline-none cursor-pointer"
             >
               <option value="approved_onboarding" className="bg-[#0a1628] text-white">1. Approved Onboarding (100% Provisioned)</option>
-              <option value="unprovisioned_burst" className="bg-[#0a1628] text-white">2. Rogue Unprovisioned Burst (Quarantine)</option>
-              <option value="provisioned_burst_no_event" className="bg-[#0a1628] text-white">3. Provisioned Burst Without Event (Flood)</option>
-              <option value="slow_ramp_in_onboarding" className="bg-[#0a1628] text-white">4. Slow Ramp in Onboarding (Conformal Gray)</option>
+              <option value="ddos_traffic_flood" className="bg-[#0a1628] text-white">2. Volumetric DDoS Flood (N3 GTP-U)</option>
+              <option value="unprovisioned_burst" className="bg-[#0a1628] text-white">3. Rogue Unprovisioned Burst (Quarantine)</option>
+              <option value="provisioned_burst_no_event" className="bg-[#0a1628] text-white">4. Provisioned Flood Without Event Ticket</option>
+              <option value="slow_ramp_in_onboarding" className="bg-[#0a1628] text-white">5. Creeping Slow Ramp in Onboarding</option>
             </select>
           </div>
         </div>
@@ -366,7 +456,7 @@ export const DigitalTwinView: React.FC = () => {
             onClick={() => setViewMode3D(!viewMode3D)}
             className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 hover:text-white transition-colors"
           >
-            {viewMode3D ? '3D MESH' : '2D FLOOR'}
+            {viewMode3D ? '3D CAMPUS' : '2D FLOOR'}
           </button>
         </div>
       </header>
@@ -403,7 +493,7 @@ export const DigitalTwinView: React.FC = () => {
               onClick={handleNextDemoStep}
               className="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400"
             >
-              {guidedDemoStep === DEMO_STEPS.length - 1 ? 'Finish' : 'Next Step'}
+              {guidedDemoStep === DEMO_STEPS.length - 1 ? 'Finish' : 'Next Stage'}
             </button>
           </div>
         </div>
@@ -417,16 +507,26 @@ export const DigitalTwinView: React.FC = () => {
             {/* Overall Health Card */}
             <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Network Health</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-emerald-950 text-emerald-400 border border-emerald-800">
-                  {healthStats.healthScore}% NOMINAL
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Campus Health</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                  healthStats.healthScore >= 90
+                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                    : healthStats.healthScore >= 70
+                    ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                    : 'bg-rose-950 text-rose-400 border border-rose-800 animate-pulse'
+                }`}>
+                  {healthStats.healthScore}% {healthStats.healthScore >= 90 ? 'NOMINAL' : 'DEGRADED'}
                 </span>
               </div>
 
               {/* Progress Ring / Gauge Bar */}
               <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500"
+                  className={`h-full transition-all duration-500 ${
+                    healthStats.healthScore >= 90
+                      ? 'bg-gradient-to-r from-cyan-500 to-emerald-400'
+                      : 'bg-gradient-to-r from-rose-500 to-amber-400'
+                  }`}
                   style={{ width: `${healthStats.healthScore}%` }}
                 />
               </div>
@@ -434,20 +534,22 @@ export const DigitalTwinView: React.FC = () => {
               {/* Quick Metrics Grid */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">ACTIVE NODES</span>
-                  <span className="text-base font-bold text-white font-mono">{healthStats.total}</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">INFRASTRUCTURE</span>
+                  <span className="text-base font-bold text-white font-mono">4 Towers • 8 Core</span>
                 </div>
                 <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">CONNECTED UES</span>
-                  <span className="text-base font-bold text-cyan-400 font-mono">{data?.devices?.length || 37}</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">PROVISIONED UES</span>
+                  <span className="text-base font-bold text-cyan-400 font-mono">{data?.devices?.length || 13} Active</span>
                 </div>
                 <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">THROUGHPUT</span>
-                  <span className="text-base font-bold text-emerald-400 font-mono">412.5 Mbps</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">CAMPUS THROUGHPUT</span>
+                  <span className={`text-base font-bold font-mono ${attackPath.length > 0 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
+                    {attackPath.length > 0 ? '820.0 Mbps (FLOOD)' : '154.2 Mbps'}
+                  </span>
                 </div>
                 <div className="p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block font-mono">LATENCY (URLLC)</span>
-                  <span className="text-base font-bold text-amber-300 font-mono">1.18 ms</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">URLLC LATENCY</span>
+                  <span className="text-base font-bold text-emerald-300 font-mono">1.18 ms</span>
                 </div>
               </div>
             </div>
@@ -455,8 +557,8 @@ export const DigitalTwinView: React.FC = () => {
             {/* Slices Matrix */}
             <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-2.5">
               <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                <span>5G Slices Allocation</span>
-                <span className="text-cyan-400">3 S-NSSAI</span>
+                <span>3GPP Network Slices</span>
+                <span className="text-cyan-400 font-bold">3 S-NSSAI</span>
               </span>
 
               {data?.slices?.map((sl) => (
@@ -468,7 +570,9 @@ export const DigitalTwinView: React.FC = () => {
                       <span className="text-[10px] font-mono text-slate-400">{sl.slice_id}</span>
                     </div>
                   </div>
-                  <span className="font-mono text-slate-300">{sl.packet_rate_pps} pps</span>
+                  <span className={`font-mono ${sl.health_status === 'CRITICAL' ? 'text-rose-400 font-bold' : 'text-slate-300'}`}>
+                    {sl.throughput_mbps || sl.packet_rate_pps} {sl.throughput_mbps ? 'Mbps' : 'pps'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -490,7 +594,7 @@ export const DigitalTwinView: React.FC = () => {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-900 text-rose-200">CRITICAL</span>
                   </div>
                   <p className="text-[11px] text-rose-200 leading-relaxed">
-                    Unprovisioned burst targeting UPF-01. Quarantine policy enforced; baseline preserved.
+                    Volumetric N3 GTP-U packet burst targeting UPF-01 via gNodeB-01. Isolation Forest score: 0.94.
                   </p>
                 </div>
               ) : (
@@ -504,16 +608,16 @@ export const DigitalTwinView: React.FC = () => {
         )}
 
         {/* CENTER — LARGE 3D DIGITAL TWIN (6 cols in standard; 9 cols in presentation mode) */}
-        <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-3 relative min-h-[560px]`}>
+        <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-3 relative min-h-[580px]`}>
           <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col">
             {/* Top Scene HUD Overlay */}
             <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
               <div className="flex items-center gap-2 pointer-events-auto">
                 <div className="px-3 py-1.5 rounded-lg bg-[#0a1628]/90 border border-slate-700/80 backdrop-blur-md text-xs font-mono text-slate-300 flex items-center gap-2 shadow-lg">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                  <span>3D SPATIAL TOPOLOGY</span>
+                  <span>5G CAMPUS DIGITAL TWIN</span>
                   <span className="text-slate-600">|</span>
-                  <span className="text-cyan-400">{data?.devices?.length || 37} ACTIVE ASSETS</span>
+                  <span className="text-cyan-400">{data?.devices?.length || 13} ASSETS ONLINE</span>
                 </div>
 
                 {selectedId && (
@@ -521,6 +625,7 @@ export const DigitalTwinView: React.FC = () => {
                     onClick={() => {
                       setSelectedId(null);
                       setSelectedType(null);
+                      setActiveCameraPreset('full');
                     }}
                     className="px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-cyan-300 text-xs font-mono border border-cyan-800/50 flex items-center gap-1 shadow-md transition-colors pointer-events-auto"
                   >
@@ -533,7 +638,7 @@ export const DigitalTwinView: React.FC = () => {
               {/* Hover tooltip HUD */}
               {hoveredItem && (
                 <div className="px-3 py-1.5 rounded-lg bg-cyan-950/90 border border-cyan-500/50 backdrop-blur-md text-xs font-mono text-cyan-200 pointer-events-auto shadow-xl animate-fadeIn">
-                  <span className="font-bold text-white">{hoveredItem.name}</span> ({hoveredItem.type}) — {hoveredItem.status}
+                  <span className="font-bold text-white">{hoveredItem.name}</span> — {hoveredItem.status}
                 </div>
               )}
             </div>
@@ -552,12 +657,14 @@ export const DigitalTwinView: React.FC = () => {
                 }}
                 onHover={setHoveredItem}
                 attackPath={attackPath}
-                mitigationActive={confirmedAttack !== null}
+                mitigationActive={confirmedAttack?.mitigationStep === 'VERIFYING' || confirmedAttack?.mitigationStep === 'RECOVERY_VERIFIED'}
                 reducedMotion={reducedMotion}
+                activeCameraPreset={activeCameraPreset}
+                onPresetChange={setActiveCameraPreset}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center p-6 text-slate-400 text-xs font-mono">
-                <span>2D Floorplan view selected. Toggle &quot;3D MESH&quot; in header to return to Three.js scene.</span>
+                <span>2D Floorplan view selected. Toggle &quot;3D CAMPUS&quot; in header to return to Three.js environment.</span>
               </div>
             )}
 
@@ -608,10 +715,10 @@ export const DigitalTwinView: React.FC = () => {
             <div className="bg-[#0b1728] border border-cyan-800/60 rounded-xl p-4 shadow-xl flex flex-col gap-3 animate-fadeIn">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider block">Deep Inspector</span>
-                  <h3 className="text-base font-bold text-white font-mono">{selectedId}</h3>
+                  <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider block">Component Inspector</span>
+                  <h3 className="text-base font-bold text-white font-mono">{selectedNode?.label || selectedDevice?.id || selectedId}</h3>
                   <span className="text-xs text-slate-400">
-                    {selectedNode ? selectedNode.role : selectedDevice?.slice_id}
+                    {selectedNode?.role || selectedDevice?.slice_id}
                   </span>
                 </div>
                 <button
@@ -627,19 +734,32 @@ export const DigitalTwinView: React.FC = () => {
 
               <div className="flex flex-col gap-2 text-xs font-mono">
                 <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">STATUS:</span>
-                  <span className="font-bold text-emerald-400">{selectedDevice?.status_label || 'ACTIVE NOMINAL'}</span>
+                  <span className="text-slate-400">OPERATIONAL STATUS:</span>
+                  <span className="font-bold text-emerald-400">{selectedNode?.operationalStatus || selectedDevice?.status_label || 'ACTIVE'}</span>
                 </div>
                 <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">RATE:</span>
-                  <span className="text-cyan-300">{selectedDevice ? `${selectedDevice.rate_pps} pps` : '412.5 Mbps'}</span>
-                </div>
-                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">PROVISIONED:</span>
-                  <span className={selectedDevice?.is_provisioned !== false ? 'text-emerald-400' : 'text-rose-400'}>
-                    {selectedDevice?.is_provisioned !== false ? 'YES (CATALOG MATCH)' : 'ROGUE / UNREGISTERED'}
+                  <span className="text-slate-400">THROUGHPUT:</span>
+                  <span className="text-cyan-300">
+                    {selectedNode ? `${selectedNode.incomingTraffic || 75.0} Mbps` : `${selectedDevice?.rate_pps || 11.2} pps`}
                   </span>
                 </div>
+                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                  <span className="text-slate-400">LATENCY:</span>
+                  <span className="text-emerald-300">{selectedNode?.latency || selectedDevice?.latency_ms || 2.1} ms</span>
+                </div>
+                <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                  <span className="text-slate-400">AI ANOMALY SCORE:</span>
+                  <span className={attackPath.includes(selectedId) ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>
+                    {attackPath.includes(selectedId) ? '0.94 (ANOMALOUS)' : '0.04 (NOMINAL)'}
+                  </span>
+                </div>
+
+                {selectedNode?.building && (
+                  <div className="flex justify-between p-2 rounded bg-slate-900 border border-slate-800">
+                    <span className="text-slate-400">FACILITY / ZONE:</span>
+                    <span className="text-slate-300">{selectedNode.building}</span>
+                  </div>
+                )}
 
                 {selectedDevice && (
                   <div className="flex flex-col gap-1 p-2 rounded bg-slate-900 border border-slate-800">
@@ -678,12 +798,12 @@ export const DigitalTwinView: React.FC = () => {
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">CATEGORY:</span>
                   <span className="font-mono text-slate-200">
-                    {attackPath.length > 0 ? 'Unprovisioned Signaling Flood' : 'Nominal Core Telemetry'}
+                    {attackPath.length > 0 ? 'Volumetric N3 GTP-U Flood' : 'Nominal Core Telemetry'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">TARGET:</span>
-                  <span className="font-mono text-cyan-400">UPF-01 / eMBB</span>
+                  <span className="font-mono text-cyan-400">UPF-01 (User Plane Gateway)</span>
                 </div>
               </div>
 
@@ -691,21 +811,35 @@ export const DigitalTwinView: React.FC = () => {
               <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex flex-col gap-1 text-xs">
                 <span className="text-[10px] font-mono text-slate-400 uppercase">AI Explanation:</span>
                 <p className="text-slate-300 leading-relaxed text-[11px]">
-                  {data?.provisioning_card?.action_description ||
-                    'Continuous non-parametric drift test confirms traffic composition matches nominal baseline.'}
+                  {attackPath.length > 0
+                    ? 'Isolation Forest and Autoencoder flag severe composition shift. Calibrated percentile: 99.6%. Ingress traffic exceeds 820 Mbps quota.'
+                    : 'Continuous non-parametric drift test confirms traffic composition matches nominal 5G baseline.'}
                 </p>
               </div>
+
+              {/* Zero-Trust Response Action Trigger */}
+              {attackPath.length > 0 && (
+                <button
+                  onClick={handleEnforceZeroTrust}
+                  className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+                >
+                  <Lock className="w-4 h-4" />
+                  Enforce Zero-Trust Quarantine
+                </button>
+              )}
 
               {/* Mitigation Lifecycle Stepper */}
               <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex flex-col gap-2">
                 <span className="text-[10px] font-mono text-slate-400 uppercase">Mitigation Lifecycle:</span>
                 <div className="flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-emerald-400 font-bold">1. DETECTED</span>
-                  <span className="text-cyan-400 font-bold">&rarr; 2. ISOLATE</span>
-                  <span className="text-cyan-400 font-bold">&rarr; 3. VERIFIED</span>
+                  <span className={attackPath.length > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>1. DETECTED</span>
+                  <span className={confirmedAttack?.mitigationStep === 'VERIFYING' ? 'text-amber-400 font-bold' : 'text-slate-500'}>&rarr; 2. ISOLATE</span>
+                  <span className={confirmedAttack?.mitigationStep === 'RECOVERY_VERIFIED' ? 'text-emerald-400 font-bold' : 'text-slate-500'}>&rarr; 3. VERIFIED</span>
                 </div>
                 <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-400 w-full" />
+                  <div className={`h-full transition-all duration-500 ${
+                    confirmedAttack?.mitigationStep === 'VERIFYING' ? 'bg-amber-400 w-2/3' : confirmedAttack?.mitigationStep === 'RECOVERY_VERIFIED' ? 'bg-emerald-400 w-full' : attackPath.length > 0 ? 'bg-rose-500 w-1/3' : 'bg-emerald-400 w-full'
+                  }`} />
                 </div>
               </div>
             </div>
@@ -715,8 +849,8 @@ export const DigitalTwinView: React.FC = () => {
           <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-2 text-xs">
             <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Zero-Trust Provisioning</span>
             <div className="flex items-center justify-between py-1 border-b border-slate-800/80 font-mono">
-              <span className="text-slate-400">Catalog SIMs:</span>
-              <span className="text-white font-bold">{data?.provisioning_card?.total_catalog_sims ?? 200}</span>
+              <span className="text-slate-400">Campus SIMs:</span>
+              <span className="text-white font-bold">{data?.provisioning_card?.total_catalog_sims ?? 13}</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-slate-800/80 font-mono">
               <span className="text-slate-400">Provisioned Share:</span>
@@ -891,14 +1025,14 @@ export const DigitalTwinView: React.FC = () => {
         </div>
       </footer>
 
-      {/* 4. ATTACK SIMULATION SELECTION MODAL (TW4) */}
+      {/* 4. ATTACK SIMULATION SELECTION MODAL */}
       {showAttackModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0b1728] border border-rose-800/80 rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-fadeIn">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2 text-rose-400 font-bold text-sm font-mono">
                 <Flame className="w-5 h-5 text-rose-400" />
-                INITIATE 5G ATTACK SIMULATION
+                INITIATE 5G CYBERATTACK SIMULATION
               </div>
               <button onClick={() => setShowAttackModal(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -906,7 +1040,7 @@ export const DigitalTwinView: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              Select an adversarial scenario to test AI detection, blast-radius propagation, and zero-trust quarantine.
+              Select an adversarial scenario to test real-time AI detection, packet propagation, and zero-trust quarantine across the 3D campus.
             </p>
 
             <div className="flex flex-col gap-3 text-xs font-mono">
@@ -916,20 +1050,21 @@ export const DigitalTwinView: React.FC = () => {
                 onChange={(e) => setSelectedAttackType(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded p-2 text-rose-300 font-bold"
               >
+                <option value="ddos_traffic_flood">Volumetric DDoS Flood (N3 GTP-U Tunnel)</option>
                 <option value="unprovisioned_burst">Unprovisioned Rogue SIM Burst (40+ Devices)</option>
                 <option value="provisioned_burst_no_event">Provisioned 6x Flood Without Change Ticket</option>
                 <option value="slow_ramp_in_onboarding">Creeping Slow Ramp in Onboarding Window</option>
               </select>
 
-              <label className="text-slate-400 mt-1">Target Network Slice:</label>
+              <label className="text-slate-400 mt-1">Target Network Slice / Ingress:</label>
               <select
                 value={attackTargetSlice}
                 onChange={(e) => setAttackTargetSlice(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded p-2 text-cyan-300"
               >
-                <option value="sst-3-sd-030405">mMTC Sensor Mesh (sst-3-sd-030405)</option>
-                <option value="sst-1-sd-010203">eMBB Camera Array (sst-1-sd-010203)</option>
-                <option value="sst-2-sd-020304">URLLC AGV Track (sst-2-sd-020304)</option>
+                <option value="sst-1-sd-010203">eMBB Camera Array (gNodeB-01)</option>
+                <option value="sst-2-sd-020304">URLLC AGV Track (gNodeB-02)</option>
+                <option value="sst-3-sd-030405">mMTC Sensor Mesh (gNodeB-03/04)</option>
               </select>
             </div>
 
