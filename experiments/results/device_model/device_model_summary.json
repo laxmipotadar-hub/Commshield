@@ -1,0 +1,184 @@
+{
+  "generated_at": "2026-11-21T05:20:56.197147+00:00",
+  "source": "simulated_twin",
+  "tuning_seed": 42,
+  "test_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110
+  ],
+  "held_out_class": "AGV",
+  "trained_classes": [
+    "sensor",
+    "camera"
+  ],
+  "calibration_sizes": {
+    "sensor": 1460,
+    "camera": 575
+  },
+  "smallest_pvalues": {
+    "sensor": 0.000684,
+    "camera": 0.001736
+  },
+  "approved_onboarding_coverage": {
+    "overall": {
+      "mean": 0.9459,
+      "ci_95": [
+        0.9445,
+        0.9478
+      ]
+    },
+    "early_pre_onboarding": {
+      "mean": 0.9477,
+      "ci_95": [
+        0.944,
+        0.9512
+      ]
+    },
+    "late_growing_onboarding": {
+      "mean": 0.9454,
+      "ci_95": [
+        0.9438,
+        0.9473
+      ]
+    },
+    "exchangeability_holds_under_growth": true
+  },
+  "hidden_ramp_per_device_evaluation": {
+    "anomaly_detection_rate": {
+      "mean": 0.9476,
+      "ci_95": [
+        0.9404,
+        0.9542
+      ]
+    },
+    "abstention_rate": {
+      "mean": 0.0467,
+      "ci_95": [
+        0.0391,
+        0.0542
+      ]
+    }
+  },
+  "overall_evaluation": {
+    "abstention_rate": {
+      "mean": 0.3252,
+      "ci_95": [
+        0.3241,
+        0.3265
+      ]
+    },
+    "non_abstained_accuracy": {
+      "mean": 0.9439,
+      "ci_95": [
+        0.9421,
+        0.9458
+      ]
+    },
+    "held_out_class_abstention_rate": 1.0
+  },
+  "accuracy_vs_coverage_curve": [
+    {
+      "alpha": 0.01,
+      "alpha_low": 0.01,
+      "alpha_high": 0.16,
+      "coverage": 0.8118,
+      "accuracy": 0.9896,
+      "non_abstained_count": 73952,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.02,
+      "alpha_low": 0.02,
+      "alpha_high": 0.17,
+      "coverage": 0.8418,
+      "accuracy": 0.9751,
+      "non_abstained_count": 76686,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.05,
+      "alpha_low": 0.05,
+      "alpha_high": 0.2,
+      "coverage": 0.8526,
+      "accuracy": 0.9439,
+      "non_abstained_count": 77668,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.1,
+      "alpha_low": 0.1,
+      "alpha_high": 0.25,
+      "coverage": 0.8597,
+      "accuracy": 0.8836,
+      "non_abstained_count": 78315,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.15,
+      "alpha_low": 0.15,
+      "alpha_high": 0.3,
+      "coverage": 0.8687,
+      "accuracy": 0.8284,
+      "non_abstained_count": 79141,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.2,
+      "alpha_low": 0.2,
+      "alpha_high": 0.35,
+      "coverage": 0.8634,
+      "accuracy": 0.7751,
+      "non_abstained_count": 78656,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.25,
+      "alpha_low": 0.25,
+      "alpha_high": 0.4,
+      "coverage": 0.8632,
+      "accuracy": 0.7221,
+      "non_abstained_count": 78639,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.3,
+      "alpha_low": 0.3,
+      "alpha_high": 0.45,
+      "coverage": 0.8567,
+      "accuracy": 0.6728,
+      "non_abstained_count": 78046,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.4,
+      "alpha_low": 0.4,
+      "alpha_high": 0.55,
+      "coverage": 0.8716,
+      "accuracy": 0.5679,
+      "non_abstained_count": 79402,
+      "total_windows": 91100
+    },
+    {
+      "alpha": 0.5,
+      "alpha_low": 0.5,
+      "alpha_high": 0.6,
+      "coverage": 0.9116,
+      "accuracy": 0.4952,
+      "non_abstained_count": 83051,
+      "total_windows": 91100
+    }
+  ],
+  "weakest_result": {
+    "metric": "hidden_ramp_detection_rate",
+    "value": "94.76% (abstention: 4.67%)",
+    "details": "In slow_ramp_in_onboarding, subtle early-stage ramping attack devices achieved 94.76% anomaly detection, with 4.67% abstained into the conformal gray band."
+  }
+}

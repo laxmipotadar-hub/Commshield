@@ -178,3 +178,52 @@ Evaluation across test streams and 5 random seeds ([42, 101, 2024, 777, 999]) re
 2. **Discretization Bottleneck**: Achieving fine-grained confidence levels ($\alpha = 0.01$) requires at least 99 pure calibration windows per slice, which does not exist in standard 5G Core deployment baselines without cross-slice pooling.
 3. **Recall vs. Precision Trade-off**: The gray band filter $[0.05, 0.20]$ prevents noisy false alarms on borderline windows, but reduces raw attack recall on stealth attacks that occur concurrently with traffic growth.
 
+---
+
+## Device Model Findings and Limitations
+
+This section documents the empirical findings, calibration results, and operational limitations of the per-device-class behavior models with split-conformal abstention evaluated on simulated Digital Twin streams (`simulated_twin`).
+
+> [!WARNING]
+> **Simulated Data Disclosure**: All evaluation streams in this benchmark were generated via `TwinScenarioGenerator` (`simulated_twin`). While device rate distributions model authentic IoT sensors, continuous IP surveillance cameras, and URLLC AGVs, actual carrier radio environments involve multi-path fading, cell handover jitter, and RRC state transitions not fully captured in simulation.
+
+### Model Architecture & Disjoint Calibration
+* **Model**: Small, bounded Isolation Forest per device class (25 estimators, max depth 6, fixed random_state 42) trained exclusively on benign tuning seed (42) per-device telemetry.
+* **Feature Schema**: 7 standard features (`packets_per_sec`, `bytes_uplink_per_sec`, `bytes_downlink_per_sec`, `events_per_sec`, `bytes_per_packet`, `uplink_byte_ratio`, `failure_ratio`).
+* **Calibration Disjointness**: Benign tuning windows were partitioned into 50% training, 25% threshold-setting, and 25% calibration with verified zero window ID overlap ($\text{IDs}_{\text{train}} \cap \text{IDs}_{\text{cal}} = \emptyset$).
+* **Sample Sizes & Smallest p-Values**:
+  * **sensor**: $n_{\text{cal}} = 1,460$ benign windows, smallest achievable p-value $p_{\min} = 1/(1460+1) = \mathbf{0.000684}$.
+  * **camera**: $n_{\text{cal}} = 575$ benign windows, smallest achievable p-value $p_{\min} = 1/(575+1) = \mathbf{0.001736}$.
+  * **AGV**: **Held out completely from training** ($n_{\text{train}} = 0, n_{\text{cal}} = 0$).
+
+### Multi-Seed Empirical Results Across 10 Test Seeds (Seeds 101–110)
+
+| Evaluation Dimension | Metric | Observed Empirical Value | 95% Bootstrap Confidence Interval | Theoretical Target |
+| :--- | :--- | :---: | :---: | :---: |
+| **Approved Onboarding (All)** | Empirical Coverage ($p \ge 0.05$) | **94.59%** | [94.45%, 94.78%] | 95.00% ($\alpha = 0.05$) |
+| **Early Pre-Onboarding** | Coverage (Windows 0–9, 1x count) | **94.77%** | [94.40%, 95.12%] | 95.00% |
+| **Late Growing Onboarding** | Coverage (Windows 10–29, expanded count) | **94.54%** | [94.38%, 94.73%] | 95.00% |
+| **Exchangeability Status** | Growth Invariance | **HOLDS** | Nominal coverage preserved | Holds under per-device normalization |
+| **Slow Ramp in Onboarding** | Anomaly Detection Rate | **94.76%** | [94.04%, 95.42%] | High detection |
+| **Slow Ramp in Onboarding** | Conformal Abstention Rate | **4.67%** | [3.91%, 5.42%] | Low abstention |
+| **Non-Abstained Windows** | Accuracy ($\frac{\text{TP}+\text{TN}}{\text{Non-Abstained}}$) | **94.39%** | [94.21%, 94.58%] | High accuracy |
+| **Overall Dataset** | Total Abstention Rate | **32.52%** | [32.41%, 32.65%] | Driven by held-out AGV |
+| **Held-Out Class (AGV)** | Abstention Rate (`held_out_device_class`) | **100.00%** | [100.00%, 100.00%] | 100.00% (Safety Fallback) |
+
+### Accuracy-vs-Coverage Trade-off
+Evaluating across varying significance levels $\alpha \in [0.01, 0.50]$ on trained classes demonstrates clear monotonic trade-offs:
+* At $\alpha = 0.01$ (conservative): Non-abstained accuracy reaches **98.96%** with **81.18%** coverage (18.82% abstention).
+* At $\alpha = 0.05$ (operational baseline): Non-abstained accuracy is **94.39%** with **85.26%** coverage.
+* At $\alpha = 0.50$ (aggressive): Coverage rises to **91.16%**, but non-abstained accuracy degrades to **49.52%**.
+
+### The Weakest Result and Operational Failures
+1. **The Weakest Result — Subtle Onset in Hidden Ramp (94.76% Detection, 4.67% Abstained)**:
+   - In `slow_ramp_in_onboarding`, compromised sensors slowly ramping their failure and signaling rates inside an approved onboarding expansion achieved a **94.76% anomaly detection rate**, leaving **4.67% of malicious windows abstained** into the conformal gray band ($0.05 \le p \le 0.20$).
+   - Root Cause: During the early stages of the ramp ($t \in [15, 18]$), rate deviations are subtle ($< 1.5\times$ base), placing nonconformity scores near the decision boundary where the conformal safety mechanism forces abstention rather than issuing a confident alert.
+2. **Total Blindness on Unseen Device Classes (100.0% Abstention on AGV)**:
+   - When telemetry from un-modeled device classes is ingested, the system cannot classify behavior and abstains unconditionally (`held_out_device_class`). While safe against false positives, it leaves novel hardware categories unmonitored without active model enrollment.
+3. **Contrast with Slice-Level Exchangeability Breakdown**:
+   - In slice-level aggregate models (`docs/AI_FEASIBILITY.md`), legitimate 2x–3x traffic expansion completely collapsed conformal coverage to 0.0% due to aggregate volumetric drift.
+   - In contrast, per-device models normalize metrics per unit time per device (`packets_per_sec`, `bytes_per_packet`), successfully **preserving exchangeability across onboarding expansions** (94.54% late vs 94.77% early coverage).
+
+

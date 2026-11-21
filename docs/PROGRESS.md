@@ -176,4 +176,34 @@ Split-conformal calibration has been integrated into the attribution layer to pr
 6. **Automated Test Suite (`backend/tests/test_twin_provisioning.py`)**:
    - 6 automated test cases passing (lookup correctness, determinism, labels on every window, schema validation, no raw IDs, seed separation).
 
+## Milestone Status: Per-Device-Class Behavior Model & Split Conformal Abstention
+
+1. **Deterministic Per-Device Isolation Forest (`ml_engine/device_model/`)**:
+   - Implemented `DeviceIsolationForest` (25 estimators, max depth 6, fixed random_state 42) with pure-Python execution and zero external dependencies.
+   - Built `DeviceModelManager` with schema validation enforcement and explicit source tagging (`simulated_twin`).
+   - Trained on benign per-device windows from tuning seed 42 for `sensor` and `camera`, strictly holding out `AGV`.
+
+2. **Disjoint Conformal Calibration**:
+   - Benign tuning data partitioned into 50% training, 25% threshold, and 25% calibration with verified zero window ID overlap.
+   - Calibration set sizes and smallest achievable p-values ($1/(n+1)$):
+     - `sensor`: $n_{\text{cal}} = 1,460$, $p_{\min} = 0.000684$
+     - `camera`: $n_{\text{cal}} = 575$, $p_{\min} = 0.001736$
+     - `AGV`: Held out from training ($n_{\text{cal}} = 0$)
+
+3. **Split Conformal p-Values & Frozen Gray-Band Abstention**:
+   - Exact $(n+1)$ conformal p-value calculation: $p = (1 + \sum \mathbb{I}(s_i \ge s_{\text{test}})) / (n+1)$.
+   - Frozen gray band $[0.05, 0.20]$ yielding verdicts: `"normal"`, `"anomalous"`, or `"uncertain"` (`conformal_gray_band` or `held_out_device_class`).
+
+4. **Multi-Seed Benchmark Evaluation Across 10 Test Seeds (`experiments/results/device_model/device_model_summary.json`)**:
+   - **Approved Onboarding Coverage**: Empirical coverage reached **94.59%** (early pre-onboarding: **94.77%**, late growing onboarding: **94.54%**), confirming exchangeability holds under per-device rate normalization.
+   - **Non-Abstained Accuracy**: **94.39%** [95% CI: 94.21%, 94.58%].
+   - **Overall Abstention Rate**: **32.52%** [95% CI: 32.41%, 32.65%], driven by 100.0% abstention on held-out `AGV` class.
+   - **Accuracy-vs-Coverage Curve**: Evaluated across $\alpha \in [0.01, 0.50]$ (98.96% accuracy at 81.18% coverage for $\alpha=0.01$).
+   - **Weakest Result**: In `slow_ramp_in_onboarding`, subtle early attack devices achieved **94.76% anomaly detection** with **4.67% abstained** into the conformal gray band.
+
+5. **Documentation & Tests (`backend/tests/test_device_model.py`)**:
+   - Documented findings, simulation disclosure, and limitations in `experiments/README.md`.
+   - 5 automated unit tests passing (disjoint calibration audit, toy example p-value correctness, determinism, raw ID exclusion, held-out class safety).
+
+
 
