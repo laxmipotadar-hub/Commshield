@@ -22,6 +22,7 @@ import {
   DigitalTwinDevice,
   DigitalTwinNode,
 } from '../services/api';
+import { useDemo } from '../context/DemoContext';
 
 const SCENARIOS = [
   { id: 'approved_onboarding', label: '1. Approved Onboarding (Batch OB-01 & OB-02)', desc: 'Valid change event + 100% provisioned SIMs' },
@@ -37,8 +38,14 @@ export const DigitalTwinView: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<string>('approved_onboarding');
   const [activeSource, setActiveSource] = useState<string>('simulated_twin');
   const [timeStep, setTimeStep] = useState<number>(15);
+  const { reducedMotion: demoReducedMotion, setReducedMotion: setDemoReducedMotion } = useDemo();
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
+  const [localReducedMotion, setLocalReducedMotion] = useState<boolean>(false);
+  const reducedMotion = demoReducedMotion || localReducedMotion;
+  const setReducedMotion = (val: boolean) => {
+    setLocalReducedMotion(val);
+    setDemoReducedMotion(val);
+  };
   const [selectedDevice, setSelectedDevice] = useState<DigitalTwinDevice | null>(null);
 
   // Check system prefers-reduced-motion on mount
@@ -369,8 +376,8 @@ export const DigitalTwinView: React.FC = () => {
                 <line x1="280" y1="425" x2="340" y2="270" />
               </g>
 
-              {/* C. Infrastructure Links between 5G Core Nodes */}
-              {data?.topology?.links.map((link) => {
+              {/* C. Infrastructure Links between 5G Core Nodes (Clamped to 8 particles max) */}
+              {data?.topology?.links.map((link, linkIdx) => {
                 const s = nodeMap.get(link.source);
                 const t = nodeMap.get(link.target);
                 if (!s || !t) return null;
@@ -393,8 +400,8 @@ export const DigitalTwinView: React.FC = () => {
                       strokeOpacity="0.7"
                     />
 
-                    {/* Animated Link Packet Particle (if not reduced motion) */}
-                    {!reducedMotion && (
+                    {/* Animated Link Packet Particle (clamped to max 8 particles; disabled on low-motion) */}
+                    {!reducedMotion && linkIdx < 8 && (
                       <circle
                         cx={px}
                         cy={py}

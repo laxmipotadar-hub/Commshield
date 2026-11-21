@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDemo } from '../context/DemoContext';
-import { ChevronRight, Presentation, Shield } from 'lucide-react';
+import { ChevronRight, Presentation, Shield, Zap } from 'lucide-react';
 
 export const DemoControlBar: React.FC = () => {
   const {
@@ -11,6 +11,9 @@ export const DemoControlBar: React.FC = () => {
     activePresetIndex,
     selectPreset,
     nextPreset,
+    isOfflineFallback,
+    reducedMotion,
+    setReducedMotion,
   } = useDemo();
 
   return (
@@ -55,29 +58,57 @@ export const DemoControlBar: React.FC = () => {
             </span>
           </div>
 
-          {/* Scenario Selector Dropdown (1 to 4) */}
+          {/* Offline Snapshot Fallback Badge if active */}
+          {isOfflineFallback && (
+            <span
+              className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40"
+              title="Replaying from frozen offline snapshots in experiments/snapshot/"
+            >
+              Snapshot Fallback
+            </span>
+          )}
+
+          {/* Clear Scene Step Indicator */}
+          <span className="text-xs font-bold text-white px-2 py-1 bg-card rounded-lg border border-border shadow-xs">
+            Scene {activePresetIndex + 1} of {presets.length}
+          </span>
+
+          {/* Scenario Selector Dropdown */}
           <div className="flex items-center gap-1.5 bg-bg px-2 py-1 rounded-lg border border-border">
-            <span className="text-[11px] font-bold text-muted uppercase">Scene:</span>
             <select
               value={activePresetIndex}
               onChange={(e) => selectPreset(Number(e.target.value))}
-              className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer max-w-[200px] truncate"
             >
               {presets.map((p, idx) => (
                 <option key={p.id} value={idx}>
-                  {idx + 1}. {p.name} [{p.source_badge || (p.source === 'lab' ? 'Live lab' : 'Simulated twin')}]
+                  {idx + 1}. {p.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Next Scene Button */}
+          {/* Low Motion Toggle Button */}
+          <button
+            onClick={() => setReducedMotion(!reducedMotion)}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+              reducedMotion
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                : 'bg-bg text-muted hover:text-text border-border'
+            }`}
+            title="Toggle low-motion (respects prefers-reduced-motion)"
+          >
+            <Zap className="w-3 h-3" />
+            <span>{reducedMotion ? 'Low-Motion: ON' : 'Low-Motion: OFF'}</span>
+          </button>
+
+          {/* Next Scene Button with Key Indicator */}
           <button
             onClick={nextPreset}
-            className="flex items-center gap-1 px-3 py-1 bg-blue hover:bg-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
-            title="Advance to next presentation scene"
+            className="flex items-center gap-1 px-3 py-1 bg-blue hover:bg-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-colors cursor-pointer"
+            title="Advance to next presentation scene (Hotkey: 'N' or Right Arrow)"
           >
-            <span>Next scene</span>
+            <span>Next scene (N)</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </>

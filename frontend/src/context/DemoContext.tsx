@@ -215,6 +215,9 @@ interface DemoContextType {
   activeKeyEvent: DemoKeyEvent | null;
   pausedAtEvent: boolean;
   resumeFromKeyEvent: () => Promise<void>;
+  isOfflineFallback: boolean;
+  reducedMotion: boolean;
+  setReducedMotion: (val: boolean) => void;
 }
 
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
@@ -225,21 +228,42 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activePresetIndex, setActivePresetIndex] = useState<number>(0);
   const [activeKeyEvent, setActiveKeyEvent] = useState<DemoKeyEvent | null>(null);
   const [pausedAtEvent, setPausedAtEvent] = useState<boolean>(false);
+  const [isOfflineFallback, setIsOfflineFallback] = useState<boolean>(false);
+  const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  });
 
   const acknowledgedEventsRef = useRef<Set<number>>(new Set());
   const { currentIndex, status, handlePause, handleResume, setSelectedDataSource, speed } = useReplay();
 
-  // Load presets from backend API on mount
+  // Listen to system prefers-reduced-motion changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+  }, []);
+
+  // Load presets from backend API on mount, with snapshot fallback
   useEffect(() => {
     api
       .getDemoScenarios()
       .then((res) => {
         if (res?.scenarios?.length > 0) {
           setPresets(res.scenarios);
+          setIsOfflineFallback(false);
+        } else {
+          setIsOfflineFallback(true);
         }
       })
       .catch((err) => {
         console.warn('Could not fetch demo scenarios from API, using fallback presets:', err);
+        setIsOfflineFallback(true);
       });
   }, []);
 
@@ -325,6 +349,25 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Keyboard shortcut listener: 'N', 'n', or 'ArrowRight' advances to next scene
+  useEffect(() => {
+    if (!isDemoMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if (e.key === 'n' || e.key === 'N' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextPreset();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDemoMode, activePresetIndex, presets]);
+
   return (
     <DemoContext.Provider
       value={{
@@ -340,6 +383,9 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeKeyEvent,
         pausedAtEvent,
         resumeFromKeyEvent,
+        isOfflineFallback,
+        reducedMotion,
+        setReducedMotion,
       }}
     >
       {children}
