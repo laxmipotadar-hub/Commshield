@@ -4,8 +4,9 @@ All thresholds, limits, and tolerances are centralized here with documented rati
 No attribution thresholds should be hard-coded inline.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import List
 
 
 class AbstainReason(str, Enum):
@@ -16,6 +17,9 @@ class AbstainReason(str, Enum):
     MIMICRY_SUSPECTED = "mimicry_suspected"
     DETECTORS_DISAGREE = "detectors_disagree"
     INCONCLUSIVE_GROWTH_PATTERN = "inconclusive_growth_pattern"
+    UNCERTAIN_CONFIDENCE = "uncertain_confidence"
+    CONFORMAL_GRAY_BAND = "conformal_gray_band"
+    DETECTOR_PVALUE_DISAGREEMENT = "detector_pvalue_disagreement"
 
 
 class AttributionVerdict(str, Enum):
@@ -37,44 +41,103 @@ class AttributionConfig:
     """Thresholds and parameters governing drift detection and attribution evidence tests."""
 
     # 1. ADWIN Drift Detection Parameters
-    # Significance delta for Hoeffding cut in ADWIN drift detection on volume stream
     adwin_delta: float = 0.002
-    # Minimum observations before ADWIN evaluates splits
     adwin_min_window_length: int = 5
 
     # 2. Volume Multiplier Thresholds
-    # Minimum volume multiplier (k) above active baseline to qualify as traffic growth
     volume_growth_min_k: float = 1.15
-    # Volume drop multiplier below which abnormal traffic contraction is flagged
     volume_drop_max_k: float = 0.70
 
     # 3. Proportional-Growth & Composition Test Thresholds
-    # Maximum Jensen-Shannon Divergence allowed between current composition and baseline (99th percentile null)
     jsd_null_threshold_99th: float = 0.0350
-    # Pseudo-count smoothing added to zero-probability categories prior to computing KL divergence
     jsd_pseudo_count: float = 1e-5
-    # Relative tolerance on per-category volume scaling factors vs overall scaling factor k
     proportionality_tolerance: float = 0.35
 
     # 4. Per-UE Rate Comparison Thresholds
-    # Allowed relative deviation of per-device rates (|rate/baseline_rate - 1.0|) to be considered stable growth
     per_ue_rate_stable_tolerance: float = 0.25
-    # Jump ratio above baseline per-device rate indicating anomalous individual device activity rather than user growth
     per_ue_rate_jump_ratio: float = 1.50
 
     # 5. Threat Indicator Cutoffs
-    # Maximum acceptable NAS signalling failure ratio before flagging signaling distress
     nas_failure_ratio_threshold: float = 0.010
-    # Maximum acceptable PFCP session failure ratio
     pfcp_failure_ratio_threshold: float = 0.010
-    # Negative shift in UE hash entropy indicating device concentration / flood
     ue_entropy_drop_threshold: float = -1.00
-    # Elevated new-device arrival rate threshold
     new_ue_rate_threshold: float = 0.035
 
     # 6. Minimum History Requirement
-    # Minimum number of recent observed windows required for confident attribution
     min_windows_required: int = 3
+
+    # 7. Attributor Selection Flag ("rules" | "learned")
+    attributor_type: str = "rules"
+
+    # 8. Split Conformal Calibration Parameters
+    conformal_enabled: bool = True
+    conformal_alpha_low: float = 0.05
+    conformal_alpha_high: float = 0.20
+    conformal_detector_disagreement_margin: float = 0.35
+    conformal_min_calibration_size: int = 30
+    conformal_pooling_fallback: bool = True
 
 
 DEFAULT_ATTRIBUTION_CONFIG = AttributionConfig()
+
+
+# Canonical ordered feature list matching attribution signals from docs/AI_FEASIBILITY.md
+# No raw identifiers, no labels of any kind
+LEARNED_ATTRIBUTION_FEATURES: List[str] = [
+    "scaling_factor_k",
+    "jsd_divergence",
+    "ue_entropy_delta",
+    "new_ue_rate",
+    "nas_failure_ratio",
+    "pfcp_failure_ratio",
+    "detector_agreement_numeric",
+    "control_slice_concordant",
+    "per_ue_rate_deviation",
+]
+
+
+@dataclass
+class LearnedAttributionConfig:
+    """Pre-registered configuration for the learned attributor with sequential evidence accumulation.
+
+    Documented Rationale:
+    Model is regularized and intentionally small (linear/logistic, 9 weights + 1 intercept)
+    because, as proven in docs/AI_FEASIBILITY.md, network drift telemetry provides very few
+    distinct episodes of growth and stealth attacks. A high-parameter model would easily overfit
+    to transient noise or diurnal patterns in the single synthetic growth episode. Fixed seed ensures determinism.
+    """
+    model_type: str = "logistic_regression"
+    regularization_l2: float = 0.5
+    random_seed: int = 42
+    sequential_window_length: int = 3
+    attack_decision_threshold: float = 0.60
+    benign_decision_threshold: float = 0.40
+    feature_names: List[str] = field(
+        default_factory=lambda: list(LEARNED_ATTRIBUTION_FEATURES)
+    )
+
+
+DEFAULT_LEARNED_ATTRIBUTION_CONFIG = LearnedAttributionConfig()
+
+
+@dataclass
+class ConformalAttributionConfig:
+    """Pre-registered, frozen parameters for split conformal calibration and abstention.
+
+    Tuned on tuning streams and frozen:
+    - alpha_low: 0.05 (rejection of null / benign hypothesis -> likely attack)
+    - alpha_high: 0.20 (acceptance of null / benign hypothesis -> likely benign)
+    - gray band: [alpha_low, alpha_high] -> abstain as uncertain
+    - detector_disagreement_margin: 0.35 -> abstain if |p_IF - p_AE| > margin
+    - min_calibration_size: 30 -> fallback to pooled calibration if per-slice count is less
+    - pooling_fallback: True -> pool calibration scores across slices when slice count is deficient
+    """
+    enabled: bool = True
+    alpha_low: float = 0.05
+    alpha_high: float = 0.20
+    detector_disagreement_margin: float = 0.35
+    min_calibration_size: int = 30
+    pooling_fallback: bool = True
+
+
+DEFAULT_CONFORMAL_CONFIG = ConformalAttributionConfig()

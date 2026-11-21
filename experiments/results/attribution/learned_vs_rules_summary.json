@@ -1,0 +1,2027 @@
+{
+  "evaluated_at": "2026-11-18T19:21:13.464836+00:00",
+  "seeds_evaluated": [
+    42,
+    101,
+    2024,
+    777,
+    999
+  ],
+  "synthetic_scenarios": {
+    "stable_benign": {
+      "rules": {
+        "attack_recall_mean": 0.0,
+        "attack_precision_mean": 0.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 1.0,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      },
+      "learned": {
+        "attack_recall_mean": 0.0,
+        "attack_precision_mean": 0.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 1.0,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    "legitimate_growth": {
+      "rules": {
+        "attack_recall_mean": 0.0,
+        "attack_precision_mean": 0.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 1.0,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      },
+      "learned": {
+        "attack_recall_mean": 0.0,
+        "attack_precision_mean": 0.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 1.0,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 0,
+            "benign_windows": 60,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    "slow_attack_ramp": {
+      "rules": {
+        "attack_recall_mean": 0.8381,
+        "attack_precision_mean": 1.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 0.4134,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 24,
+            "abstain_rate": 0.4,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8571,
+                "ci_lower": 0.7391,
+                "ci_upper": 0.9524
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 25,
+            "abstain_rate": 0.4167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8333,
+                "ci_lower": 0.7073,
+                "ci_upper": 0.9318
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 25,
+            "abstain_rate": 0.4167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8333,
+                "ci_lower": 0.7073,
+                "ci_upper": 0.9318
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 25,
+            "abstain_rate": 0.4167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8333,
+                "ci_lower": 0.7073,
+                "ci_upper": 0.9318
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 25,
+            "abstain_rate": 0.4167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8333,
+                "ci_lower": 0.7073,
+                "ci_upper": 0.9318
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      },
+      "learned": {
+        "attack_recall_mean": 0.7429,
+        "attack_precision_mean": 1.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 0.48,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 29,
+            "abstain_rate": 0.4833,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.7381,
+                "ci_lower": 0.5952,
+                "ci_upper": 0.8571
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.7619,
+                "ci_lower": 0.6279,
+                "ci_upper": 0.875
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 29,
+            "abstain_rate": 0.4833,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.7381,
+                "ci_lower": 0.5952,
+                "ci_upper": 0.8571
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.7619,
+                "ci_lower": 0.6279,
+                "ci_upper": 0.875
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 42,
+            "benign_windows": 18,
+            "abstain_count": 30,
+            "abstain_rate": 0.5,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.7143,
+                "ci_lower": 0.5675,
+                "ci_upper": 0.8333
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    "attack_in_growth": {
+      "rules": {
+        "attack_recall_mean": 0.8889,
+        "attack_precision_mean": 1.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 0.4667,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8889,
+                "ci_lower": 0.7838,
+                "ci_upper": 0.973
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8889,
+                "ci_lower": 0.7838,
+                "ci_upper": 0.973
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8889,
+                "ci_lower": 0.7838,
+                "ci_upper": 0.973
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8889,
+                "ci_lower": 0.7838,
+                "ci_upper": 0.973
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 28,
+            "abstain_rate": 0.4667,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.8889,
+                "ci_lower": 0.7838,
+                "ci_upper": 0.973
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      },
+      "learned": {
+        "attack_recall_mean": 0.6333,
+        "attack_precision_mean": 1.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 0.62,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 37,
+            "abstain_rate": 0.6167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.6389,
+                "ci_lower": 0.4846,
+                "ci_upper": 0.8
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 38,
+            "abstain_rate": 0.6333,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.6111,
+                "ci_lower": 0.4545,
+                "ci_upper": 0.7813
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 37,
+            "abstain_rate": 0.6167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.6389,
+                "ci_lower": 0.4846,
+                "ci_upper": 0.8
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 37,
+            "abstain_rate": 0.6167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.6389,
+                "ci_lower": 0.4846,
+                "ci_upper": 0.8
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 36,
+            "benign_windows": 24,
+            "abstain_count": 37,
+            "abstain_rate": 0.6167,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.6389,
+                "ci_lower": 0.4846,
+                "ci_upper": 0.8
+              },
+              "precision": {
+                "point_estimate": 1.0,
+                "ci_lower": 1.0,
+                "ci_upper": 1.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    "mimicry_attack": {
+      "rules": {
+        "attack_recall_mean": 0.0,
+        "attack_precision_mean": 0.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 1.0,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      },
+      "learned": {
+        "attack_recall_mean": 0.0,
+        "attack_precision_mean": 0.0,
+        "benign_recall_mean": 0.0,
+        "benign_precision_mean": 0.0,
+        "abstain_rate_mean": 1.0,
+        "seed_detail": [
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          },
+          {
+            "total_windows": 60,
+            "attack_windows": 30,
+            "benign_windows": 30,
+            "abstain_count": 60,
+            "abstain_rate": 1.0,
+            "attack_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            },
+            "benign_class": {
+              "recall": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              },
+              "precision": {
+                "point_estimate": 0.0,
+                "ci_lower": 0.0,
+                "ci_upper": 0.0
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "held_out_real_family": {
+    "scaled_benign_growth": {
+      "rules": {
+        "total_windows": 40,
+        "attack_windows": 0,
+        "benign_windows": 40,
+        "abstain_count": 2,
+        "abstain_rate": 0.05,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      },
+      "learned": {
+        "total_windows": 40,
+        "attack_windows": 0,
+        "benign_windows": 40,
+        "abstain_count": 2,
+        "abstain_rate": 0.05,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      }
+    },
+    "SYNFlood": {
+      "rules": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      },
+      "learned": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      }
+    },
+    "HTTPFlood": {
+      "rules": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      },
+      "learned": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      }
+    },
+    "UDPScan": {
+      "rules": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      },
+      "learned": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      }
+    },
+    "SlowrateDoS": {
+      "rules": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      },
+      "learned": {
+        "total_windows": 80,
+        "attack_windows": 25,
+        "benign_windows": 55,
+        "abstain_count": 2,
+        "abstain_rate": 0.025,
+        "attack_class": {
+          "recall": {
+            "point_estimate": 1.0,
+            "ci_lower": 1.0,
+            "ci_upper": 1.0
+          },
+          "precision": {
+            "point_estimate": 0.3205,
+            "ci_lower": 0.2179,
+            "ci_upper": 0.4304
+          }
+        },
+        "benign_class": {
+          "recall": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          },
+          "precision": {
+            "point_estimate": 0.0,
+            "ci_lower": 0.0,
+            "ci_upper": 0.0
+          }
+        }
+      }
+    }
+  },
+  "where_learned_is_worse": [
+    {
+      "domain": "synthetic",
+      "scenario": "slow_attack_ramp",
+      "metric": "attack_recall",
+      "rules": 0.8381,
+      "learned": 0.7429,
+      "delta": 0.0952,
+      "reason": "Sequential decision horizon (N=3) dampens initial detection of fast attacks, causing detection delay."
+    },
+    {
+      "domain": "synthetic",
+      "scenario": "slow_attack_ramp",
+      "metric": "abstention_rate",
+      "rules": 0.4134,
+      "learned": 0.48,
+      "delta": 0.0666,
+      "reason": "Learned decision boundary outputs probabilities in the ambiguous zone (0.40 - 0.60), triggering abstention."
+    },
+    {
+      "domain": "synthetic",
+      "scenario": "attack_in_growth",
+      "metric": "attack_recall",
+      "rules": 0.8889,
+      "learned": 0.6333,
+      "delta": 0.2556,
+      "reason": "Sequential decision horizon (N=3) dampens initial detection of fast attacks, causing detection delay."
+    },
+    {
+      "domain": "synthetic",
+      "scenario": "attack_in_growth",
+      "metric": "abstention_rate",
+      "rules": 0.4667,
+      "learned": 0.62,
+      "delta": 0.1533,
+      "reason": "Learned decision boundary outputs probabilities in the ambiguous zone (0.40 - 0.60), triggering abstention."
+    }
+  ],
+  "summary": {
+    "total_evaluations": 10,
+    "scenarios_where_learned_worse_count": 4,
+    "key_weakness": "Learned model incurs sequential lag (N=3 horizon) and suffers domain degradation on held-out real 5G-NIDD due to missing 3GPP signaling fields."
+  }
+}
