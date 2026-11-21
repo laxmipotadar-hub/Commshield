@@ -18,22 +18,46 @@
         "commshield": {
           "recall": 1.0,
           "fpr": 0.25,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
         },
         "isolation_forest": {
           "recall": 1.0,
           "fpr": 0.125,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
         },
         "autoencoder": {
           "recall": 1.0,
           "fpr": 0.125,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
         },
         "fixed_zscore": {
           "recall": 1.0,
           "fpr": 0.75,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
         }
       }
     },
@@ -45,22 +69,46 @@
         "commshield": {
           "recall": 1.0,
           "fpr": 0.4,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "isolation_forest": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "autoencoder": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "fixed_zscore": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         }
       }
     },
@@ -72,22 +120,70 @@
         "commshield": {
           "recall": 0.7273,
           "fpr": 0.6667,
-          "detection_delay_windows": 4
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.4375,
+            0.8372
+          ],
+          "fpr_ci_text": "[43.8%, 83.7%]"
         },
         "isolation_forest": {
           "recall": 0.7273,
           "fpr": 0.5556,
-          "detection_delay_windows": 4
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.3372,
+            0.7544
+          ],
+          "fpr_ci_text": "[33.7%, 75.4%]"
         },
         "autoencoder": {
           "recall": 0.7273,
           "fpr": 0.6667,
-          "detection_delay_windows": 4
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.4375,
+            0.8372
+          ],
+          "fpr_ci_text": "[43.8%, 83.7%]"
         },
         "fixed_zscore": {
           "recall": 0.7273,
           "fpr": 0.7222,
-          "detection_delay_windows": 4
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.4913,
+            0.875
+          ],
+          "fpr_ci_text": "[49.1%, 87.5%]"
         }
       }
     },
@@ -99,22 +195,46 @@
         "commshield": {
           "recall": 1.0,
           "fpr": 0.1429,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
         },
         "isolation_forest": {
           "recall": 1.0,
           "fpr": 0.1429,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
         },
         "autoencoder": {
           "recall": 1.0,
           "fpr": 0.1429,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
         },
         "fixed_zscore": {
           "recall": 1.0,
           "fpr": 0.2857,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
         }
       }
     },
@@ -126,22 +246,70 @@
         "commshield": {
           "recall": 0.0,
           "fpr": 0.35,
-          "detection_delay_windows": 10
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1812,
+            0.5671
+          ],
+          "fpr_ci_text": "[18.1%, 56.7%]"
         },
         "isolation_forest": {
           "recall": 0.0,
           "fpr": 0.3,
-          "detection_delay_windows": 10
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1455,
+            0.519
+          ],
+          "fpr_ci_text": "[14.5%, 51.9%]"
         },
         "autoencoder": {
           "recall": 0.0,
           "fpr": 0.35,
-          "detection_delay_windows": 10
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1812,
+            0.5671
+          ],
+          "fpr_ci_text": "[18.1%, 56.7%]"
         },
         "fixed_zscore": {
           "recall": 0.0,
           "fpr": 0.3,
-          "detection_delay_windows": 10
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1455,
+            0.519
+          ],
+          "fpr_ci_text": "[14.5%, 51.9%]"
         }
       }
     },
@@ -153,22 +321,46 @@
         "commshield": {
           "recall": 1.0,
           "fpr": 0.2,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "isolation_forest": {
           "recall": 1.0,
           "fpr": 0.2,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "autoencoder": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "fixed_zscore": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         }
       }
     },
@@ -180,22 +372,46 @@
         "commshield": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "isolation_forest": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "autoencoder": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         },
         "fixed_zscore": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
         }
       }
     },
@@ -207,24 +423,513 @@
         "commshield": {
           "recall": 0.8571,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
         },
         "isolation_forest": {
           "recall": 0.8571,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
         },
         "autoencoder": {
           "recall": 0.8571,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
         },
         "fixed_zscore": {
           "recall": 1.0,
           "fpr": 0.0,
-          "detection_delay_windows": 0
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
         }
       }
+    }
+  },
+  "slices_assigned": true,
+  "effective_attacks": {
+    "SlowrateDoS": {
+      "total_windows": 29,
+      "attack_windows": 11,
+      "benign_windows": 18,
+      "detectors": {
+        "commshield": {
+          "recall": 0.7273,
+          "fpr": 0.6667,
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.4375,
+            0.8372
+          ],
+          "fpr_ci_text": "[43.8%, 83.7%]"
+        },
+        "isolation_forest": {
+          "recall": 0.7273,
+          "fpr": 0.5556,
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.3372,
+            0.7544
+          ],
+          "fpr_ci_text": "[33.7%, 75.4%]"
+        },
+        "autoencoder": {
+          "recall": 0.7273,
+          "fpr": 0.6667,
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.4375,
+            0.8372
+          ],
+          "fpr_ci_text": "[43.8%, 83.7%]"
+        },
+        "fixed_zscore": {
+          "recall": 0.7273,
+          "fpr": 0.7222,
+          "detection_delay_windows": 4,
+          "recall_n": 11,
+          "recall_ci": [
+            0.4344,
+            0.9025
+          ],
+          "recall_ci_text": "[43.4%, 90.2%]",
+          "fpr_n": 18,
+          "fpr_ci": [
+            0.4913,
+            0.875
+          ],
+          "fpr_ci_text": "[49.1%, 87.5%]"
+        }
+      }
+    },
+    "SYNFlood": {
+      "total_windows": 16,
+      "attack_windows": 9,
+      "benign_windows": 7,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.1429,
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.1429,
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.1429,
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.2857,
+          "detection_delay_windows": 0,
+          "recall_n": 9,
+          "recall_ci": null,
+          "recall_ci_text": "n=9, interval too wide to interpret",
+          "fpr_n": 7,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=7, interval too wide to interpret"
+        }
+      }
+    },
+    "TCPConnectScan": {
+      "total_windows": 10,
+      "attack_windows": 5,
+      "benign_windows": 5,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.2,
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.2,
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 5,
+          "recall_ci": null,
+          "recall_ci_text": "n=5, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        }
+      }
+    },
+    "UDPScan": {
+      "total_windows": 10,
+      "attack_windows": 7,
+      "benign_windows": 3,
+      "detectors": {
+        "commshield": {
+          "recall": 0.8571,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
+        },
+        "isolation_forest": {
+          "recall": 0.8571,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
+        },
+        "autoencoder": {
+          "recall": 0.8571,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 7,
+          "recall_ci": null,
+          "recall_ci_text": "n=7, interval too wide to interpret",
+          "fpr_n": 3,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=3, interval too wide to interpret"
+        }
+      }
+    }
+  },
+  "where_it_does_not_work": {
+    "UDPFlood": {
+      "total_windows": 9,
+      "attack_windows": 1,
+      "benign_windows": 8,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.25,
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.125,
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.125,
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.75,
+          "detection_delay_windows": 0,
+          "recall_n": 1,
+          "recall_ci": null,
+          "recall_ci_text": "n=1, interval too wide to interpret",
+          "fpr_n": 8,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=8, interval too wide to interpret"
+        }
+      },
+      "reason": "Sample size too small (n=1 window), interval too wide to establish statistical power."
+    },
+    "HTTPFlood": {
+      "total_windows": 8,
+      "attack_windows": 3,
+      "benign_windows": 5,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.4,
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 3,
+          "recall_ci": null,
+          "recall_ci_text": "n=3, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        }
+      },
+      "reason": "Sample size too small (n=3 windows), interval too wide to establish statistical power."
+    },
+    "ICMPFlood": {
+      "total_windows": 30,
+      "attack_windows": 10,
+      "benign_windows": 20,
+      "detectors": {
+        "commshield": {
+          "recall": 0.0,
+          "fpr": 0.35,
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1812,
+            0.5671
+          ],
+          "fpr_ci_text": "[18.1%, 56.7%]"
+        },
+        "isolation_forest": {
+          "recall": 0.0,
+          "fpr": 0.3,
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1455,
+            0.519
+          ],
+          "fpr_ci_text": "[14.5%, 51.9%]"
+        },
+        "autoencoder": {
+          "recall": 0.0,
+          "fpr": 0.35,
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1812,
+            0.5671
+          ],
+          "fpr_ci_text": "[18.1%, 56.7%]"
+        },
+        "fixed_zscore": {
+          "recall": 0.0,
+          "fpr": 0.3,
+          "detection_delay_windows": 10,
+          "recall_n": 10,
+          "recall_ci": [
+            0.0,
+            0.2775
+          ],
+          "recall_ci_text": "[0.0%, 27.8%]",
+          "fpr_n": 20,
+          "fpr_ci": [
+            0.1455,
+            0.519
+          ],
+          "fpr_ci_text": "[14.5%, 51.9%]"
+        }
+      },
+      "reason": "Trickle attack of only 613 packets over 20 min (<0.5 pps) diluted across 60 s window aggregations."
+    },
+    "SYNScan": {
+      "total_windows": 9,
+      "attack_windows": 4,
+      "benign_windows": 5,
+      "detectors": {
+        "commshield": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "isolation_forest": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "autoencoder": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        },
+        "fixed_zscore": {
+          "recall": 1.0,
+          "fpr": 0.0,
+          "detection_delay_windows": 0,
+          "recall_n": 4,
+          "recall_ci": null,
+          "recall_ci_text": "n=4, interval too wide to interpret",
+          "fpr_n": 5,
+          "fpr_ci": null,
+          "fpr_ci_text": "n=5, interval too wide to interpret"
+        }
+      },
+      "reason": "Sample size too small (n=4 windows), interval too wide to establish statistical power."
     }
   }
 }

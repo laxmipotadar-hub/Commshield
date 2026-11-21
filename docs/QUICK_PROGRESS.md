@@ -1,3 +1,4 @@
 # CommShield Quick Master Task Progress Log
 
 - Stage: Q0, Status: DONE, Files Changed: docs/DATA_FACTS.md, docs/QUICK_PROGRESS.md, Test Result: 114/114 passed, demo_check 10/10 PASS, Weakest Finding: 5G-NIDD completely lacks 3GPP control-plane signaling and native S-NSSAI slice headers; slices assigned by base station topology.
+- Stage: Q1, Status: DONE, Files Changed: ml_engine/evaluation/metrics.py, experiments/test_counts_and_intervals.py, experiments/results/real/detection_evaluation.json, experiments/results/real/three_arm_summary.json, experiments/results/experiment_summary.json, frontend/src/views/ExperimentsView.tsx, Test Result: 118/118 passed, demo_check 10/10 PASS, frontend build clean, Weakest Finding: For n < 10 window counts (UDPFlood, HTTPFlood, SYNScan), confidence intervals are too wide to interpret; ICMP flood has 0.0% recall due to extreme trickle rate.

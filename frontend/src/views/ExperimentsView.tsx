@@ -907,27 +907,68 @@ export const ExperimentsView: React.FC = () => {
     };
   }, [selectedScenario, armA, armB, armC]);
 
-  // Real data detection table rows
-  const realAttackRows = useMemo(() => {
+  // Real data detection table rows partitioned into effective vs where it does not work
+  const { effectiveAttackRows, whereNotWorkRows } = useMemo(() => {
     const atkObj = realSummaryData.detection_evaluation?.attack_evaluations || {};
-    return Object.entries(atkObj).map(([atkName, data]: [string, any]) => {
+    const effective: any[] = [];
+    const notWork: any[] = [];
+
+    const formatMetric = (val: number | null | undefined, n: number) => {
+      if (val === null || val === undefined) return 'N/A';
+      const pct = (val * 100).toFixed(1) + '%';
+      if (n < 10) return `${pct} (n=${n}, interval too wide to interpret)`;
+      // Wilson 95%
+      const z = 1.96;
+      const p = val;
+      const denom = 1 + (z * z) / n;
+      const center = (p + (z * z) / (2 * n)) / denom;
+      const margin = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+      const low = Math.max(0, center - margin) * 100;
+      const high = Math.min(1, center + margin) * 100;
+      return `${pct} [${low.toFixed(1)}%, ${high.toFixed(1)}%] (n=${n})`;
+    };
+
+    Object.entries(atkObj).forEach(([atkName, data]: [string, any]) => {
       const dets = data.detectors || {};
-      return {
+      const atkW = data.attack_windows ?? 0;
+      const benW = data.benign_windows ?? 0;
+      const csRecall = dets.commshield?.recall ?? 0;
+
+      const reason = data.reason || (
+        atkName === 'ICMPFlood'
+          ? 'Trickle attack of only 613 packets over 20 min (<0.5 pps) diluted across 60 s window aggregations.'
+          : atkW < 5
+          ? `Sample size too small (n=${atkW} windows), interval too wide to establish statistical power.`
+          : 'Low detection power under 60 s aggregation.'
+      );
+
+      const row = {
         attack_name: atkName,
         category: data.category || (atkName.includes('Scan') ? 'PortScan' : 'DoS'),
-        atk_windows: data.attack_windows,
-        ben_windows: data.benign_windows,
+        atk_windows: atkW,
+        ben_windows: benW,
         commshield_recall: dets.commshield?.recall,
+        commshield_recall_display: formatMetric(dets.commshield?.recall, atkW),
         commshield_fpr: dets.commshield?.fpr,
+        commshield_fpr_display: formatMetric(dets.commshield?.fpr, benW),
         commshield_delay: dets.commshield?.detection_delay_windows,
-        if_recall: dets.isolation_forest?.recall,
-        if_fpr: dets.isolation_forest?.fpr,
-        ae_recall: dets.autoencoder?.recall,
-        ae_fpr: dets.autoencoder?.fpr,
-        zscore_recall: dets.fixed_zscore?.recall,
-        zscore_fpr: dets.fixed_zscore?.fpr,
+        if_recall_display: formatMetric(dets.isolation_forest?.recall, atkW),
+        if_fpr_display: formatMetric(dets.isolation_forest?.fpr, benW),
+        ae_recall_display: formatMetric(dets.autoencoder?.recall, atkW),
+        ae_fpr_display: formatMetric(dets.autoencoder?.fpr, benW),
+        zscore_recall_display: formatMetric(dets.fixed_zscore?.recall, atkW),
+        zscore_fpr_display: formatMetric(dets.fixed_zscore?.fpr, benW),
+        reason,
       };
+
+      if (csRecall === 0 || atkW < 5) {
+        notWork.push(row);
+      } else {
+        effective.push(row);
+      }
     });
+
+    return { effectiveAttackRows: effective, whereNotWorkRows: notWork };
   }, [realSummaryData]);
 
   if (loading && !summaryData && !realSummaryData) {
@@ -1638,11 +1679,16 @@ export const ExperimentsView: React.FC = () => {
           <div className="bg-card rounded-xl border border-border p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-base font-bold text-text">
-                  Per-Attack Detection & False-Positive Rate on 5G-NIDD
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-text">
+                    Per-Attack Detection & False-Positive Rate on 5G-NIDD
+                  </h2>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30">
+                    slices assigned
+                  </span>
+                </div>
                 <p className="text-xs text-muted">
-                  Detection recall, benign false-alarm rate, and detection delay across DoS and port-scan campaigns. Fixed Z-Score baseline included for context.
+                  Detection recall, benign false-alarm rate, and Wilson 95% intervals across DoS and port-scan campaigns. Fixed Z-Score baseline included for context.
                 </p>
               </div>
               <span className="text-xs font-mono px-2 py-1 rounded bg-bg border border-border text-slate">
@@ -1654,7 +1700,7 @@ export const ExperimentsView: React.FC = () => {
               <table className="w-full text-left text-xs text-text border border-border rounded-lg overflow-hidden">
                 <thead className="bg-bg/80 text-muted uppercase font-semibold border-b border-border">
                   <tr>
-                    <th className="px-3.5 py-3">Attack Campaign</th>
+                    <th className="px-3.5 py-3">Evaluated Campaign</th>
                     <th className="px-3.5 py-3">Category</th>
                     <th className="px-3.5 py-3">Atk / Ben Windows</th>
                     <th className="px-3.5 py-3 text-blue font-bold">CommShield Recall (FPR)</th>
@@ -1665,12 +1711,9 @@ export const ExperimentsView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {realAttackRows.map((r) => (
+                  {effectiveAttackRows.map((r) => (
                     <tr key={r.attack_name} className="hover:bg-bg/40 transition-colors">
                       <td className="px-3.5 py-2.5 font-bold text-text flex items-center gap-1.5">
-                        {r.attack_name === 'ICMPFlood' && (
-                          <span className="w-2 h-2 rounded-full bg-attack" title="Weakest Result (0% Recall)" />
-                        )}
                         <span>{r.attack_name}</span>
                       </td>
                       <td className="px-3.5 py-2.5">
@@ -1680,26 +1723,68 @@ export const ExperimentsView: React.FC = () => {
                       </td>
                       <td className="px-3.5 py-2.5 font-mono">{r.atk_windows} / {r.ben_windows}</td>
                       <td className="px-3.5 py-2.5 font-bold text-blue">
-                        {r.commshield_recall !== null ? `${(r.commshield_recall * 100).toFixed(1)}%` : 'N/A'}{' '}
-                        <span className="text-muted font-normal">({(r.commshield_fpr * 100).toFixed(1)}%)</span>
+                        {r.commshield_recall_display}
                       </td>
                       <td className="px-3.5 py-2.5 font-mono">{r.commshield_delay ?? 0}</td>
                       <td className="px-3.5 py-2.5">
-                        {r.if_recall !== null ? `${(r.if_recall * 100).toFixed(1)}%` : 'N/A'}{' '}
-                        <span className="text-muted">({(r.if_fpr * 100).toFixed(1)}%)</span>
+                        {r.if_recall_display}
                       </td>
                       <td className="px-3.5 py-2.5">
-                        {r.ae_recall !== null ? `${(r.ae_recall * 100).toFixed(1)}%` : 'N/A'}{' '}
-                        <span className="text-muted">({(r.ae_fpr * 100).toFixed(1)}%)</span>
+                        {r.ae_recall_display}
                       </td>
                       <td className="px-3.5 py-2.5 font-mono text-slate">
-                        {r.zscore_recall !== null ? `${(r.zscore_recall * 100).toFixed(1)}%` : 'N/A'}{' '}
-                        <span className="text-muted">({(r.zscore_fpr * 100).toFixed(1)}%)</span>
+                        {r.zscore_recall_display}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Where It Does Not Work Group */}
+            <div className="mt-5 pt-4 border-t border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-attack" />
+                <h3 className="text-sm font-bold text-text">
+                  Where It Does Not Work (Recall 0 or n &lt; 5 Windows)
+                </h3>
+                <span className="text-[11px] text-muted font-medium">
+                  Documented in docs/DATA_FACTS.md
+                </span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 ml-auto">
+                  slices assigned
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-text border border-border rounded-lg overflow-hidden bg-bg/40">
+                  <thead className="bg-bg text-muted uppercase font-semibold border-b border-border">
+                    <tr>
+                      <th className="px-3.5 py-2.5">Attack Campaign</th>
+                      <th className="px-3.5 py-2.5">Category</th>
+                      <th className="px-3.5 py-2.5">Atk / Ben Windows</th>
+                      <th className="px-3.5 py-2.5 text-attack font-bold">CommShield Recall</th>
+                      <th className="px-3.5 py-2.5">Operational Reason (from docs/DATA_FACTS.md)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {whereNotWorkRows.map((r) => (
+                      <tr key={r.attack_name} className="hover:bg-bg/60 transition-colors">
+                        <td className="px-3.5 py-2 font-bold text-text">{r.attack_name}</td>
+                        <td className="px-3.5 py-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${r.category === 'DoS' ? 'bg-attack/10 text-attack' : 'bg-blue/10 text-blue'}`}>
+                            {r.category}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2 font-mono">{r.atk_windows} / {r.ben_windows}</td>
+                        <td className="px-3.5 py-2 font-bold text-attack">
+                          {r.commshield_recall_display}
+                        </td>
+                        <td className="px-3.5 py-2 text-muted italic">{r.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
