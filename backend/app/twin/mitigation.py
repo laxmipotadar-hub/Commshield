@@ -405,34 +405,14 @@ class MitigationEngine:
             }
 
     def initiate_recovery(self) -> Dict[str, Any]:
-        """Restore all components and connections to nominal operating conditions."""
+        """Restore all components, connections, and flows to nominal operating conditions."""
         with self._lock:
-            # Rebalance component health and telemetry
-            for cid in self._state_engine.get_components().keys():
-                comp = self._state_engine.get_component(cid)
-                if comp and comp.security_status != SecurityStatus.SECURE:
-                    self._state_engine.update_component(
-                        cid,
-                        operational_status=OperationalStatus.ACTIVE,
-                        security_status=SecurityStatus.SECURE,
-                        health_score=100.0,
-                        latency_ms=2.2 if "upf" in cid or "gnb" in cid else 1.5,
-                        packet_loss_pct=0.0,
-                    )
+            from .scenarios import scenario_engine
 
-            # Rebalance link statuses
-            for conn_id, conn in self._state_engine.get_connections().items():
-                if conn.connection_status != ConnectionStatus.ACTIVE:
-                    self._state_engine.update_connection(
-                        conn_id,
-                        connection_status=ConnectionStatus.ACTIVE,
-                        utilization_mbps=min(conn.capacity_mbps * 0.15, 30.0),
-                        latency_ms=1.8,
-                        packet_loss_pct=0.0,
-                        security_status="NORMAL",
-                    )
+            # Step 1: Stop active attack generator
+            scenario_engine.stop_scenario()
 
-            # Ensure an IncidentRecord is recorded into ledger upon recovery
+            # Step 2: Archive incident into forensic ledger BEFORE clearing threats
             active_mitigations = self._state_engine.get_active_mitigations()
             active_scen_id = self._state_engine._active_scenario_id or "VOLUMETRIC_DDOS"
             if active_mitigations or self._state_engine._active_threats:
@@ -454,21 +434,61 @@ class MitigationEngine:
                     blocked_packets_count=48500,
                     legitimate_preserved_pct=99.5,
                     verification_status="CONTAINMENT_VERIFIED",
-                    final_outcome="Threat contained at N3 boundary; nominal latency restored with zero packet loss. Legitimate traffic preserved.",
+                    final_outcome="Threat fully contained and mitigated; nominal user-plane latency restored with zero packet loss. Legitimate traffic preserved.",
                     evidence={
                         "remaining_malicious_mbps": 0.0,
-                        "legitimate_throughput_mbps": 74.8,
+                        "legitimate_throughput_mbps": 75.0,
                         "packet_loss_pct": 0.0,
-                        "latency_ms": 2.2,
+                        "latency_ms": 2.1,
                         "cpu_utilization_pct": 22.0,
                         "service_availability_pct": 100.0,
                     },
                 )
                 self._state_engine.record_incident(inc)
 
-            # Clear threats and transition lifecycle
+            # Step 3: Rebalance and restore all components (UEs, gNodeBs, Core NFs, Edge MECs)
+            for cid in self._state_engine.get_components().keys():
+                self._state_engine.update_component(
+                    cid,
+                    operational_status=OperationalStatus.ACTIVE,
+                    security_status=SecurityStatus.SECURE,
+                    health_score=100.0,
+                    latency_ms=2.1 if "upf" in cid or "gnb" in cid else 1.5,
+                    packet_loss_pct=0.0,
+                )
+
+            # Step 4: Rebalance all logical links
+            for conn_id, conn in self._state_engine.get_connections().items():
+                self._state_engine.update_connection(
+                    conn_id,
+                    connection_status=ConnectionStatus.ACTIVE,
+                    utilization_mbps=min(conn.capacity_mbps * 0.15, 30.0),
+                    latency_ms=1.8,
+                    packet_loss_pct=0.0,
+                    security_status="NORMAL",
+                )
+
+            # Step 5: Restore slices to nominal state
+            for s_id in self._state_engine.get_slices().keys():
+                self._state_engine.update_slice(
+                    s_id,
+                    security_state="NOMINAL",
+                    current_packet_loss_pct=0.0,
+                    current_latency_ms=3.5 if "sst-2" in s_id else 8.5,
+                )
+
+            # Step 6: Clear active attack propagation and blast-radius state
+            self._state_engine.set_propagation_result(None)
+
+            # Step 7: Clear threats and staged recommendations
             self._state_engine.clear_threats()
+            self._state_engine.clear_recommendations()
+            self._state_engine._active_scenario_id = None
+
+            # Step 8: Transition lifecycle state to RECOVERED
             self._state_engine.set_lifecycle_state(ScenarioLifecycleState.RECOVERED)
+
+            # Step 9: Rebalance network traffic breakdown to clean baseline
             self._state_engine.update_traffic_breakdown(
                 normal_traffic_mbps=75.0,
                 current_traffic_mbps=75.0,
@@ -480,7 +500,7 @@ class MitigationEngine:
                 legitimate_preserved_pct=100.0,
             )
 
-            # Resilience score update
+            # Step 10: Quantitative resilience score calculation
             snapshot = self._state_engine.get_snapshot()
             res_metrics = resilience_engine.calculate_resilience(
                 snapshot=snapshot,
@@ -498,6 +518,13 @@ class MitigationEngine:
                 status="RECOVERED",
                 description="Network recovery sequence successfully completed. All SLA parameters nominal.",
             )
+
+            return {
+                "status": "RECOVERED",
+                "recovery_progress_pct": 100.0,
+                "health_score": self._state_engine.calculate_overall_health(),
+                "lifecycle_state": ScenarioLifecycleState.RECOVERED.value,
+            }
 
             return {
                 "status": "RECOVERED",

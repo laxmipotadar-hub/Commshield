@@ -26,6 +26,7 @@ class DataClassification(str, Enum):
     SIMULATED = "SIMULATED"
     DERIVED = "DERIVED"
     PREDICTED = "PREDICTED"
+    TESTBED_5G = "TESTBED_5G"
 
 
 class OperationalStatus(str, Enum):
@@ -196,6 +197,10 @@ class AttackPropagationResult(BaseModel):
     containment_boundaries: List[str]
     blast_radius_score: float  # 0.0 - 100.0 (percentage of network affected)
     impact_explanation: str
+    attacker_sources: List[str] = Field(default_factory=list)
+    attack_paths: List[List[str]] = Field(default_factory=list)
+    is_distributed: bool = False
+    per_source_traffic_mbps: Dict[str, float] = Field(default_factory=dict)
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -383,3 +388,11 @@ class DigitalTwinStateSnapshot(BaseModel):
     traffic_breakdown: Optional[TrafficBreakdown] = None
     recent_events: List[HistoricalNetworkEvent] = Field(default_factory=list)
     resilience: Optional[ResilienceMetrics] = None
+    current_propagation: Optional[AttackPropagationResult] = None
+    data_mode: str = "LIVE_SIMULATION"  # "REAL_DATASET", "LIVE_SIMULATION", "HYBRID"
+    synthetic_data_enabled: bool = True
+    active_slice_id: str = "sst-1-sd-010203"
+    simulation_speed: float = 1.0
+    defence_mode: str = "MANUAL"
+    ensemble_fusion_enabled: bool = True
+    data_integrity: Dict[str, Any] = Field(default_factory=dict)

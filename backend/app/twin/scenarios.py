@@ -43,6 +43,11 @@ SCENARIO_ALIASES: Dict[str, str] = {
     "volumetric ddos": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
     "ddos": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
     "ddos volumetric traffic flood": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "udp flood": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "syn flood": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "http flood": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "distributed ddos": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
+    "distributed": ScenarioType.DDOS_TRAFFIC_FLOOD.value,
     "signalling storm": ScenarioType.AUTH_ANOMALY.value,
     "signaling storm": ScenarioType.AUTH_ANOMALY.value,
     "auth anomaly": ScenarioType.AUTH_ANOMALY.value,
@@ -50,6 +55,11 @@ SCENARIO_ALIASES: Dict[str, str] = {
     "network congestion": ScenarioType.SLICE_RESOURCE_ABUSE.value,
     "congestion": ScenarioType.SLICE_RESOURCE_ABUSE.value,
     "slice abuse": ScenarioType.SLICE_RESOURCE_ABUSE.value,
+    "slow-rate dos": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
+    "slow-rate": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
+    "slow rate": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
+    "port scanning": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
+    "port scan": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
     "suspicious ue": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
     "suspicious ue behaviour": ScenarioType.SUSPICIOUS_UE_ACTIVITY.value,
     "gateway compromise": ScenarioType.GATEWAY_COMPROMISE.value,
@@ -218,9 +228,16 @@ class ScenarioSimulationEngine:
         entry_point: Optional[str] = None,
         intensity: float = 3.0,
         auto_progress: bool = True,
+        is_distributed: bool = False,
+        attacker_sources: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Initiate attack scenario and launch asynchronous state progression."""
         with self._lock:
+            # Check for Normal Operation request
+            raw_type = scenario_type.strip().lower()
+            if raw_type in ("normal", "normal operation", "nominal"):
+                return self.reset_simulation()
+
             if self._active_scenario and self._state_engine.get_lifecycle_state() not in (
                 ScenarioLifecycleState.NORMAL,
                 ScenarioLifecycleState.RECOVERED,
@@ -232,28 +249,45 @@ class ScenarioSimulationEngine:
                     "message": "A scenario is currently executing. Stop or reset before starting another.",
                 }
 
+            # Check if distributed
+            if "distributed" in raw_type or is_distributed:
+                is_distributed = True
+                if not attacker_sources:
+                    attacker_sources = ["ue-camera-01", "ue-camera-02", "ue-sensor-01", "ue-sensor-02", "ue-phone-01"]
+
             # Lookup catalog definition with alias support
-            lookup_key = SCENARIO_ALIASES.get(scenario_type.strip().lower(), scenario_type)
+            lookup_key = SCENARIO_ALIASES.get(raw_type, scenario_type)
             scen_info = SCENARIO_CATALOG.get(lookup_key)
             if not scen_info:
-                # Fallback to DDOS
                 scenario_type = ScenarioType.DDOS_TRAFFIC_FLOOD.value
                 scen_info = SCENARIO_CATALOG[scenario_type]
             else:
                 scenario_type = lookup_key
 
             target = target_component or scen_info["default_target"]
-            entry = entry_point or scen_info["default_entry"]
+            entry = entry_point or (attacker_sources[0] if attacker_sources else scen_info["default_entry"])
             scen_id = f"scen-{scenario_type.lower()}-{int(time.time())}"
 
-            # Initialize initial elevated traffic breakdown
-            init_mal = round(45.0 * intensity, 1)
+            # Calculate initial elevated traffic breakdown based on attack type
+            if scenario_type == ScenarioType.SUSPICIOUS_UE_ACTIVITY or "slow" in raw_type:
+                init_mal = round(12.0 * intensity, 1)
+                pps = round(1200.0 + (350.0 * intensity), 0)
+            elif scenario_type == ScenarioType.AUTH_ANOMALY:
+                init_mal = round(25.0 * intensity, 1)
+                pps = round(1200.0 + (5500.0 * intensity), 0)
+            elif is_distributed:
+                init_mal = round(75.0 * intensity, 1)
+                pps = round(1200.0 + (5800.0 * intensity), 0)
+            else:
+                init_mal = round(45.0 * intensity, 1)
+                pps = round(1200.0 + (2800.0 * intensity), 0)
+
             self._state_engine.update_traffic_breakdown(
                 normal_traffic_mbps=75.0,
                 current_traffic_mbps=round(75.0 + init_mal, 1),
                 malicious_traffic_mbps=init_mal,
                 legitimate_traffic_mbps=75.0,
-                packet_rate_pps=round(1200.0 + (2800.0 * intensity), 0),
+                packet_rate_pps=pps,
                 malicious_blocked_mbps=0.0,
                 collateral_dropped_mbps=0.0,
                 legitimate_preserved_pct=100.0,
@@ -267,7 +301,7 @@ class ScenarioSimulationEngine:
             self._active_scenario = {
                 "scenario_id": scen_id,
                 "scenario_type": scenario_type,
-                "name": scen_info["name"],
+                "name": ("Distributed " if is_distributed and "Distributed" not in scen_info["name"] else "") + scen_info["name"],
                 "description": scen_info["description"],
                 "target_component": target,
                 "entry_point": entry,
@@ -275,6 +309,8 @@ class ScenarioSimulationEngine:
                 "intensity": intensity,
                 "start_time": datetime.now(timezone.utc).isoformat(),
                 "step": 0,
+                "is_distributed": is_distributed,
+                "attacker_sources": attacker_sources or [entry],
             }
 
             # Set initial lifecycle state
@@ -289,7 +325,7 @@ class ScenarioSimulationEngine:
                 scenario_id=scen_id,
                 severity="WARNING",
                 status="INITIATED",
-                description=f"Cyber attack scenario '{scen_info['name']}' initiated from entry point {entry}.",
+                description=f"Cyber attack scenario '{self._active_scenario['name']}' initiated (distributed={is_distributed}).",
                 payload=self._active_scenario,
             )
 
@@ -303,6 +339,8 @@ class ScenarioSimulationEngine:
                 components=components,
                 connections=connections,
                 traffic_intensity_multiplier=intensity,
+                is_distributed=is_distributed,
+                attacker_sources=attacker_sources,
             )
             self._state_engine.set_propagation_result(prop_result)
 
@@ -539,15 +577,37 @@ class ScenarioSimulationEngine:
         )
         self._state_engine.record_threat(threat)
 
-        # Update peak malicious traffic breakdown
-        peak_mal = round(175.0 * intensity, 1)
+        # Update peak malicious traffic breakdown according to attack type
+        scen_type = catalog_entry.get("scenario_type")
+        is_dist = self._active_scenario.get("is_distributed", False) if self._active_scenario else False
+        if scen_type == ScenarioType.SUSPICIOUS_UE_ACTIVITY:
+            peak_mal = round(28.0 * intensity, 1)
+            pps = round(1200.0 + (850.0 * intensity), 0)
+            legit_mbps = 74.2
+            legit_pct = 98.9
+        elif scen_type == ScenarioType.AUTH_ANOMALY:
+            peak_mal = round(65.0 * intensity, 1)
+            pps = round(1200.0 + (28500.0 * intensity), 0)
+            legit_mbps = 73.5
+            legit_pct = 98.0
+        elif is_dist:
+            peak_mal = round(240.0 * intensity, 1)
+            pps = round(1200.0 + (19500.0 * intensity), 0)
+            legit_mbps = 70.5
+            legit_pct = 94.0
+        else:
+            peak_mal = round(175.0 * intensity, 1)
+            pps = round(1200.0 + (14500.0 * intensity), 0)
+            legit_mbps = 71.8
+            legit_pct = 95.7
+
         self._state_engine.update_traffic_breakdown(
             normal_traffic_mbps=75.0,
             current_traffic_mbps=round(75.0 + peak_mal, 1),
             malicious_traffic_mbps=peak_mal,
-            legitimate_traffic_mbps=71.8,
-            packet_rate_pps=round(1200.0 + (14500.0 * intensity), 0),
-            legitimate_preserved_pct=95.7,
+            legitimate_traffic_mbps=legit_mbps,
+            packet_rate_pps=pps,
+            legitimate_preserved_pct=legit_pct,
         )
 
         # Policy Decision Engine: Generate actionable mitigation recommendation

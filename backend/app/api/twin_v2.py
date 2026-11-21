@@ -60,12 +60,16 @@ class StartScenarioRequest(BaseModel):
     entry_point: Optional[str] = Field(None, description="Entry point component ID e.g. ue-camera-01")
     intensity: float = Field(3.0, ge=1.0, le=10.0, description="Attack traffic intensity multiplier")
     auto_progress: bool = Field(True, description="Whether lifecycle automatically steps through phases")
+    is_distributed: bool = Field(False, description="Whether attack originates from multiple distributed sources")
+    attacker_sources: Optional[List[str]] = Field(None, description="Explicit list of attacker source UEs")
 
 
 class PropagateRequest(BaseModel):
     entry_point: str = Field("ue-camera-01", description="Ingress component")
     target_component: str = Field("upf-01", description="Target component")
     intensity: float = Field(3.0, ge=1.0, le=10.0, description="Traffic intensity multiplier")
+    is_distributed: bool = Field(False, description="Whether propagation includes multiple distributed sources")
+    attacker_sources: Optional[List[str]] = Field(None, description="Attacker sources")
 
 
 class ApplyMitigationRequest(BaseModel):
@@ -99,7 +103,23 @@ class SetDetectionConfigRequest(BaseModel):
 
 
 class SetSpeedRequest(BaseModel):
-    speed: float = Field(..., description="Simulation speed: 0.5, 1.0, 2.0, or 5.0")
+    speed: float = Field(..., description="Simulation speed: 0.5, 1.0, 2.0, 5.0, or 10.0")
+
+
+class SetDataModeRequest(BaseModel):
+    mode: str = Field(..., description="Data mode: REAL_DATASET, LIVE_SIMULATION, or HYBRID")
+
+
+class SetSyntheticRequest(BaseModel):
+    enabled: bool = Field(..., description="Toggle synthetic data generation")
+
+
+class SetActiveSliceRequest(BaseModel):
+    slice_id: str = Field(..., description="Target slice ID: e.g. sst-1-sd-010203")
+
+
+class SetEnsembleFusionRequest(BaseModel):
+    enabled: bool = Field(..., description="Toggle multi-detector ensemble fusion")
 
 
 class VerifyMitigationRequest(BaseModel):
@@ -196,6 +216,8 @@ def start_scenario(req: StartScenarioRequest):
         entry_point=req.entry_point,
         intensity=req.intensity,
         auto_progress=req.auto_progress,
+        is_distributed=req.is_distributed,
+        attacker_sources=req.attacker_sources,
     )
     if result.get("status") == "ALREADY_RUNNING":
         raise HTTPException(status_code=409, detail=result.get("message"))
@@ -418,9 +440,67 @@ def get_simulation_speed():
 
 @router.post("/speed")
 def set_simulation_speed(req: SetSpeedRequest):
-    """Set simulation speed multiplier (0.5x, 1x, 2x, 5x)."""
+    """Set simulation speed multiplier (0.5x, 1x, 2x, 5x, 10x)."""
     speed = twin_state_engine.set_simulation_speed(req.speed)
     return {"speed": speed, "status": "SPEED_UPDATED"}
+
+
+@router.get("/data/mode")
+def get_data_mode():
+    """Retrieve current data mode (REAL_DATASET, LIVE_SIMULATION, HYBRID)."""
+    return {"data_mode": twin_state_engine.get_data_mode()}
+
+
+@router.post("/data/mode")
+def set_data_mode(req: SetDataModeRequest):
+    """Switch data mode between REAL_DATASET, LIVE_SIMULATION, and HYBRID."""
+    mode = twin_state_engine.set_data_mode(req.mode)
+    return {"data_mode": mode, "status": "DATA_MODE_UPDATED"}
+
+
+@router.get("/data/synthetic")
+def get_synthetic_data_status():
+    """Retrieve synthetic data generation toggle status."""
+    return {"synthetic_enabled": twin_state_engine.get_synthetic_enabled()}
+
+
+@router.post("/data/synthetic")
+def set_synthetic_data_status(req: SetSyntheticRequest):
+    """Toggle synthetic data generation on or off."""
+    enabled = twin_state_engine.set_synthetic_enabled(req.enabled)
+    return {"synthetic_enabled": enabled, "status": "SYNTHETIC_DATA_UPDATED"}
+
+
+@router.get("/slice/active")
+def get_active_slice():
+    """Retrieve currently active network slice ID."""
+    return {"active_slice_id": twin_state_engine.get_active_slice()}
+
+
+@router.post("/slice/active")
+def set_active_slice(req: SetActiveSliceRequest):
+    """Switch active network slice context."""
+    slice_id = twin_state_engine.set_active_slice(req.slice_id)
+    return {"active_slice_id": slice_id, "status": "ACTIVE_SLICE_UPDATED"}
+
+
+@router.get("/detection/fusion")
+def get_ensemble_fusion_status():
+    """Retrieve multi-detector ensemble fusion toggle state."""
+    return {"ensemble_fusion_enabled": twin_state_engine.get_ensemble_fusion()}
+
+
+@router.post("/detection/fusion")
+def set_ensemble_fusion_status(req: SetEnsembleFusionRequest):
+    """Toggle multi-detector ensemble fusion on or off."""
+    enabled = twin_state_engine.set_ensemble_fusion(req.enabled)
+    return {"ensemble_fusion_enabled": enabled, "status": "ENSEMBLE_FUSION_UPDATED"}
+
+
+@router.get("/data/integrity")
+def get_data_integrity():
+    """Retrieve comprehensive data integrity, validation rules, and schema conformance status."""
+    return twin_state_engine.get_data_integrity_report()
 
 
 @router.get("/incidents")

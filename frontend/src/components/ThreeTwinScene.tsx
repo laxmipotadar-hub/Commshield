@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TwinDevice, TwinLink, TwinNode, TwinSlice } from '../services/twinApi';
-import { Camera, Eye, Zap, ShieldAlert, Cpu, Activity, RefreshCw } from 'lucide-react';
+import { Camera, Eye, Zap, ShieldAlert, Cpu, Activity, ZoomIn, ZoomOut, RotateCcw, RotateCw, Maximize2 } from 'lucide-react';
 
 interface ThreeTwinSceneProps {
   nodes: TwinNode[];
@@ -10,9 +10,13 @@ interface ThreeTwinSceneProps {
   slices: TwinSlice[];
   devices: TwinDevice[];
   selectedId: string | null;
-  onSelect: (id: string | null, type: 'node' | 'device' | null) => void;
+  onSelect: (id: string | null, type: 'node' | 'device' | 'link' | null) => void;
   onHover: (item: { id: string; name: string; type: string; status: string } | null) => void;
   attackPath?: string[];
+  attackPaths?: string[][];
+  attackerSources?: string[];
+  isDistributed?: boolean;
+  attackType?: string;
   mitigationActive?: boolean;
   reducedMotion?: boolean;
   activeCameraPreset?: string;
@@ -30,6 +34,10 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   onSelect,
   onHover,
   attackPath = [],
+  attackPaths = [],
+  attackerSources = [],
+  isDistributed = false,
+  attackType = 'volumetric_ddos',
   mitigationActive = false,
   reducedMotion = false,
   activeCameraPreset = 'full',
@@ -43,6 +51,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const animFrameId = useRef<number | null>(null);
+  const isLerpingRef = useRef<boolean>(false);
 
   // 8-Layer Visibility Controls
   const [layers, setLayers] = useState<{
@@ -81,16 +90,17 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   };
 
   // Target camera positions for smooth interpolation
-  const targetCamPos = useRef<THREE.Vector3>(new THREE.Vector3(0, 48, 64));
+  const targetCamPos = useRef<THREE.Vector3>(new THREE.Vector3(0, 52, 70));
   const targetLookAt = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
 
   // Current selected preset
   const [currentPreset, setCurrentPreset] = useState<string>(activeCameraPreset);
 
-  // Apply camera presets smoothly
+  // Apply camera presets smoothly without overriding user orbit control
   const applyCameraPreset = useCallback((preset: string) => {
     setCurrentPreset(preset);
     if (onPresetChange) onPresetChange(preset);
+    isLerpingRef.current = true;
 
     switch (preset) {
       case 'ran':
@@ -106,16 +116,48 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         targetLookAt.current.set(10, 2, 8);
         break;
       case 'attack':
-        targetCamPos.current.set(-10, 15, 18);
+        targetCamPos.current.set(-12, 22, 28);
         targetLookAt.current.set(-4, 3, 0);
         break;
       case 'full':
       default:
-        targetCamPos.current.set(0, 48, 64);
+        targetCamPos.current.set(0, 52, 70);
         targetLookAt.current.set(0, 0, 0);
         break;
     }
   }, [onPresetChange]);
+
+  const handleManualZoom = (delta: number) => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    const cam = cameraRef.current;
+    const target = controlsRef.current.target;
+    const dir = new THREE.Vector3().subVectors(cam.position, target).normalize();
+    const dist = cam.position.distanceTo(target);
+    const newDist = Math.max(15, Math.min(180, dist + delta));
+    targetCamPos.current.copy(target).addScaledVector(dir, newDist);
+    targetLookAt.current.copy(target);
+    isLerpingRef.current = true;
+  };
+
+  const handleManualRotate = (angleDeg: number) => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    const cam = cameraRef.current;
+    const target = controlsRef.current.target;
+    const offset = new THREE.Vector3().subVectors(cam.position, target);
+    const rad = THREE.MathUtils.degToRad(angleDeg);
+    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rad);
+    targetCamPos.current.copy(target).add(offset);
+    targetLookAt.current.copy(target);
+    isLerpingRef.current = true;
+  };
+
+  const handleFitNetwork = () => {
+    targetCamPos.current.set(0, 52, 70);
+    targetLookAt.current.set(0, 0, 0);
+    isLerpingRef.current = true;
+    setCurrentPreset('full');
+    if (onPresetChange) onPresetChange('full');
+  };
 
   useEffect(() => {
     if (activeCameraPreset && activeCameraPreset !== currentPreset) {
@@ -145,7 +187,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 1200);
     cameraRef.current = camera;
-    camera.position.set(0, 48, 64);
+    camera.position.set(0, 52, 70);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -173,6 +215,11 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     controls.minDistance = 12;
     controls.maxDistance = 180;
     controls.target.set(0, 0, 0);
+
+    // Stop programmatic lerp immediately whenever user manually orbits, pans, or zooms
+    controls.addEventListener('start', () => {
+      isLerpingRef.current = false;
+    });
 
     // 3. PBR Lighting System
     const ambientLight = new THREE.AmbientLight(0xdce7fe, 0.65);
@@ -524,7 +571,50 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       scene.add(towerGroup);
     };
 
-    // 7. Render Infrastructure Nodes & Technical Campus Buildings
+    // 7. Calculate Attack and Threat Scope from Single Source of Truth
+    const isAttackActive = (
+      lifecycleState !== 'NORMAL' &&
+      lifecycleState !== 'RECOVERED' &&
+      (attackPath.length > 0 || (attackPaths && attackPaths.length > 0))
+    );
+
+    const attackNodeSet = new Set<string>();
+    if (isAttackActive) {
+      attackPath.forEach((id) => {
+        attackNodeSet.add(id);
+        if (id === 'upf-01') attackNodeSet.add('upf');
+      });
+      if (attackPaths) {
+        attackPaths.forEach((path) => {
+          path.forEach((id) => {
+            attackNodeSet.add(id);
+            if (id === 'upf-01') attackNodeSet.add('upf');
+          });
+        });
+      }
+      if (attackerSources) {
+        attackerSources.forEach((id) => attackNodeSet.add(id));
+      }
+    }
+
+    const attackLinkSet = new Set<string>();
+    if (isAttackActive) {
+      if (attackPaths && attackPaths.length > 0) {
+        attackPaths.forEach((path) => {
+          for (let i = 0; i < path.length - 1; i++) {
+            attackLinkSet.add(`${path[i]}->${path[i + 1]}`);
+            attackLinkSet.add(`${path[i + 1]}->${path[i]}`);
+          }
+        });
+      } else if (attackPath.length > 0) {
+        for (let i = 0; i < attackPath.length - 1; i++) {
+          attackLinkSet.add(`${attackPath[i]}->${attackPath[i + 1]}`);
+          attackLinkSet.add(`${attackPath[i + 1]}->${attackPath[i]}`);
+        }
+      }
+    }
+
+    // Render Infrastructure Nodes & Technical Campus Buildings
     nodes.forEach((n) => {
       // Determine world position
       let pos: THREE.Vector3;
@@ -536,7 +626,10 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       }
       nodePositionMap.set(n.id, pos);
 
-      const isUnderAttack = attackPath.includes(n.id) || (n.id === 'upf' && attackPath.length > 0);
+      const isUnderAttack = isAttackActive && (
+        attackNodeSet.has(n.id) ||
+        ((n.id === 'upf' || n.id === 'upf-01') && attackNodeSet.size > 0)
+      );
       const isSelected = selectedId === n.id;
 
       // Check if this node is one of the 4 RAN Towers
@@ -546,7 +639,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       }
 
       // Otherwise build architectural tech buildings or core function racks
-      if (n.id === 'upf') {
+      if (n.id === 'upf' || n.id === 'upf-01') {
         // High-Throughput Core User Plane Facility (UPF Building)
         const bGroup = new THREE.Group();
         bGroup.position.copy(pos);
@@ -799,8 +892,9 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     });
 
     // 10. Live Packet & Traffic Simulation Particles
-    // High-performance instanced packet particles
-    const maxParticles = attackPath.length > 0 ? 96 : 48;
+    // High-performance instanced packet particles with clamped particle count
+    const particleCount = attackPath.length > 0 ? 96 : 48;
+    const maxParticles = particleCount;
     const packetGeo = new THREE.SphereGeometry(0.32, 8, 8);
     const packetList: Array<{
       mesh: THREE.Mesh;
@@ -858,12 +952,6 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       if (intersects.length > 0) {
         const hit = intersects[0].object;
         onSelect(hit.userData.id, hit.userData.type);
-
-        // Smooth camera focus onto selected entity
-        const worldPos = new THREE.Vector3();
-        hit.getWorldPosition(worldPos);
-        targetLookAt.current.copy(worldPos);
-        targetCamPos.current.set(worldPos.x + 12, worldPos.y + 14, worldPos.z + 16);
       } else {
         onSelect(null, null);
       }
@@ -877,50 +965,58 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     const animate = () => {
       controls.update();
 
-      // Smooth camera interpolation towards target presets
-      if (!reducedMotion) {
-        camera.position.lerp(targetCamPos.current, 0.04);
-        controls.target.lerp(targetLookAt.current, 0.04);
-
-        // Animate Tower Signal Waves
-        towerWaveMeshes.forEach((w) => {
-          const s = (w.scale.x + 0.02) % 3.5;
-          w.scale.set(s, s, s);
-          (w.material as THREE.MeshBasicMaterial).opacity = Math.max(0.0, 0.7 - s / 3.5);
-        });
-
-        // Animate CommShield AI Detection Engine (Spin & Bob)
-        if (aiEngineMesh) {
-          aiEngineMesh.rotation.y += 0.02;
-          aiEngineMesh.rotation.z = Math.sin(Date.now() * 0.002) * 0.15;
-          aiEngineMesh.position.y = 9.5 + Math.sin(Date.now() * 0.003) * 0.4;
+      // Smooth camera interpolation towards target presets only when triggered
+      if (isLerpingRef.current && !reducedMotion) {
+        camera.position.lerp(targetCamPos.current, 0.05);
+        controls.target.lerp(targetLookAt.current, 0.05);
+        if (
+          camera.position.distanceTo(targetCamPos.current) < 0.1 &&
+          controls.target.distanceTo(targetLookAt.current) < 0.1
+        ) {
+          camera.position.copy(targetCamPos.current);
+          controls.target.copy(targetLookAt.current);
+          isLerpingRef.current = false;
         }
-
-        // Animate Security Probes & Enforcement Gateways
-        sensorWaveMeshes.forEach((s, idx) => {
-          s.rotation.z += 0.015 * (idx % 2 === 0 ? 1 : -1);
-        });
-        enforcementMeshes.forEach((b) => {
-          b.rotation.y += 0.01;
-        });
-
-        // Move packet particles along conduits (Dual stream: cyan legitimate continues vs red attack dropped at barrier)
-        packetList.forEach((p) => {
-          if (p.pair.isAttack && mitigationActive) {
-            // Drop and filter malicious traffic at the N3 Enforcement Gateway (halt at 0.42 progress)
-            p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.42);
-            (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.25;
-          } else if (p.pair.isIsolated) {
-            // Quarantined device link halted
-            p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.2);
-          } else {
-            // Legitimate traffic continues unobstructed
-            p.progress = (p.progress + p.pair.speed) % 1.0;
-            p.mesh.position.lerpVectors(p.pair.start, p.pair.end, p.progress);
-            (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.9;
-          }
-        });
       }
+
+      // Animate Tower Signal Waves
+      towerWaveMeshes.forEach((w) => {
+        const s = (w.scale.x + 0.02) % 3.5;
+        w.scale.set(s, s, s);
+        (w.material as THREE.MeshBasicMaterial).opacity = Math.max(0.0, 0.7 - s / 3.5);
+      });
+
+      // Animate CommShield AI Detection Engine (Spin & Bob)
+      if (aiEngineMesh) {
+        aiEngineMesh.rotation.y += 0.02;
+        aiEngineMesh.rotation.z = Math.sin(Date.now() * 0.002) * 0.15;
+        aiEngineMesh.position.y = 9.5 + Math.sin(Date.now() * 0.003) * 0.4;
+      }
+
+      // Animate Security Probes & Enforcement Gateways
+      sensorWaveMeshes.forEach((s, idx) => {
+        s.rotation.z += 0.015 * (idx % 2 === 0 ? 1 : -1);
+      });
+      enforcementMeshes.forEach((b) => {
+        b.rotation.y += 0.01;
+      });
+
+      // Move packet particles along conduits (Dual stream: cyan legitimate continues vs red attack dropped at barrier)
+      packetList.forEach((p) => {
+        if (p.pair.isAttack && mitigationActive) {
+          // Drop and filter malicious traffic at the N3 Enforcement Gateway (halt at 0.42 progress)
+          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.42);
+          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.25;
+        } else if (p.pair.isIsolated) {
+          // Quarantined device link halted
+          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.2);
+        } else {
+          // Legitimate traffic continues unobstructed
+          p.progress = (p.progress + p.pair.speed) % 1.0;
+          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, p.progress);
+          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.9;
+        }
+      });
 
       renderer.render(scene, camera);
       animFrameId.current = requestAnimationFrame(animate);
@@ -928,7 +1024,19 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
 
     animFrameId.current = requestAnimationFrame(animate);
 
-    // 13. Dynamic Resize Handler
+    // 13. Dynamic ResizeObserver for Fluid Viewport
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: w, height: h } = entry.contentRect;
+        if (w > 0 && h > 0) {
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        }
+      }
+    });
+    resizeObserver.observe(container);
+
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth || 800;
@@ -943,6 +1051,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     // 14. Explicit Resource Disposal
     return () => {
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+      resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
       domElement.removeEventListener('pointermove', handlePointerMove);
       domElement.removeEventListener('click', handleClick);
@@ -964,29 +1073,29 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         container.removeChild(domElement);
       }
     };
-  }, [nodes, links, slices, devices, selectedId, attackPath, mitigationActive, reducedMotion, traceAttackPath, lifecycleState, layers]);
+  }, [nodes, links, slices, devices, selectedId, attackPath, attackPaths, attackerSources, isDistributed, attackType, mitigationActive, reducedMotion, traceAttackPath, lifecycleState, layers]);
 
   return (
     <div className="w-full h-full relative rounded-xl overflow-hidden shadow-2xl bg-[#08101e] border border-slate-800">
       {/* Three.js Canvas Container */}
       <div ref={mountRef} className="w-full h-full" style={{ minHeight: '580px' }} />
 
-      {/* Floating HUD: Camera Preset Controls */}
-      <div className="absolute top-4 left-4 z-10 flex items-center space-x-1.5 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs">
-        <span className="text-slate-400 font-medium mr-1.5 flex items-center">
+      {/* Floating HUD: Camera Preset & Navigation Controls */}
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs">
+        <span className="text-slate-400 font-medium mr-1 flex items-center">
           <Camera className="w-3.5 h-3.5 mr-1 text-sky-400" /> View:
         </span>
         {[
           { id: 'full', label: 'Full Campus', icon: Eye },
-          { id: 'ran', label: 'Cell Towers', icon: Zap },
-          { id: 'core', label: '5G Core', icon: Cpu },
-          { id: 'edge', label: 'Edge / MEC', icon: Activity },
+          { id: 'ran', label: 'Towers', icon: Zap },
+          { id: 'core', label: 'Core', icon: Cpu },
+          { id: 'edge', label: 'MEC', icon: Activity },
           { id: 'attack', label: 'Attack Focus', icon: ShieldAlert },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => applyCameraPreset(id)}
-            className={`px-2.5 py-1 rounded flex items-center space-x-1 transition-all ${
+            className={`px-2 py-1 rounded flex items-center space-x-1 transition-all ${
               currentPreset === id
                 ? 'bg-sky-600 text-white font-medium shadow-sm'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -996,12 +1105,45 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
             <span>{label}</span>
           </button>
         ))}
+
+        <div className="h-4 w-px bg-slate-700/70 mx-1" />
+
+        {/* Manual Precision Navigation */}
         <button
-          onClick={() => applyCameraPreset('full')}
-          title="Reset Camera"
-          className="p-1 rounded text-slate-400 hover:bg-slate-800 hover:text-white ml-1 border-l border-slate-700/60 pl-2"
+          onClick={() => handleManualRotate(-25)}
+          title="Rotate Left"
+          className="p-1 rounded text-slate-300 hover:bg-slate-800 hover:text-white"
         >
-          <RefreshCw className="w-3 h-3" />
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => handleManualRotate(25)}
+          title="Rotate Right"
+          className="p-1 rounded text-slate-300 hover:bg-slate-800 hover:text-white"
+        >
+          <RotateCw className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => handleManualZoom(-12)}
+          title="Zoom In"
+          className="p-1 rounded text-slate-300 hover:bg-slate-800 hover:text-white"
+        >
+          <ZoomIn className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => handleManualZoom(12)}
+          title="Zoom Out"
+          className="p-1 rounded text-slate-300 hover:bg-slate-800 hover:text-white"
+        >
+          <ZoomOut className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={handleFitNetwork}
+          title="Fit Entire Network"
+          className="px-2 py-1 rounded text-sky-400 bg-sky-950/60 border border-sky-800/60 hover:bg-sky-900/80 flex items-center space-x-1 font-medium"
+        >
+          <Maximize2 className="w-3 h-3" />
+          <span>Fit Network</span>
         </button>
       </div>
 

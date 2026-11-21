@@ -33,6 +33,8 @@ class AttackPropagationEngine:
         components: Dict[str, NetworkComponent],
         connections: Dict[str, NetworkConnection],
         traffic_intensity_multiplier: float = 3.0,
+        is_distributed: bool = False,
+        attacker_sources: Optional[List[str]] = None,
     ) -> AttackPropagationResult:
         """Execute graph dependency traversal to determine causal blast radius."""
         if target_component not in components:
@@ -50,22 +52,57 @@ class AttackPropagationEngine:
             conn_by_pair[(conn.source, conn.destination)] = conn
             conn_by_pair[(conn.destination, conn.source)] = conn
 
-        # 2. Find shortest attack path from entry_point to target_component (BFS)
-        attack_path = self._find_shortest_path(adj, entry_point, target_component)
-        if not attack_path:
-            attack_path = [entry_point, "gnb-01", target_component]
+        # 2. Determine attacker sources and compute paths
+        sources: List[str] = []
+        if is_distributed:
+            if attacker_sources:
+                sources = [s for s in attacker_sources if s in components]
+            if not sources:
+                sources = [cid for cid in ["ue-camera-01", "ue-camera-02", "ue-sensor-01", "ue-sensor-02", "ue-phone-01"] if cid in components]
+            if not sources:
+                sources = [entry_point]
+        else:
+            sources = [entry_point]
+
+        attack_paths: List[List[str]] = []
+        suspicious_traffic_paths: List[str] = []
+        per_source_traffic: Dict[str, float] = {}
+        total_malicious_mbps = 120.0 * traffic_intensity_multiplier
+
+        weights = [0.30, 0.25, 0.20, 0.15, 0.10]
+        for idx, src in enumerate(sources):
+            path = self._find_shortest_path(adj, src, target_component)
+            if not path:
+                path = [src, "gnb-01", target_component]
+            attack_paths.append(path)
+            # Add traversed links
+            for i in range(len(path) - 1):
+                pair = (path[i], path[i + 1])
+                if pair in conn_by_pair:
+                    link_id = conn_by_pair[pair].id
+                    if link_id not in suspicious_traffic_paths:
+                        suspicious_traffic_paths.append(link_id)
+            w = weights[idx % len(weights)] if len(sources) > 1 else 1.0
+            per_source_traffic[src] = round(total_malicious_mbps * w, 1)
+
+        primary_attack_path = attack_paths[0] if attack_paths else [entry_point, "gnb-01", target_component]
 
         # 3. Classify components causally:
-        # Directly targeted
+        # Directly targeted: Target plus all attacker source devices
         directly_targeted = [target_component]
-        if entry_point != target_component and entry_point not in directly_targeted:
-            directly_targeted.append(entry_point)
+        for src in sources:
+            if src not in directly_targeted:
+                directly_targeted.append(src)
 
         # 1-hop dependencies: Indirectly affected
         indirectly_affected: Set[str] = set()
         for neighbor, _, _ in adj.get(target_component, []):
             if neighbor not in directly_targeted:
                 indirectly_affected.add(neighbor)
+        for src in sources:
+            for neighbor, _, _ in adj.get(src, []):
+                if neighbor not in directly_targeted:
+                    indirectly_affected.add(neighbor)
 
         # 2-hop dependencies: Potentially affected
         potentially_affected: Set[str] = set()
@@ -93,12 +130,7 @@ class AttackPropagationEngine:
             if c.component_type == "UE" and (cid in affected_set or c.network_slice in affected_slices)
         ]
 
-        # 5. Suspicious traffic paths (connecting links along attack and 1-hop propagation)
-        suspicious_traffic_paths: List[str] = []
-        for i in range(len(attack_path) - 1):
-            s, d = attack_path[i], attack_path[i + 1]
-            if (s, d) in conn_by_pair:
-                suspicious_traffic_paths.append(conn_by_pair[(s, d)].id)
+        # 5. Additional 1-hop link checks for containment boundaries
 
         # 6. Containment boundaries (firewall / policy enforcement points surrounding blast radius)
         containment_boundaries: List[str] = []
@@ -142,7 +174,7 @@ class AttackPropagationEngine:
             scenario_id=scenario_id,
             entry_point=entry_point,
             target_component=target_component,
-            attack_path=attack_path,
+            attack_path=primary_attack_path,
             directly_targeted=sorted(directly_targeted),
             indirectly_affected=sorted(list(indirectly_affected)),
             potentially_affected=sorted(list(potentially_affected)),
@@ -154,6 +186,10 @@ class AttackPropagationEngine:
             containment_boundaries=sorted(containment_boundaries),
             blast_radius_score=blast_radius_score,
             impact_explanation=explanation,
+            attacker_sources=sources,
+            attack_paths=attack_paths,
+            is_distributed=is_distributed,
+            per_source_traffic_mbps=per_source_traffic,
             timestamp=datetime.now(timezone.utc).isoformat(),
         )
 
