@@ -11,5 +11,6 @@ export * from './DemoEventBanner';
 export * from './DataProvenanceStrip';
 export * from './DataPanelModal';
 export * from './BuiltVsPlannedModal';
+export * from './ScenarioCharts';
 
 
