@@ -322,6 +322,17 @@ Split-conformal calibration has been integrated into the attribution layer to pr
 
 4. **Automated Unit Tests & Verification (`backend/tests/test_demo.py`)**:
    - 5 automated unit tests passing verifying scene order (1 to 4), bitwise deterministic replay, presence of labels and source tags on all windows, lab file absence end-to-end fallback, and lab file presence validation.
+
+## Milestone Status: Demo Check & End-to-End Verification Tool
+
+1. **Demo & Results Endpoint Verifier (`tools/demo_check.py`)**:
+   - Automated cross-platform CLI tool that starts the backend server, calls `/api/health`, `/api/demo/scenarios`, `/api/digital-twin` across all 4 streams, and `/api/experiments/results`.
+   - Checks that every displayed numerical figure in the demo and digital twin views appears in a verified saved result JSON/JSONL file (505 unique figures indexed).
+   - Enforces the strict rule that no badge displays "Live lab" unless `data/lab/windows.jsonl` exists and validates against the canonical schema.
+   - Outputs explicit `PASS` / `FAIL` per check, terminating backend process cleanly upon completion.
+   - Execution commands:
+     - PowerShell: `python tools\demo_check.py`
+     - Bash: `python3 tools/demo_check.py`
    - Execution commands:
      - PowerShell: `python -m unittest backend\tests\test_demo.py -v; cd frontend; npm run build`
      - Bash: `python3 -m unittest backend/tests/test_demo.py -v && npm --prefix frontend run build`
