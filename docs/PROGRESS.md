@@ -144,3 +144,36 @@ Split-conformal calibration has been integrated into the attribution layer to pr
    - Verified cross-platform constraints (Windows primary, Ubuntu secondary; pure Python scripts; pathlib paths; UTF-8 LF encoding; explicit random states; environment-backed secrets).
    - Confirmed strict empirical integrity: no hardcoded numbers, no changes to existing detector code, thresholds, or governance gates.
 
+## Milestone Status: Digital Twin Provisioning & Canonical Window Schemas
+
+1. **Digital Twin Catalog & Onboarding Batches**:
+   - Implemented `data/twin/provisioning.json` with 200 simulated SIMs across `sensor` (100), `camera` (50), and `AGV` (50) with non-IMSI random string IDs.
+   - Implemented `data/twin/change_events.json` with 3 onboarding batches tracking batch ID, start/end UTC timestamps, device count, slice, and SIM IDs.
+
+2. **Read-Only Loader with HMAC Pseudonymisation (`ml_engine/provisioning/loader.py`)**:
+   - Added `COMMSHIELD_TWIN_HMAC_KEY` to `.env.example` and environment loader.
+   - Enforced 64-character HMAC-SHA256 pseudonymisation for all subscriber identifiers.
+   - Built `ProvisioningLoader.lookup(id, time)` returning `{provisioned, device_class, slice, event_id or None}`.
+
+3. **Labelled Telemetry Scenario Generator (`ml_engine/scenarios/twin_generator.py`)**:
+   - Built generator emitting both slice-level canonical windows and per-device windows across 4 labelled streams: `approved_onboarding`, `unprovisioned_burst`, `provisioned_burst_no_event`, and `slow_ramp_in_onboarding`.
+   - Applied distinct per-device-class rate distributions (`sensor`, `camera`, `AGV`).
+   - Deterministic seed architecture with separate tuning seed (42) and 10 test seeds ([101..110]).
+
+4. **Canonical Schema Contract & Validation (`docs/CANONICAL_WINDOW_SCHEMA.md` & `ml_engine/provisioning/schema.py`)**:
+   - Defined canonical specifications with `source` in `["simulated_twin", "lab", "real_recorded"]`.
+   - Implemented `validate_slice_window` and `validate_device_window`, enforcing strict type checks and blocking raw subscriber ID leakage.
+
+5. **Empirical Results & Plot Generation (`experiments/results/twin/`)**:
+   - Generated telemetry plots per stream and saved window counts to `experiments/results/twin/window_counts.json`:
+     - `sensor`: 6,510 windows
+     - `camera`: 2,600 windows
+     - `AGV`: 2,400 windows
+     - Total: 11,510 device windows, 360 slice windows (11,870 total windows; 10,805 benign, 1,065 attack).
+   - Saved multi-seed validation summary to `experiments/results/twin/twin_summary.json`.
+   - Audited zero raw IDs across all generated artifacts.
+
+6. **Automated Test Suite (`backend/tests/test_twin_provisioning.py`)**:
+   - 6 automated test cases passing (lookup correctness, determinism, labels on every window, schema validation, no raw IDs, seed separation).
+
+

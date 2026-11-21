@@ -1,0 +1,69 @@
+{
+  "generated_at": "2026-11-21T05:14:56.039486+00:00",
+  "tuning_seed": 42,
+  "total_streams": 4,
+  "total_slice_windows": 360,
+  "total_device_windows": 11510,
+  "total_windows_all": 11870,
+  "total_benign_windows": 10805,
+  "total_attack_windows": 1065,
+  "aggregate_device_counts": {
+    "sensor": 6510,
+    "camera": 2600,
+    "AGV": 2400
+  },
+  "streams": {
+    "approved_onboarding": {
+      "slice_windows": 90,
+      "device_windows": 3200,
+      "slice_benign": 90,
+      "slice_attack": 0,
+      "device_benign": 3200,
+      "device_attack": 0,
+      "device_by_class": {
+        "sensor": 1800,
+        "camera": 800,
+        "AGV": 600
+      }
+    },
+    "unprovisioned_burst": {
+      "slice_windows": 90,
+      "device_windows": 2850,
+      "slice_benign": 60,
+      "slice_attack": 30,
+      "device_benign": 2400,
+      "device_attack": 450,
+      "device_by_class": {
+        "sensor": 1650,
+        "camera": 600,
+        "AGV": 600
+      }
+    },
+    "provisioned_burst_no_event": {
+      "slice_windows": 90,
+      "device_windows": 2400,
+      "slice_benign": 60,
+      "slice_attack": 30,
+      "device_benign": 2100,
+      "device_attack": 300,
+      "device_by_class": {
+        "sensor": 1200,
+        "camera": 600,
+        "AGV": 600
+      }
+    },
+    "slow_ramp_in_onboarding": {
+      "slice_windows": 90,
+      "device_windows": 3060,
+      "slice_benign": 60,
+      "slice_attack": 30,
+      "device_benign": 2835,
+      "device_attack": 225,
+      "device_by_class": {
+        "sensor": 1860,
+        "camera": 600,
+        "AGV": 600
+      }
+    }
+  }
+}

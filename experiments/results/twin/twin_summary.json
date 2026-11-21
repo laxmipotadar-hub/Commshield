@@ -1,0 +1,332 @@
+{
+  "generated_at": "2026-11-21T05:14:58.252659+00:00",
+  "tuning_seed": 42,
+  "test_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110
+  ],
+  "tuning_stream_counts": {
+    "approved_onboarding": {
+      "slice_windows": 90,
+      "device_windows": 3200,
+      "slice_benign": 90,
+      "slice_attack": 0,
+      "device_benign": 3200,
+      "device_attack": 0,
+      "device_by_class": {
+        "sensor": 1800,
+        "camera": 800,
+        "AGV": 600
+      }
+    },
+    "unprovisioned_burst": {
+      "slice_windows": 90,
+      "device_windows": 2850,
+      "slice_benign": 60,
+      "slice_attack": 30,
+      "device_benign": 2400,
+      "device_attack": 450,
+      "device_by_class": {
+        "sensor": 1650,
+        "camera": 600,
+        "AGV": 600
+      }
+    },
+    "provisioned_burst_no_event": {
+      "slice_windows": 90,
+      "device_windows": 2400,
+      "slice_benign": 60,
+      "slice_attack": 30,
+      "device_benign": 2100,
+      "device_attack": 300,
+      "device_by_class": {
+        "sensor": 1200,
+        "camera": 600,
+        "AGV": 600
+      }
+    },
+    "slow_ramp_in_onboarding": {
+      "slice_windows": 90,
+      "device_windows": 3060,
+      "slice_benign": 60,
+      "slice_attack": 30,
+      "device_benign": 2835,
+      "device_attack": 225,
+      "device_by_class": {
+        "sensor": 1860,
+        "camera": 600,
+        "AGV": 600
+      }
+    }
+  },
+  "multi_seed_test_runs": {
+    "101": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "102": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "103": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "104": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "105": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "106": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "107": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "108": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "109": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    },
+    "110": {
+      "approved_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3200,
+        "slice_attack": 0,
+        "device_attack": 0
+      },
+      "unprovisioned_burst": {
+        "slice_windows": 90,
+        "device_windows": 2850,
+        "slice_attack": 30,
+        "device_attack": 450
+      },
+      "provisioned_burst_no_event": {
+        "slice_windows": 90,
+        "device_windows": 2400,
+        "slice_attack": 30,
+        "device_attack": 300
+      },
+      "slow_ramp_in_onboarding": {
+        "slice_windows": 90,
+        "device_windows": 3060,
+        "slice_attack": 30,
+        "device_attack": 225
+      }
+    }
+  }
+}
