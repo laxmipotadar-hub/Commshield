@@ -32,7 +32,7 @@ import {
   LoadingState,
   StatCard,
 } from '../components';
-import { api, CanonicalTrafficWindow } from '../services/api';
+import { api, CanonicalTrafficWindow, RealMonitoringResponse } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
 
 const PIE_COLORS = ['#3478F6', '#14B8A6', '#8B5CF6', '#F59E0B', '#294C70'];
@@ -41,6 +41,7 @@ export const MonitoringPage: React.FC = () => {
   const { pollTick } = useReplay();
 
   const [windows, setWindows] = useState<CanonicalTrafficWindow[]>([]);
+  const [realMonitoring, setRealMonitoring] = useState<RealMonitoringResponse | null>(null);
   const [sliceFilter, setSliceFilter] = useState<string>('ALL');
   const [timeRangeLimit, setTimeRangeLimit] = useState<number>(50);
   const [loading, setLoading] = useState(true);
@@ -50,11 +51,20 @@ export const MonitoringPage: React.FC = () => {
     if (isInitial) setLoading(true);
     setError(null);
     try {
-      const res = await api.getWindows({
-        slice_id: sliceFilter !== 'ALL' ? sliceFilter : undefined,
-        limit: timeRangeLimit,
-      });
+      const [res, realRes] = await Promise.all([
+        api.getWindows({
+          slice_id: sliceFilter !== 'ALL' ? sliceFilter : undefined,
+          limit: timeRangeLimit,
+        }),
+        api.getRealMonitoring({
+          slice_id: sliceFilter !== 'ALL' ? sliceFilter : undefined,
+          limit: timeRangeLimit,
+        }).catch(() => null),
+      ]);
       setWindows(res.items || []);
+      if (realRes) {
+        setRealMonitoring(realRes);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch network monitoring data';
       setError(msg);
@@ -75,6 +85,19 @@ export const MonitoringPage: React.FC = () => {
 
   // Derived: Traffic volume over time
   const trafficTimeData = useMemo(() => {
+    if (realMonitoring && realMonitoring.time_series && realMonitoring.time_series.length > 0) {
+      return realMonitoring.time_series.map((pt) => {
+        const d = new Date(pt.timestamp);
+        const timeStr = isNaN(d.getTime())
+          ? (pt.timestamp ? pt.timestamp.slice(11, 16) : '--:--')
+          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return {
+          time: timeStr,
+          uplink_mb: pt.uplink_mb,
+          downlink_mb: pt.downlink_mb,
+        };
+      });
+    }
     return [...windows]
       .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
       .map((w) => {
@@ -88,10 +111,16 @@ export const MonitoringPage: React.FC = () => {
           downlink_mb: Number(((w.raw_counters?.total_bytes_downlink || 0) / 1048576).toFixed(2)),
         };
       });
-  }, [windows]);
+  }, [windows, realMonitoring]);
 
   // Derived: Distribution across slices
   const sliceDistributionData = useMemo(() => {
+    if (realMonitoring && realMonitoring.slice_breakdown && Object.keys(realMonitoring.slice_breakdown).length > 0) {
+      return Object.entries(realMonitoring.slice_breakdown).map(([name, item]) => ({
+        name,
+        value: item.traffic_mb,
+      }));
+    }
     const map: Record<string, number> = {};
     windows.forEach((w) => {
       const sId = w.slice_id || 'unknown';
@@ -102,7 +131,7 @@ export const MonitoringPage: React.FC = () => {
       name,
       value: Number((bytes / 1048576).toFixed(2)),
     }));
-  }, [windows]);
+  }, [windows, realMonitoring]);
 
   // Derived: Network Function activity
   const nfActivityData = useMemo(() => {
@@ -143,6 +172,21 @@ export const MonitoringPage: React.FC = () => {
 
   // Derived: Normalised traffic composition
   const compositionData = useMemo(() => {
+    if (realMonitoring && realMonitoring.time_series && realMonitoring.time_series.length > 0) {
+      return realMonitoring.time_series.map((pt) => {
+        const d = new Date(pt.timestamp);
+        const timeStr = isNaN(d.getTime())
+          ? (pt.timestamp ? pt.timestamp.slice(11, 16) : '--:--')
+          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return {
+          time: timeStr,
+          session_setup: Number((pt.tcp_ratio * 100).toFixed(1)),
+          registration: Number((pt.udp_ratio * 100).toFixed(1)),
+          failure: Number((pt.rst_flag_ratio * 100).toFixed(2)),
+          other: Number((pt.icmp_ratio * 100).toFixed(1)),
+        };
+      });
+    }
     return [...windows]
       .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
       .map((w) => {
@@ -159,16 +203,18 @@ export const MonitoringPage: React.FC = () => {
           other: Number(((c.other_signalling_ratio || 0) * 100).toFixed(1)),
         };
       });
-  }, [windows]);
+  }, [windows, realMonitoring]);
 
   // Aggregate stats
   const totalUEs = windows.reduce((max, w) => Math.max(max, w.raw_counters?.active_ue_count || 0), 0);
   const avgNasFailure = windows.length > 0
     ? (windows.reduce((sum, w) => sum + (w.ratio_features?.nas_failure_ratio || 0), 0) / windows.length * 100).toFixed(3)
     : '0.000';
-  const totalVolumeMB = (
-    windows.reduce((sum, w) => sum + (w.raw_counters?.total_bytes_uplink || 0) + (w.raw_counters?.total_bytes_downlink || 0), 0) / 1048576
-  ).toFixed(1);
+  const totalVolumeMB = realMonitoring
+    ? realMonitoring.total_traffic_mb.toFixed(1)
+    : (
+        windows.reduce((sum, w) => sum + (w.raw_counters?.total_bytes_uplink || 0) + (w.raw_counters?.total_bytes_downlink || 0), 0) / 1048576
+      ).toFixed(1);
 
   const nfColumns: Column<{ nf_id: string; packets: number; volume_mb: number; active_ues: number }>[] = [
     {

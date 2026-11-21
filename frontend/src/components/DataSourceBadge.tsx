@@ -16,7 +16,11 @@ export const DataSourceBadge: React.FC<DataSourceBadgeProps> = ({
   const { selectedDataSource, selectedScenario } = useReplay();
   const activeSource = sourceOverride || selectedDataSource;
 
-  const isReal5GNIDD = activeSource === '5g_nidd';
+  const isReal5GNIDD =
+    activeSource === '5g_nidd' ||
+    activeSource === 'real' ||
+    activeSource === 'real_recorded' ||
+    activeSource === '5G-NIDD';
   const isAssignedSlices = isReal5GNIDD;
   const isSemiSynthetic =
     forceSemiSynthetic ||
@@ -26,9 +30,9 @@ export const DataSourceBadge: React.FC<DataSourceBadgeProps> = ({
         selectedScenario.includes('growth') ||
         selectedScenario.includes('scaled')));
 
-  let badgeLabel = 'Controlled simulation (ground truth known)';
+  let badgeLabel = 'Simulated (ground truth known)';
   if (isReal5GNIDD) {
-    badgeLabel = 'Real 5G testbed traffic (5G-NIDD), replayed';
+    badgeLabel = 'Source: 5G-NIDD (Real)';
   } else if (activeSource === 'open5gs_lab') {
     badgeLabel = 'Open5GS Lab';
   }

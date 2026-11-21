@@ -35,6 +35,7 @@ import {
   api,
   CanonicalTrafficWindow,
   DetectorOutput,
+  RealDetectionResponse,
 } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
 
@@ -51,6 +52,7 @@ export const DetectionPage: React.FC = () => {
   const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
   const [detectorData, setDetectorData] = useState<DetectorOutput | null>(null);
   const [detectionMap, setDetectionMap] = useState<Record<string, DetectorOutput>>({});
+  const [realDetection, setRealDetection] = useState<RealDetectionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,9 +61,15 @@ export const DetectionPage: React.FC = () => {
     if (isInitial) setLoading(true);
     setError(null);
     try {
-      const res = await api.getWindows({ limit: 30 });
+      const [res, realDetRes] = await Promise.all([
+        api.getWindows({ limit: 30 }),
+        api.getRealDetection().catch(() => null),
+      ]);
       const items = res.items || [];
       setWindows(items);
+      if (realDetRes) {
+        setRealDetection(realDetRes);
+      }
       if (items.length > 0 && !selectedWindowId) {
         setSelectedWindowId(items[0].window_id);
       }
@@ -136,6 +144,31 @@ export const DetectionPage: React.FC = () => {
 
   // Trend data for sparklines and charts
   const historyData = useMemo(() => {
+    if (realDetection && realDetection.scored_windows && realDetection.scored_windows.length > 0) {
+      return realDetection.scored_windows.slice(0, 30).map((sw) => {
+        const d = new Date(sw.timestamp);
+        const timeStr = isNaN(d.getTime())
+          ? (sw.timestamp ? sw.timestamp.slice(11, 16) : '--:--')
+          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const ifPct = Number((Math.min(1.0, Math.max(0.0, 1.0 - sw.if_score)) * 100).toFixed(1));
+        const aePct = Number((Math.min(1.0, sw.ae_error) * 100).toFixed(1));
+        const fusedPct = Number((sw.anomaly_score * 100).toFixed(1));
+        const isAlarm = sw.verdict === 'attack';
+
+        return {
+          time: timeStr,
+          window_id: sw.window_id,
+          if_percentile: ifPct,
+          ae_percentile: aePct,
+          fused_percentile: fusedPct,
+          cusum_score: Number((sw.anomaly_score * 5.0).toFixed(2)),
+          alarm_threshold: 70.0,
+          is_alarm: isAlarm,
+          agreement: sw.anomaly_score > 0.7 ? 'both_fired' : 'neither',
+        };
+      });
+    }
     return sortedRecords.map(({ window: w, output: out }) => {
       const d = new Date(w.window_start);
       const timeStr = isNaN(d.getTime())
@@ -161,7 +194,7 @@ export const DetectionPage: React.FC = () => {
         agreement: agreement,
       };
     });
-  }, [sortedRecords]);
+  }, [sortedRecords, realDetection]);
 
   // Selected window metrics
   const activeOutput = detectorData;

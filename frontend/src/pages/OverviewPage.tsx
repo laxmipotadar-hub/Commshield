@@ -38,6 +38,7 @@ import {
   CanonicalTrafficWindow,
   ExplainabilityResponse,
   QuarantineWindowItem,
+  RealOverviewResponse,
 } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
 
@@ -51,6 +52,7 @@ export const OverviewPage: React.FC = () => {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [quarantineItems, setQuarantineItems] = useState<QuarantineWindowItem[]>([]);
   const [explainMap, setExplainMap] = useState<Record<string, ExplainabilityResponse>>({});
+  const [realOverview, setRealOverview] = useState<RealOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,12 +60,13 @@ export const OverviewPage: React.FC = () => {
     if (isInitial) setLoading(true);
     setError(null);
     try {
-      const [winRes, baseRes, candRes, alertRes, quaranRes] = await Promise.all([
+      const [winRes, baseRes, candRes, alertRes, quaranRes, realRes] = await Promise.all([
         api.getWindows({ limit: 20 }),
         api.getBaselines(),
         api.getCandidates('PENDING'),
         api.getAlerts().catch(() => [] as AlertItem[]),
         api.getQuarantineWindows().catch(() => [] as QuarantineWindowItem[]),
+        api.getRealOverview().catch(() => null),
       ]);
 
       const items = winRes.items || [];
@@ -73,6 +76,9 @@ export const OverviewPage: React.FC = () => {
       setCandidates(candRes || []);
       setAlerts(alertRes || []);
       setQuarantineItems(quaranRes || []);
+      if (realRes) {
+        setRealOverview(realRes);
+      }
 
       // Fetch explainability for recent windows
       if (items.length > 0) {
@@ -118,12 +124,19 @@ export const OverviewPage: React.FC = () => {
     return acc + ul + dl;
   }, 0);
 
-  const totalTrafficMB = (totalBytes / (1024 * 1024)).toFixed(1);
-  const totalTrafficGB = (totalBytes / (1024 * 1024 * 1024)).toFixed(2);
-  const trafficDisplay = totalBytes > 1024 * 1024 * 1024 ? `${totalTrafficGB} GB` : `${totalTrafficMB} MB`;
+  const totalTrafficMB = realOverview
+    ? realOverview.total_traffic_mb.toFixed(1)
+    : (totalBytes / (1024 * 1024)).toFixed(1);
+  const totalTrafficGB = realOverview
+    ? realOverview.total_traffic_gb.toFixed(2)
+    : (totalBytes / (1024 * 1024 * 1024)).toFixed(2);
+  const trafficDisplay =
+    (realOverview?.total_traffic_gb ?? 0) > 1 || totalBytes > 1024 * 1024 * 1024
+      ? `${totalTrafficGB} GB`
+      : `${totalTrafficMB} MB`;
 
-  const uniqueSlices = Array.from(new Set(windows.map((w) => w.slice_id).filter(Boolean)));
-  const activeSlicesCount = uniqueSlices.length || (baselines.length > 0 ? baselines.length : 3);
+  const uniqueSlices = realOverview?.unique_slices || Array.from(new Set(windows.map((w) => w.slice_id).filter(Boolean)));
+  const activeSlicesCount = realOverview?.active_slices_count || uniqueSlices.length || (baselines.length > 0 ? baselines.length : 3);
 
   const activeBaseline = baselines.find((b) => b.is_active) || baselines[0];
   const activeBaselineVersion = activeBaseline?.version || 'v1.0.0-anchor';
@@ -139,20 +152,32 @@ export const OverviewPage: React.FC = () => {
     ? quarantineItems.length
     : windows.filter((w) => explainMap[w.window_id]?.attribution_summary?.verdict === 'uncertain').length;
 
-  // Chart Data: traffic volume over time from windows
-  const chartData = [...windows]
-    .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
-    .map((w) => {
-      const date = new Date(w.window_start);
-      const timeStr = isNaN(date.getTime())
-        ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
-        : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      return {
-        time: timeStr,
-        uplink: Number(((w.raw_counters?.total_bytes_uplink || 0) / (1024 * 1024)).toFixed(2)),
-        downlink: Number(((w.raw_counters?.total_bytes_downlink || 0) / (1024 * 1024)).toFixed(2)),
-      };
-    });
+  // Chart Data: traffic volume over time from real 5G-NIDD timeline or windows
+  const chartData = realOverview && realOverview.traffic_timeline && realOverview.traffic_timeline.length > 0
+    ? realOverview.traffic_timeline.slice(0, 30).map((t) => {
+        const d = new Date(t.timestamp);
+        const timeStr = isNaN(d.getTime())
+          ? (t.timestamp ? t.timestamp.slice(11, 16) : '--:--')
+          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return {
+          time: timeStr,
+          uplink: t.uplink_mb,
+          downlink: t.downlink_mb,
+        };
+      })
+    : [...windows]
+        .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
+        .map((w) => {
+          const date = new Date(w.window_start);
+          const timeStr = isNaN(date.getTime())
+            ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
+            : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          return {
+            time: timeStr,
+            uplink: Number(((w.raw_counters?.total_bytes_uplink || 0) / (1024 * 1024)).toFixed(2)),
+            downlink: Number(((w.raw_counters?.total_bytes_downlink || 0) / (1024 * 1024)).toFixed(2)),
+          };
+        });
 
   // Alerts Table Columns (from real AlertItem with full detector output)
   const alertItemColumns: Column<AlertItem>[] = [
@@ -335,7 +360,7 @@ export const OverviewPage: React.FC = () => {
         <StatCard
           title="Total Traffic Volume"
           value={trafficDisplay}
-          subtitle={`${windows.length} windows captured`}
+          subtitle={realOverview ? `${realOverview.total_windows} 5G-NIDD windows loaded` : `${windows.length} windows captured`}
           icon={<TrendingUp className="w-4 h-4 text-blue" />}
         />
 

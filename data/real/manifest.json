@@ -1,0 +1,43 @@
+{
+  "dataset": "5G-NIDD",
+  "version": "1.0",
+  "total_windows": 156,
+  "attack_distribution": {
+    "normal": 91,
+    "udp_flood": 15,
+    "http_flood": 8,
+    "syn_flood": 8,
+    "tcp_connect": 8,
+    "syn_scan": 9,
+    "slowloris": 9,
+    "torshammer": 8
+  },
+  "slices": [
+    "sst-1-sd-010203",
+    "sst-2-sd-010203",
+    "sst-3-sd-010203"
+  ],
+  "window_duration_sec": 60,
+  "time_span": {
+    "start": "2022-09-15T20:00:02.400000+00:00",
+    "end": "2022-09-15T21:44:02.400000+00:00"
+  },
+  "features": [
+    "window_id",
+    "timestamp",
+    "slice_id",
+    "uplink_mb",
+    "downlink_mb",
+    "total_packets",
+    "udp_ratio",
+    "tcp_ratio",
+    "icmp_ratio",
+    "unique_src_ips",
+    "unique_dst_ports",
+    "syn_flag_ratio",
+    "rst_flag_ratio",
+    "avg_inter_arrival_ms",
+    "inter_arrival_cv",
+    "attack_label"
+  ]
+}

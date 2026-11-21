@@ -720,7 +720,163 @@ export const api = {
     const qs = params.toString() ? `?${params.toString()}` : '';
     return request<DigitalTwinResponse>(`/api/digital-twin${qs}`);
   },
+
+  // Real 5G-NIDD Endpoints
+  getRealManifest: () => request<RealManifestResponse>('/api/real/manifest'),
+
+  getRealOverview: () => request<RealOverviewResponse>('/api/real/overview'),
+
+  getRealMonitoring: (params?: { slice_id?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.slice_id && params.slice_id !== 'ALL') qs.set('slice_id', params.slice_id);
+    if (params?.limit !== undefined) qs.set('limit', String(params.limit));
+    const str = qs.toString();
+    return request<RealMonitoringResponse>(`/api/real/monitoring${str ? `?${str}` : ''}`);
+  },
+
+  getRealDetection: (params?: { slice_id?: string; threshold?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.slice_id && params.slice_id !== 'ALL') qs.set('slice_id', params.slice_id);
+    if (params?.threshold !== undefined) qs.set('threshold', String(params.threshold));
+    const str = qs.toString();
+    return request<RealDetectionResponse>(`/api/real/detection${str ? `?${str}` : ''}`);
+  },
+
+  getRealWindows: (params?: { slice_id?: string; attack_label?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.slice_id && params.slice_id !== 'ALL') qs.set('slice_id', params.slice_id);
+    if (params?.attack_label && params.attack_label !== 'ALL') qs.set('attack_label', params.attack_label);
+    if (params?.limit !== undefined) qs.set('limit', String(params.limit));
+    if (params?.offset !== undefined) qs.set('offset', String(params.offset));
+    const str = qs.toString();
+    return request<{ items: RealTelemetryWindow[]; total: number; limit: number; offset: number; source: string }>(
+      `/api/real/windows${str ? `?${str}` : ''}`
+    );
+  },
 };
+
+export interface RealManifestResponse {
+  dataset: string;
+  version: string;
+  total_windows: number;
+  attack_distribution: Record<string, number>;
+  slices: string[];
+  window_duration_sec: number;
+  time_span: {
+    start?: string;
+    end?: string;
+  };
+  features: string[];
+}
+
+export interface RealTelemetryWindow {
+  window_id: string;
+  timestamp: string;
+  slice_id: string;
+  uplink_mb: number;
+  downlink_mb: number;
+  total_packets: number;
+  udp_ratio: number;
+  tcp_ratio: number;
+  icmp_ratio: number;
+  unique_src_ips: number;
+  unique_dst_ports: number;
+  syn_flag_ratio: number;
+  rst_flag_ratio: number;
+  avg_inter_arrival_ms: number;
+  inter_arrival_cv: number;
+  attack_label: string;
+}
+
+export interface RealOverviewResponse {
+  total_windows: number;
+  total_traffic_mb: number;
+  total_traffic_gb: number;
+  total_packets: number;
+  unique_slices: string[];
+  active_slices_count: number;
+  attack_windows_count: number;
+  normal_windows_count: number;
+  attack_distribution: Record<string, number>;
+  traffic_timeline: Array<{
+    timestamp: string;
+    slice_id: string;
+    uplink_mb: number;
+    downlink_mb: number;
+    total_mb: number;
+    total_packets: number;
+    attack_label: string;
+  }>;
+  source: string;
+  dataset: string;
+  version: string;
+}
+
+export interface RealMonitoringResponse {
+  time_series: Array<{
+    timestamp: string;
+    slice_id: string;
+    uplink_mb: number;
+    downlink_mb: number;
+    total_mb: number;
+    total_packets: number;
+    udp_ratio: number;
+    tcp_ratio: number;
+    icmp_ratio: number;
+    syn_flag_ratio: number;
+    rst_flag_ratio: number;
+    avg_inter_arrival_ms: number;
+    inter_arrival_cv: number;
+    unique_src_ips: number;
+    unique_dst_ports: number;
+    attack_label: string;
+  }>;
+  slice_breakdown: Record<string, {
+    slice_id: string;
+    traffic_mb: number;
+    total_packets: number;
+    window_count: number;
+    ratio: number;
+  }>;
+  protocol_summary: {
+    tcp_ratio: number;
+    udp_ratio: number;
+    icmp_ratio: number;
+  };
+  total_traffic_mb: number;
+  total_packets: number;
+  source: string;
+}
+
+export interface RealDetectionResponse {
+  scored_windows: Array<{
+    window_id: string;
+    timestamp: string;
+    slice_id: string;
+    attack_label: string;
+    is_attack: boolean;
+    anomaly_score: number;
+    if_score: number;
+    ae_error: number;
+    verdict: string;
+    uplink_mb: number;
+    downlink_mb: number;
+    total_packets: number;
+    features: Record<string, number>;
+  }>;
+  threshold: number;
+  detection_stats: {
+    total_evaluated: number;
+    true_positives: number;
+    false_positives: number;
+    true_negatives: number;
+    false_negatives: number;
+    precision: number;
+    recall: number;
+    f1_score: number;
+  };
+  source: string;
+}
 
 export interface DigitalTwinNode {
   id: string;
