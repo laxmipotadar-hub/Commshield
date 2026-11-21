@@ -32,6 +32,7 @@ logger = logging.getLogger("commshield.demo")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DATA_LAB_DIR = PROJECT_ROOT / "data" / "lab"
 RESULTS_TWIN_DIR = PROJECT_ROOT / "experiments" / "results" / "twin"
+SNAPSHOT_TWIN_DIR = PROJECT_ROOT / "experiments" / "snapshot" / "twin"
 DATA_TWIN_DIR = PROJECT_ROOT / "data" / "twin"
 
 
@@ -56,12 +57,23 @@ def check_lab_validated() -> bool:
 
 
 def load_saved_three_arm_summary() -> Dict[str, Any]:
-    """Load benchmark summary from experiments/results/twin/three_arm_twin_summary.json."""
+    """Load benchmark summary from experiments/results/twin or snapshot."""
     summary_path = RESULTS_TWIN_DIR / "three_arm_twin_summary.json"
-    if not summary_path.is_file():
-        return {}
-    with open(summary_path, "r", encoding="utf-8", newline="\n") as f:
-        return json.load(f)
+    if summary_path.is_file():
+        try:
+            with open(summary_path, "r", encoding="utf-8", newline="\n") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    # Fallback to snapshot
+    snapshot_path = SNAPSHOT_TWIN_DIR / "three_arm_twin_summary.json"
+    if snapshot_path.is_file():
+        try:
+            with open(snapshot_path, "r", encoding="utf-8", newline="\n") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 
 class KeyEvent(BaseModel):
