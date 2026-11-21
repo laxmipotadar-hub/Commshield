@@ -15,12 +15,20 @@ from sklearn.ensemble import IsolationForest
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.data_loader import (
-    AttackLabel,
-    TelemetryWindow,
-    generate_manifest,
-    load_5g_nidd_csv,
-)
+try:
+    from ..data_loader import (
+        AttackLabel,
+        TelemetryWindow,
+        generate_manifest,
+        load_5g_nidd_csv,
+    )
+except ImportError:
+    from app.data_loader import (
+        AttackLabel,
+        TelemetryWindow,
+        generate_manifest,
+        load_5g_nidd_csv,
+    )
 
 logger = logging.getLogger("commshield.api.real")
 
