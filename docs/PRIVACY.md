@@ -94,7 +94,34 @@ CommShield stores **only aggregate window statistics and governance decision rec
 
 ---
 
-## 8. Requirements for Production Carrier Deployment
+## 8. Threat Model & Adversary Capabilities
+
+### Threat Model Definition
+We analyze an adversary with **full passive read access** to the relational database (`commshield.db`) or the canonical telemetry stream (`data/lab/windows.jsonl` or API responses). The adversary is assumed to possess knowledge of public IP address ranges, cellular prefix allocations, and standard 5G Core protocol specifications.
+
+### Summary of Privacy Controls
+| Mechanism | Target Telemetry | Implementation | Cryptographic / Mathematical Guarantee |
+| :--- | :--- | :--- | :--- |
+| **HMAC-SHA256 Pseudonymisation** | Client IP addresses, SIM IDs, IMSIs | `ml_engine/preprocessing/adapters/base.py` | Keyed one-way hashing with `COMMSHIELD_HMAC_KEY`. Immune to rainbow table preimage attacks without key. |
+| **Aggregate-Only Boundary** | Telemetry window ingress | `enforce_aggregate_boundary()` allowlist | Individual flow/packet records dropped in adapter memory; only 60s aggregates exported. |
+| **Small-Group Suppression** | Active UE count $< K$ ($K=5$) | `SUPPRESSED_ENTROPY_VALUE = -1.0` | Prevents volume/entropy fingerprinting of individual devices in sparse slices. |
+| **Analyst Bearer Token** | State mutations (`approve`, `reject`, `rollback`) | `require_analyst_token` | HTTP 401 unauthorized block without `COMMSHIELD_ANALYST_TOKEN`. |
+
+### What an Attacker with Read Access COULD Learn
+1. **Network-Wide Macro-Traffic Volumetrics**: The attacker can observe total uplink/downlink bytes, total packets, and session establishment rates aggregated over 60-second epochs.
+2. **Slice-Level Operational Health**: The attacker can observe aggregate control-plane failure ratios (`nas_failure_ratio`, `pfcp_failure_ratio`) and protocol compositions.
+3. **Anomaly Verdicts**: The attacker can observe whether CommShield flagged a given 60-second window as anomalous, quarantined, or undergoing legitimate growth.
+
+### What an Attacker CANNOT Learn
+1. **Subscriber Identity**: No permanent (IMSI/SUPI) or temporary (GUTI) identifier exists anywhere in the database or stream. All IDs are HMAC-SHA256 hashed at parse time.
+2. **Subscriber IP Addresses**: Raw IP addresses are dropped immediately at the adapter boundary and never persisted.
+3. **Communication Contents & Destinations**: No packet payloads, URLs, destination domain names, or application-layer data are ingested or stored.
+4. **Individual Device Trajectories**: Because windows represent 60-second slice-level sums, an attacker cannot track the movement, browsing, or activity of any specific device.
+5. **Sparse Group Signatures**: When fewer than 5 UEs are active in a window, entropy is suppressed to prevent side-channel fingerprinting.
+
+---
+
+## 9. Requirements for Production Carrier Deployment
 
 While CommShield is verified privacy-compliant on public benchmark datasets (5G-NIDD), deployment in a live commercial telecommunications or private 5G network requires the following additional controls:
 

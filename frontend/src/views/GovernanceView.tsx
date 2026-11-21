@@ -41,6 +41,8 @@ import {
   BaselineSummaryResponse,
   CandidateResponse,
   QuarantineWindowItem,
+  getAnalystToken,
+  setAnalystToken,
 } from '../services/api';
 import { useReplay } from '../context/ReplayContext';
 
@@ -115,6 +117,7 @@ export const GovernanceView: React.FC = () => {
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Dialog & Modal state
+  const [analystToken, setAnalystTokenState] = useState<string>(getAnalystToken());
   const [showApproveDialog, setShowApproveDialog] = useState<boolean>(false);
   const [approveNotes, setApproveNotes] = useState<string>('Verified organic marketing campaign traffic surge matches operational schedule.');
   const [showRollbackDialog, setShowRollbackDialog] = useState<boolean>(false);
@@ -1225,6 +1228,20 @@ export const GovernanceView: React.FC = () => {
             </p>
 
             <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-text">Analyst Bearer Token:</label>
+              <input
+                type="password"
+                value={analystToken}
+                onChange={(e) => {
+                  setAnalystTokenState(e.target.value);
+                  setAnalystToken(e.target.value);
+                }}
+                placeholder="Enter COMMSHIELD_ANALYST_TOKEN..."
+                className="w-full text-xs p-2.5 rounded-lg border border-border bg-bg text-text font-mono focus:outline-none focus:ring-1 focus:ring-teal"
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-text">Operator Audit Note:</label>
               <textarea
                 value={approveNotes}
@@ -1291,6 +1308,20 @@ export const GovernanceView: React.FC = () => {
                     </option>
                   ))}
               </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-text">Analyst Bearer Token:</label>
+              <input
+                type="password"
+                value={analystToken}
+                onChange={(e) => {
+                  setAnalystTokenState(e.target.value);
+                  setAnalystToken(e.target.value);
+                }}
+                placeholder="Enter COMMSHIELD_ANALYST_TOKEN..."
+                className="w-full text-xs p-2.5 rounded-lg border border-border bg-bg text-text font-mono focus:outline-none focus:ring-1 focus:ring-attack"
+              />
             </div>
 
             <div className="space-y-1.5">
