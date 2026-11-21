@@ -100,12 +100,16 @@ def rescale_canary_window(
     if "pdu_sessions_established" in raw:
         raw["pdu_sessions_established"] = max(1, int(raw["pdu_sessions_established"] * k))
 
-    # Ratio features: per-UE volume scales with k, but anomaly ratios (failures, session rates) stay intact
-    ratios = rescaled.get("ratio_features", {})
-    if "gtpu_volume_per_ue" in ratios:
-        ratios["gtpu_volume_per_ue"] = float(ratios["gtpu_volume_per_ue"]) * k
-    if "bytes_per_session" in ratios:
-        ratios["bytes_per_session"] = float(ratios["bytes_per_session"]) * k
+    # Under proportional growth (mode="proportional"), both raw volume and entity counts
+    # (UEs, sessions) scale identically by k, leaving ratio features invariant:
+    # (k * bytes) / (k * UEs) = bytes / UEs.
+    # In "fat_pipe" mode (traffic increases without adding UEs or sessions), volume ratios scale by k:
+    if mode == "fat_pipe":
+        ratios = rescaled.get("ratio_features", {})
+        if "gtpu_volume_per_ue" in ratios:
+            ratios["gtpu_volume_per_ue"] = float(ratios["gtpu_volume_per_ue"]) * k
+        if "bytes_per_session" in ratios:
+            ratios["bytes_per_session"] = float(ratios["bytes_per_session"]) * k
 
     return rescaled
 

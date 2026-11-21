@@ -361,6 +361,7 @@ def evaluate_governance_on_real_data(
     anchor_bundle: Dict[str, Any],
     clean_adaptation_windows: List[Dict[str, Any]],
     real_attack_windows: List[Dict[str, Any]],
+    holdout_windows: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Build a clean candidate and a poisoned candidate, and report 4-gate verification results."""
     gov_pipe = build_default_governance_pipeline()
@@ -381,6 +382,8 @@ def evaluate_governance_on_real_data(
         context={
             "volume_multiplier": 1.5,
             "adaptation_windows": clean_adaptation_windows,
+            "normal_holdout_windows": holdout_windows,
+            "ratio_only_budget": True,
         },
     )
 
@@ -404,6 +407,8 @@ def evaluate_governance_on_real_data(
         context={
             "volume_multiplier": 1.5,
             "adaptation_windows": poisoned_adaptation_windows,
+            "normal_holdout_windows": holdout_windows,
+            "ratio_only_budget": True,
         },
     )
 

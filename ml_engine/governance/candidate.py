@@ -103,7 +103,8 @@ def build_shadow_candidate(
             )
 
     # 2. Collect base training data + verified legitimate adaptation windows
-    base_windows = load_base_training_windows(slice_id)
+    # Preserves domain continuity if active or anchor bundle defines custom training windows
+    base_windows = active_bundle.get("training_windows") or anchor_bundle.get("training_windows") or load_base_training_windows(slice_id)
     combined_windows: List[Dict[str, Any]] = list(base_windows) + list(adaptation_windows)
 
     if not combined_windows:
@@ -193,6 +194,7 @@ def build_shadow_candidate(
             "cusum_threshold": 4.5,
         },
         "feature_schema": {"features": FEATURE_NAMES},
+        "training_windows": combined_windows,
         "training_window_count": len(combined_windows),
         "adaptation_window_count": len(adaptation_windows),
         "training_window_ids": training_window_ids,

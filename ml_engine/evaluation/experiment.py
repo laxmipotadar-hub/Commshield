@@ -284,6 +284,7 @@ class ThreeArmExperimentRunner:
         training_windows_c: List[Dict[str, Any]] = list(self.anchor_bundle.get("training_windows", []))
         quarantined_ids: Set[str] = set()
         legitimate_growth_pool: List[Dict[str, Any]] = []
+        buffer_c: List[Dict[str, Any]] = []
         y_pred_c: List[bool] = []
         contamination_c: List[float] = []
         adaptations_c = 0
@@ -302,6 +303,7 @@ class ThreeArmExperimentRunner:
             assert cur_contam == 0.0, f"Arm C baseline contamination violated: {cur_contam} > 0.0"
             contamination_c.append(cur_contam)
 
+            buffer_c.append(w)
             w_id = w.get("window_id", "")
             raw = w.get("raw_counters", {})
             total_bytes = float(raw.get("total_bytes_uplink", 0) + raw.get("total_bytes_downlink", 0))
@@ -312,7 +314,7 @@ class ThreeArmExperimentRunner:
                 attr_res = attributor.attribute(
                     window=w,
                     baseline_bundle=arm_c_bundle,
-                    recent_windows=legitimate_growth_pool[-10:] if legitimate_growth_pool else [w],
+                    recent_windows=buffer_c[-10:],
                     drift_detected=True,
                 )
                 verdict = attr_res.get("verdict")
@@ -337,6 +339,10 @@ class ThreeArmExperimentRunner:
                             candidate_bundle=cand_bundle,
                             active_bundle=arm_c_bundle,
                             anchor_bundle=self.anchor_bundle,
+                            context={
+                                "ratio_only_budget": True,
+                                "adaptation_windows": legitimate_growth_pool[-20:],
+                            },
                         )
 
                         # 4. Careful Analyst Scripted Approval Gate

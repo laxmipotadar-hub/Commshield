@@ -224,10 +224,12 @@ def run_all_real_evaluations() -> None:
     logger.info("Executing 3. Governance Closed-Loop Gates Evaluation...")
     attack_sample_windows = load_attack_windows("UDPFlood", adapter=adapter, max_rows=10000, window_duration_sec=60)
     clean_adaptation_windows = val_windows[:10]
+    holdout_windows = val_windows[10:]
     gov_results = evaluate_governance_on_real_data(
         anchor_bundle=anchor_bundle,
         clean_adaptation_windows=clean_adaptation_windows,
         real_attack_windows=attack_sample_windows,
+        holdout_windows=holdout_windows,
     )
     with open(RESULTS_REAL_DIR / "governance_evaluation.json", "w", encoding="utf-8") as f:
         json.dump(gov_results, f, indent=2)

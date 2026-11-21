@@ -44,7 +44,7 @@ accuracy, and governance integrity of automated 5G Core anomaly detection baseli
 | stable_benign | Arm C (CommShield) | N/A (No Attacks) | 23.0% ± 5.6% | 0.0% | 0.0 | 2.2 | 0.0 |
 | legitimate_growth | Arm A (Static) | N/A (No Attacks) | 97.0% ± 1.9% | 0.0% | 0.0 | 0.0 | 0.0 |
 | legitimate_growth | Arm B (Naive) | N/A (No Attacks) | 37.5% ± 10.7% | 0.0% | 4.0 | 0.0 | 0.0 |
-| legitimate_growth | Arm C (CommShield) | N/A (No Attacks) | 97.0% ± 1.9% | 0.0% | 0.0 | 4.0 | 0.0 |
+| legitimate_growth | Arm C (CommShield) | N/A (No Attacks) | 83.0% ± 4.5% | 0.0% | 1.6 ± 0.5 | 2.4 | 0.0 |
 | slow_attack_ramp | Arm A (Static) | 100.0% ± 0.0% | 18.3% ± 3.3% | 0.0% | 0.0 | 0.0 | 0.0 |
 | slow_attack_ramp | Arm B (Naive) | 91.4% ± 8.0% | 18.3% ± 3.3% | 83.2% ± 13.7% | 2.2 | 0.0 | 0.0 |
 | slow_attack_ramp | Arm C (CommShield) | 100.0% ± 0.0% | 18.3% ± 3.3% | 0.0% | 0.0 | 2.2 | 0.0 |
@@ -62,10 +62,10 @@ accuracy, and governance integrity of automated 5G Core anomaly detection baseli
 ### Where CommShield Helped
 1. **Contamination Elimination**: Arm C maintained strictly **0.0% baseline contamination** across all attack scenarios (`slow_attack_ramp`, `attack_in_growth`, `mimicry_attack`). Quarantined attack windows were mathematically isolated from candidate training sets.
 2. **Attack Evasion Resistance**: Arm B suffered severe attack blinding in `slow_attack_ramp` and `attack_in_growth` as it absorbed attack traffic into its training data (contamination rising to 40-70%), cutting its attack recall in half. Arm C maintained full attack recall because its active baseline remained pure.
-3. **Growth vs Poisoning Trade-off**: Gated adaptation keeps baseline contamination strictly at 0.0% where naive adaptation reaches 56.0% to 83.3% across the slow ramp, attack-in-growth, and mimicry scenarios. However, under simulated growth, Arm C made 0 adaptations because candidates did not pass the conservative governance gates, leaving FPR about 97% (97.0% ± 1.9%, similar to the static anchor).
+3. **Growth vs Poisoning Trade-off**: Gated adaptation keeps baseline contamination strictly at 0.0% where naive adaptation reaches 56.0% to 83.3% across the slow ramp, attack-in-growth, and mimicry scenarios. Following the Stage S5 governance fix (ratio-only drift budget, proportional canary rescaling, and attribution stream buffer), Arm C actively adapts under simulated growth (mean 1.6 ± 0.5 adaptations per seed), reducing FPR from 97.0% down to 83.0% ± 4.5% while maintaining 0.0% contamination.
 
 ### Where CommShield Did Not Help & Trade-offs
-1. **Adaptation Delay (Inertia)**: CommShield requires verified proportional growth accumulation and a 4-check governance gate before promoting candidates. Under rapid growth, it adapts more conservatively than naive retraining.
+1. **Adaptation Delay (Inertia)**: CommShield requires verified proportional growth accumulation and a 4-check governance gate before promoting candidates. Under rapid growth, it adapts more conservatively than naive retraining (Arm C FPR 83.0% vs Arm B FPR 37.5%).
 2. **Human Approval Dependency**: In production, Arm C relies on an analyst approval gate. If operators are slow or unavailable, the system remains on the previous baseline.
 3. **Synthetic Data Disclosure**: All evaluation streams in this benchmark were synthesized using `SyntheticGenerator` modeling Open5GS/5G-NIDD profiles with diurnal noise and mathematical proportional scaling. While deterministic and multi-seeded, real operator core traffic contains complex burstiness not fully captured in synthetic generation.
 
@@ -73,8 +73,8 @@ accuracy, and governance integrity of automated 5G Core anomaly detection baseli
 
 ## Known Limitations
 
-- **Arm C 0 adaptations under simulated growth with FPR about 97%**: Under simulated legitimate growth, Arm C made 0 adaptations because candidates did not pass the conservative governance gates, leaving FPR at approximately 97% (97.0% ± 1.9%, identical to the static anchor).
-- **Clean growth candidate rejected by canary and budget**: Under empirical governance testing, a clean candidate trained on scaled benign traffic was rejected by the canary retention gate (retention dropped to 25.0%) and the drift budget gate ($D_{rms} = 6.65$), preventing automated promotion without manual override.
+- **Arm C Adaptation Inertia under Growth**: Following the Stage S5 fix, Arm C adapts an average of 1.6 times under simulated growth (reducing FPR to 83.0% ± 4.5%), but does not achieve naive adaptation's 37.5% FPR. What the fix changed: it eliminated the attribution buffer deadlock and allowed scale-invariant ratio features to pass the drift budget, enabling verified adaptation. What it did not change: it did not eliminate governance inertia, as zero-trust 4-gate verification intentionally delays promotion until sufficient benign history is proven.
+- **Initial Clean Candidate Rejection Prior to Fix**: Under initial un-rescaled canary evaluation and all-feature drift budget, clean candidates trained on scaled traffic were rejected by canary retention (recall dropped to 25.0%) and drift budget ($D_{rms} = 6.65$), which was resolved by evaluating scale-invariant ratio features in `DriftBudgetCheck` and proportional canary rescaling.
 - **Poisoned candidate rejected only by the holdout**: The poisoned candidate passed canary retention with 100.0% recall, and was blocked exclusively by the normal holdout gate (holdout FPR reaching 100.0%).
 - **Small window counts**: In the 5G-NIDD real evaluation, attack campaigns yielded small sample sizes (1 to 11 attack windows and 3 to 20 benign windows per campaign), constraining confidence interval widths.
 - **ICMPFlood recall 0%**: Across all detectors (Isolation Forest, Autoencoder, Percentile Fusion, and Fixed Z-Score), recall was 0.0% on the trickle ICMP flood attack (613 packets over 20 minutes obscured in 60-second window aggregations).

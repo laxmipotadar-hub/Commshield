@@ -36,15 +36,23 @@ MAX_PER_UE_RATE_DEVIATION: float = 0.25
 # Candidate recall must stay within delta of anchor recall in every canary category.
 CANARY_RECALL_MARGIN_DELTA: float = 0.05
 
-# Rescaling mode for canary attacks ('proportional' vs 'fixed' volume).
-# Proportional rescaling ensures that an attack replayed at higher legitimate volume
-# keeps its proportional anomaly signal rather than being diluted by benign growth.
+# Rescaling mode for canary attacks ('proportional' vs 'fixed' vs 'fat_pipe').
+# Proportional rescaling preserves scale-invariant ratio features while scaling raw counts.
+# Fat-pipe mode scales volume-per-session features by k.
 CANARY_SCALE_METHOD: str = "proportional"
 
 
 # -----------------------------------------------------------------------------
 # 4. Cumulative Drift Budget Limits (Spec Feature 4 Section C)
 # -----------------------------------------------------------------------------
+# Scale-invariant ratio features evaluated under proportional growth
+RATIO_FEATURE_NAMES: list[str] = [
+    "registrations_per_active_ue",
+    "nas_failure_ratio",
+    "pfcp_failure_ratio",
+    "pdu_session_rate_per_ue",
+    "new_ue_rate",
+]
 # Per-update step limit: Maximum root-mean-square robust distance between candidate
 # and the currently active serving baseline: D_rms(cand, active) <= b_step.
 DRIFT_BUDGET_STEP_LIMIT_B_STEP: float = 1.50

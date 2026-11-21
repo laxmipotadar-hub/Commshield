@@ -31,6 +31,7 @@ from .config import (
     MAX_HOLDOUT_FPR,
     MAX_JSD_DIVERGENCE,
     MAX_PER_UE_RATE_DEVIATION,
+    RATIO_FEATURE_NAMES,
 )
 
 logger = logging.getLogger("commshield.governance.checks")
@@ -61,6 +62,8 @@ class NormalHoldoutBacktestCheck(GovernanceCheck):
         holdout_windows = context.get("normal_holdout_windows")
 
         # Load clean normal holdout windows if not supplied
+        if not holdout_windows:
+            holdout_windows = active_bundle.get("holdout_windows") or anchor_bundle.get("holdout_windows")
         if not holdout_windows:
             holdout_windows = self._load_default_normal_holdout(slice_id)
 
@@ -155,7 +158,8 @@ class ProportionalGrowthCheck(GovernanceCheck):
             mean_pdu = float(np.mean(pdu_rates)) if pdu_rates else 1.0
         else:
             avg_comp = cand_comp
-            mean_pdu = 1.0
+            cand_scaler = candidate_bundle.get("scaler_params", {})
+            mean_pdu = float(cand_scaler.get("medians", {}).get("pdu_session_rate_per_ue", 1.0))
 
         jsd = compute_jsd(baseline_comp, avg_comp)
         active_scaler = active_bundle.get("scaler_params", {})
@@ -264,6 +268,10 @@ class DriftBudgetCheck(GovernanceCheck):
     name: str = "drift_budget"
     mandatory: bool = True
 
+    def __init__(self, feature_names: Optional[List[str]] = None, ratio_only: bool = False):
+        self.feature_names = feature_names
+        self.ratio_only = ratio_only
+
     def evaluate(
         self,
         candidate_bundle: Dict[str, Any],
@@ -284,10 +292,13 @@ class DriftBudgetCheck(GovernanceCheck):
         act_iqrs = active_scaler.get("iqrs", {})
         anc_iqrs = anchor_scaler.get("iqrs", {})
 
+        ratio_only_mode = self.ratio_only or context.get("ratio_only_budget", False)
+        eval_features = self.feature_names or (RATIO_FEATURE_NAMES if ratio_only_mode else FEATURE_NAMES)
+
         z_act_list: List[float] = []
         z_anc_list: List[float] = []
 
-        for f in FEATURE_NAMES:
+        for f in eval_features:
             c_med = float(cand_meds.get(f, 0.0))
             a_med = float(act_meds.get(f, 0.0))
             anc_med = float(anc_meds.get(f, 0.0))
