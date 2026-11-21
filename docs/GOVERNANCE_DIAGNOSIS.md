@@ -40,7 +40,47 @@ Computed directly from `data/processed/candidates/sst-1-sd-010203_v1.1.0-real-cl
 *Remaining features*: `new_ue_rate` ($z = +0.4530$), `registrations_per_active_ue` ($z = +0.0422$), `nas_failure_ratio` ($z = 0.0$), `pfcp_failure_ratio` ($z = 0.0$).
 
 ### Comparison Across Growth Multipliers (1.5x, 2.0x, 3.0x)
-When adaptation windows are scaled by 1.5x, 2.0x, and 3.0x, the top 5 features and their $|z_i|$ values remain virtually identical ($D_{\max} = 16.8980, D_{\text{rms}} = 6.6496$). The reason is that `build_shadow_candidate` pools 10 adaptation windows with 100 base training windows; the shift is entirely dominated by the base training set mismatch, not the scale multiplier.
+
+#### Case 1: Empirical Real-Evaluation Pipeline (Observed `experiments/results/real/governance_evaluation.json`)
+When adaptation windows are scaled by 1.5x, 2.0x, and 3.0x under the evaluation pipeline, the candidate is constructed by pooling adaptation windows with 100 base training windows loaded from synthetic data (`training_embb.json`). The resulting $|z_i|$ values for all 9 features across scale multipliers are:
+
+| Feature Name | Category | $|z_i|$ (1.5x Scale) | $|z_i|$ (2.0x Scale) | $|z_i|$ (3.0x Scale) | Shift Direction |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `ue_hash_entropy` | Statistical entropy | **16.8980** | **16.8980** | **16.8980** | $+16.90\sigma$ (Candidate $\gg$ Anchor) |
+| `pdu_session_rate_per_ue` | Ratio | **9.1791** | **9.1791** | **9.1791** | $+9.18\sigma$ (Candidate $\gg$ Anchor) |
+| `packets_per_session` | Count-per-session | **3.9165** | **3.9165** | **3.9165** | $-3.92\sigma$ (Candidate $\ll$ Anchor) |
+| `bytes_per_session` | Volume-per-session | **3.5006** | **3.5006** | **3.5006** | $-3.50\sigma$ (Candidate $\ll$ Anchor) |
+| `gtpu_volume_per_ue` | Volume-per-UE | **0.5933** | **0.5933** | **0.5933** | $-0.59\sigma$ (Candidate $\ll$ Anchor) |
+| `new_ue_rate` | Ratio | 0.4530 | 0.4530 | 0.4530 | $+0.45\sigma$ |
+| `registrations_per_active_ue` | Ratio | 0.0422 | 0.0422 | 0.0422 | $+0.04\sigma$ |
+| `nas_failure_ratio` | Ratio | 0.0000 | 0.0000 | 0.0000 | $0.00\sigma$ |
+| `pfcp_failure_ratio` | Ratio | 0.0000 | 0.0000 | 0.0000 | $0.00\sigma$ |
+| **Summary $D_{\max}$** | - | **16.8980** | **16.8980** | **16.8980** | Limit $\le 3.00$ (**FAILED**) |
+| **Summary $D_{\text{rms}}$** | - | **6.6496** | **6.6496** | **6.6496** | Limit $\le 2.50$ (**FAILED**) |
+
+**Top 5 Drivers of $D_{\max}$ and $D_{\text{rms}}$**:
+1. `ue_hash_entropy` ($|z| = 16.8980$)
+2. `pdu_session_rate_per_ue` ($|z| = 9.1791$)
+3. `packets_per_session` ($|z| = 3.9165$)
+4. `bytes_per_session` ($|z| = 3.5006$)
+5. `gtpu_volume_per_ue` ($|z| = 0.5933$)
+
+#### Case 2: Fat-Pipe / Payload Rescaling on Synthetic Baseline
+If growth is modeled by scaling payload volume features (`bytes_per_session`, `packets_per_session`, `gtpu_volume_per_ue`) without entity expansion (as performed by naive canary rescaling):
+
+| Feature Name | Category | $|z_i|$ (1.5x Scale) | $|z_i|$ (2.0x Scale) | $|z_i|$ (3.0x Scale) |
+| :--- | :--- | :---: | :---: | :---: |
+| `bytes_per_session` | Volume-per-session | **115.6899** | **231.5341** | **463.2225** |
+| `packets_per_session` | Count-per-session | **56.4698** | **113.5042** | **227.5732** |
+| `gtpu_volume_per_ue` | Volume-per-UE | **42.2603** | **84.5824** | **169.2265** |
+| `registrations_per_active_ue` | Ratio | 0.7994 | 0.7994 | 0.7994 |
+| `new_ue_rate` | Ratio | 0.5799 | 0.5799 | 0.5799 |
+| `ue_hash_entropy` | Statistical entropy | 0.1245 | 0.1245 | 0.1245 |
+| `pdu_session_rate_per_ue` | Ratio | 0.0812 | 0.0812 | 0.0812 |
+| `nas_failure_ratio` | Ratio | 0.0000 | 0.0000 | 0.0000 |
+| `pfcp_failure_ratio` | Ratio | 0.0000 | 0.0000 | 0.0000 |
+| **Summary $D_{\max}$** | - | **115.69** | **231.53** | **463.22** |
+| **Summary $D_{\text{rms}}$** | - | **45.17** | **90.46** | **181.05** |
 
 ---
 
