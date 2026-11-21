@@ -1,6 +1,6 @@
 {
   "config_version": "v1.0.0",
-  "generated_at": "2026-11-21T07:27:16.749900+00:00",
+  "generated_at": "2026-11-21T17:52:07.101445+00:00",
   "scenarios": [
     "stable_benign",
     "legitimate_growth",
@@ -35,16 +35,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 0,
-          "benign_windows": 60,
-          "fpr_n": 60,
-          "fpr_ci": [
-            0.1444,
-            0.3544
-          ],
-          "fpr_ci_text": "[14.4%, 35.4%]"
+          "recovery_time_mean": 0.0
         },
         "arm_b_naive": {
           "recall_mean": null,
@@ -55,16 +46,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 2.2,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 0,
-          "benign_windows": 60,
-          "fpr_n": 60,
-          "fpr_ci": [
-            0.1312,
-            0.3362
-          ],
-          "fpr_ci_text": "[13.1%, 33.6%]"
+          "recovery_time_mean": 0.0
         },
         "arm_c_commshield": {
           "recall_mean": null,
@@ -75,21 +57,9 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 2.2,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 0,
-          "benign_windows": 60,
-          "fpr_n": 60,
-          "fpr_ci": [
-            0.1444,
-            0.3544
-          ],
-          "fpr_ci_text": "[14.4%, 35.4%]"
+          "recovery_time_mean": 0.0
         }
-      },
-      "total_windows": 60,
-      "attack_windows": 0,
-      "benign_windows": 60
+      }
     },
     "legitimate_growth": {
       "num_seeds": 5,
@@ -110,16 +80,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 0,
-          "benign_windows": 60,
-          "fpr_n": 60,
-          "fpr_ci": [
-            0.8864,
-            0.9908
-          ],
-          "fpr_ci_text": "[88.6%, 99.1%]"
+          "recovery_time_mean": 0.0
         },
         "arm_b_naive": {
           "recall_mean": null,
@@ -130,16 +91,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 4.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 0,
-          "benign_windows": 60,
-          "fpr_n": 60,
-          "fpr_ci": [
-            0.2562,
-            0.4932
-          ],
-          "fpr_ci_text": "[25.6%, 49.3%]"
+          "recovery_time_mean": 0.0
         },
         "arm_c_commshield": {
           "recall_mean": null,
@@ -150,21 +102,9 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 4.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 0,
-          "benign_windows": 60,
-          "fpr_n": 60,
-          "fpr_ci": [
-            0.8864,
-            0.9908
-          ],
-          "fpr_ci_text": "[88.6%, 99.1%]"
+          "recovery_time_mean": 0.0
         }
-      },
-      "total_windows": 60,
-      "attack_windows": 0,
-      "benign_windows": 60
+      }
     },
     "slow_attack_ramp": {
       "num_seeds": 5,
@@ -185,22 +125,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 42,
-          "benign_windows": 18,
-          "recall_n": 42,
-          "recall_ci": [
-            0.9162,
-            1.0
-          ],
-          "recall_ci_text": "[91.6%, 100.0%]",
-          "fpr_n": 18,
-          "fpr_ci": [
-            0.0584,
-            0.3922
-          ],
-          "fpr_ci_text": "[5.8%, 39.2%]"
+          "recovery_time_mean": 0.0
         },
         "arm_b_naive": {
           "recall_mean": 0.9143,
@@ -211,22 +136,7 @@
           "contamination_std": 0.1372,
           "adaptations_mean": 2.2,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 42,
-          "benign_windows": 18,
-          "recall_n": 42,
-          "recall_ci": [
-            0.7793,
-            0.9623
-          ],
-          "recall_ci_text": "[77.9%, 96.2%]",
-          "fpr_n": 18,
-          "fpr_ci": [
-            0.0584,
-            0.3922
-          ],
-          "fpr_ci_text": "[5.8%, 39.2%]"
+          "recovery_time_mean": 0.0
         },
         "arm_c_commshield": {
           "recall_mean": 1.0,
@@ -237,27 +147,9 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 2.2,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 42,
-          "benign_windows": 18,
-          "recall_n": 42,
-          "recall_ci": [
-            0.9162,
-            1.0
-          ],
-          "recall_ci_text": "[91.6%, 100.0%]",
-          "fpr_n": 18,
-          "fpr_ci": [
-            0.0584,
-            0.3922
-          ],
-          "fpr_ci_text": "[5.8%, 39.2%]"
+          "recovery_time_mean": 0.0
         }
-      },
-      "total_windows": 60,
-      "attack_windows": 42,
-      "benign_windows": 18
+      }
     },
     "attack_in_growth": {
       "num_seeds": 5,
@@ -278,22 +170,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 36,
-          "benign_windows": 24,
-          "recall_n": 36,
-          "recall_ci": [
-            0.9036,
-            1.0
-          ],
-          "recall_ci_text": "[90.4%, 100.0%]",
-          "fpr_n": 24,
-          "fpr_ci": [
-            0.7415,
-            0.9768
-          ],
-          "fpr_ci_text": "[74.2%, 97.7%]"
+          "recovery_time_mean": 0.0
         },
         "arm_b_naive": {
           "recall_mean": 0.9667,
@@ -304,22 +181,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 4.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 36,
-          "benign_windows": 24,
-          "recall_n": 36,
-          "recall_ci": [
-            0.8583,
-            0.9951
-          ],
-          "recall_ci_text": "[85.8%, 99.5%]",
-          "fpr_n": 24,
-          "fpr_ci": [
-            0.3883,
-            0.7553
-          ],
-          "fpr_ci_text": "[38.8%, 75.5%]"
+          "recovery_time_mean": 0.0
         },
         "arm_c_commshield": {
           "recall_mean": 1.0,
@@ -330,27 +192,9 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 4.0,
-          "recovery_time_mean": 0.0,
-          "total_windows": 60,
-          "attack_windows": 36,
-          "benign_windows": 24,
-          "recall_n": 36,
-          "recall_ci": [
-            0.9036,
-            1.0
-          ],
-          "recall_ci_text": "[90.4%, 100.0%]",
-          "fpr_n": 24,
-          "fpr_ci": [
-            0.7415,
-            0.9768
-          ],
-          "fpr_ci_text": "[74.2%, 97.7%]"
+          "recovery_time_mean": 0.0
         }
-      },
-      "total_windows": 60,
-      "attack_windows": 36,
-      "benign_windows": 24
+      }
     },
     "mimicry_attack": {
       "num_seeds": 5,
@@ -371,22 +215,7 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.4,
-          "total_windows": 60,
-          "attack_windows": 30,
-          "benign_windows": 30,
-          "recall_n": 30,
-          "recall_ci": [
-            0.8865,
-            1.0
-          ],
-          "recall_ci_text": "[88.6%, 100.0%]",
-          "fpr_n": 30,
-          "fpr_ci": [
-            0.0951,
-            0.3731
-          ],
-          "fpr_ci_text": "[9.5%, 37.3%]"
+          "recovery_time_mean": 0.4
         },
         "arm_b_naive": {
           "recall_mean": 0.56,
@@ -397,22 +226,7 @@
           "contamination_std": 0.0697,
           "adaptations_mean": 2.2,
           "quarantined_mean": 0.0,
-          "recovery_time_mean": 0.4,
-          "total_windows": 60,
-          "attack_windows": 30,
-          "benign_windows": 30,
-          "recall_n": 30,
-          "recall_ci": [
-            0.392,
-            0.7262
-          ],
-          "recall_ci_text": "[39.2%, 72.6%]",
-          "fpr_n": 30,
-          "fpr_ci": [
-            0.1418,
-            0.4445
-          ],
-          "fpr_ci_text": "[14.2%, 44.5%]"
+          "recovery_time_mean": 0.4
         },
         "arm_c_commshield": {
           "recall_mean": 1.0,
@@ -423,27 +237,9 @@
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
           "quarantined_mean": 2.2,
-          "recovery_time_mean": 0.4,
-          "total_windows": 60,
-          "attack_windows": 30,
-          "benign_windows": 30,
-          "recall_n": 30,
-          "recall_ci": [
-            0.8865,
-            1.0
-          ],
-          "recall_ci_text": "[88.6%, 100.0%]",
-          "fpr_n": 30,
-          "fpr_ci": [
-            0.0951,
-            0.3731
-          ],
-          "fpr_ci_text": "[9.5%, 37.3%]"
+          "recovery_time_mean": 0.4
         }
-      },
-      "total_windows": 60,
-      "attack_windows": 30,
-      "benign_windows": 30
+      }
     }
   }
 }

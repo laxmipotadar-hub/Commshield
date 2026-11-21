@@ -85,8 +85,9 @@ export const MonitoringPage: React.FC = () => {
 
   // Derived: Traffic volume over time
   const trafficTimeData = useMemo(() => {
+    let raw: { time: string; uplink_mb: number; downlink_mb: number }[] = [];
     if (realMonitoring && realMonitoring.time_series && realMonitoring.time_series.length > 0) {
-      return realMonitoring.time_series.map((pt) => {
+      raw = realMonitoring.time_series.map((pt) => {
         const d = new Date(pt.timestamp);
         const timeStr = isNaN(d.getTime())
           ? (pt.timestamp ? pt.timestamp.slice(11, 16) : '--:--')
@@ -97,20 +98,26 @@ export const MonitoringPage: React.FC = () => {
           downlink_mb: pt.downlink_mb,
         };
       });
+    } else {
+      raw = [...windows]
+        .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
+        .map((w) => {
+          const d = new Date(w.window_start);
+          const timeStr = isNaN(d.getTime())
+            ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
+            : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          return {
+            time: timeStr,
+            uplink_mb: Number(((w.raw_counters?.total_bytes_uplink || 0) / 1048576).toFixed(2)),
+            downlink_mb: Number(((w.raw_counters?.total_bytes_downlink || 0) / 1048576).toFixed(2)),
+          };
+        });
     }
-    return [...windows]
-      .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
-      .map((w) => {
-        const d = new Date(w.window_start);
-        const timeStr = isNaN(d.getTime())
-          ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
-          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return {
-          time: timeStr,
-          uplink_mb: Number(((w.raw_counters?.total_bytes_uplink || 0) / 1048576).toFixed(2)),
-          downlink_mb: Number(((w.raw_counters?.total_bytes_downlink || 0) / 1048576).toFixed(2)),
-        };
-      });
+    // Prune trailing zero windows that cause sudden plummet to zero
+    while (raw.length > 1 && raw[raw.length - 1].uplink_mb === 0 && raw[raw.length - 1].downlink_mb === 0) {
+      raw.pop();
+    }
+    return raw;
   }, [windows, realMonitoring]);
 
   // Derived: Distribution across slices
@@ -154,7 +161,7 @@ export const MonitoringPage: React.FC = () => {
 
   // Derived: Registration and session failure rates
   const failureRatesData = useMemo(() => {
-    return [...windows]
+    const raw = [...windows]
       .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
       .map((w) => {
         const d = new Date(w.window_start);
@@ -168,12 +175,20 @@ export const MonitoringPage: React.FC = () => {
           reg_rate: Number((w.ratio_features?.registrations_per_active_ue || 0).toFixed(4)),
         };
       });
+    if (raw.length > 1 && windows.length > 1) {
+      const lastW = windows[windows.length - 1];
+      if ((lastW.raw_counters?.total_bytes_uplink || 0) + (lastW.raw_counters?.total_bytes_downlink || 0) === 0) {
+        raw.pop();
+      }
+    }
+    return raw;
   }, [windows]);
 
   // Derived: Normalised traffic composition
   const compositionData = useMemo(() => {
+    let raw: { time: string; session_setup: number; registration: number; failure: number; other: number }[] = [];
     if (realMonitoring && realMonitoring.time_series && realMonitoring.time_series.length > 0) {
-      return realMonitoring.time_series.map((pt) => {
+      raw = realMonitoring.time_series.map((pt) => {
         const d = new Date(pt.timestamp);
         const timeStr = isNaN(d.getTime())
           ? (pt.timestamp ? pt.timestamp.slice(11, 16) : '--:--')
@@ -186,23 +201,28 @@ export const MonitoringPage: React.FC = () => {
           other: Number((pt.icmp_ratio * 100).toFixed(1)),
         };
       });
+    } else {
+      raw = [...windows]
+        .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
+        .map((w) => {
+          const d = new Date(w.window_start);
+          const timeStr = isNaN(d.getTime())
+            ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
+            : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const c = w.composition_vector || {};
+          return {
+            time: timeStr,
+            session_setup: Number(((c.session_setup_ratio || 0) * 100).toFixed(1)),
+            registration: Number(((c.registration_ratio || 0) * 100).toFixed(1)),
+            failure: Number(((c.failure_ratio || 0) * 100).toFixed(2)),
+            other: Number(((c.other_signalling_ratio || 0) * 100).toFixed(1)),
+          };
+        });
     }
-    return [...windows]
-      .sort((a, b) => new Date(a.window_start).getTime() - new Date(b.window_start).getTime())
-      .map((w) => {
-        const d = new Date(w.window_start);
-        const timeStr = isNaN(d.getTime())
-          ? (w.window_start ? w.window_start.slice(11, 16) : '--:--')
-          : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const c = w.composition_vector || {};
-        return {
-          time: timeStr,
-          session_setup: Number(((c.session_setup_ratio || 0) * 100).toFixed(1)),
-          registration: Number(((c.registration_ratio || 0) * 100).toFixed(1)),
-          failure: Number(((c.failure_ratio || 0) * 100).toFixed(2)),
-          other: Number(((c.other_signalling_ratio || 0) * 100).toFixed(1)),
-        };
-      });
+    while (raw.length > 1 && raw[raw.length - 1].session_setup === 0 && raw[raw.length - 1].registration === 0 && raw[raw.length - 1].other === 0) {
+      raw.pop();
+    }
+    return raw;
   }, [windows, realMonitoring]);
 
   // Aggregate stats

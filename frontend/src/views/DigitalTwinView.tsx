@@ -607,24 +607,24 @@ export const DigitalTwinView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full min-h-screen bg-[#070e1b] text-slate-100 font-sans select-none pb-12">
+    <div className="flex flex-col w-full h-full bg-[#070e1b] text-slate-100 font-sans select-none overflow-hidden">
       {/* 1. TOP HEADER BRAND & CONNECTIVITY */}
-      <header className="h-14 px-4 bg-[#0a1628]/95 backdrop-blur-md border-b border-[#1e293b] flex items-center justify-between z-30 shrink-0 sticky top-0">
-        <div className="flex items-center gap-3">
+      <header className="h-11 px-3 bg-[#0a1628]/95 backdrop-blur-md border-b border-[#1e293b] flex items-center justify-between z-30 shrink-0">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-cyan-400" />
-            <div className="flex flex-col">
-              <span className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
-                CommShield AI <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">5G SOC</span>
+            <Shield className="w-5 h-5 text-cyan-400" />
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-xs tracking-tight text-white flex items-center gap-1.5">
+                CommShield AI <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">5G SOC</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">Cyber Defence Operations Centre</span>
+              <span className="text-[10px] text-slate-400 font-mono hidden md:inline">| Operations Centre</span>
             </div>
           </div>
 
-          <div className="h-6 w-px bg-slate-800 hidden md:block" />
+          <div className="h-4 w-px bg-slate-800 hidden md:block" />
 
           {/* Connection Status Badge */}
-          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-mono">
             <span
               className={`w-2 h-2 rounded-full ${
                 connState === 'connected' ? 'bg-emerald-400 animate-pulse' : connState === 'connecting' ? 'bg-amber-400 animate-ping' : 'bg-rose-500'
@@ -636,25 +636,25 @@ export const DigitalTwinView: React.FC = () => {
           </div>
 
           {/* Network Health Badge */}
-          <div className="hidden xl:flex items-center gap-2 font-mono text-[11px]">
-            <span className={`px-2 py-0.5 rounded border ${healthStats.statusLabel === 'HEALTHY' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-rose-950 text-rose-400 border-rose-800 animate-pulse'}`}>
+          <div className="hidden xl:flex items-center gap-1.5 font-mono text-[10px]">
+            <span className={`px-1.5 py-0.5 rounded border ${healthStats.statusLabel === 'HEALTHY' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-rose-950 text-rose-400 border-rose-800 animate-pulse'}`}>
               HEALTH: {healthStats.statusLabel} ({healthStats.healthScore}%)
             </span>
-            <span className={`px-2 py-0.5 rounded border ${isAttackActive ? 'bg-rose-950 text-rose-400 border-rose-800 animate-pulse' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+            <span className={`px-1.5 py-0.5 rounded border ${isAttackActive ? 'bg-rose-950 text-rose-400 border-rose-800 animate-pulse' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
               THREAT: {isAttackActive ? 'ACTIVE ANOMALY' : 'NOMINAL'}
             </span>
           </div>
         </div>
 
         {/* Global Action Controls */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-1.5 text-xs">
           {/* Data Integrity Button */}
           <button
             onClick={handleOpenIntegrityModal}
-            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 hover:text-white border border-cyan-800/60 text-[11px] font-mono flex items-center gap-1.5 transition-colors"
+            className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-cyan-300 hover:text-white border border-cyan-800/60 text-[10px] font-mono flex items-center gap-1 transition-colors"
             title="Inspect Data Integrity invariant proofs"
           >
-            <Database className="w-3.5 h-3.5 text-cyan-400" />
+            <Database className="w-3 h-3 text-cyan-400" />
             <span className="hidden sm:inline">Data Integrity</span>
           </button>
 
@@ -667,37 +667,37 @@ export const DigitalTwinView: React.FC = () => {
                 executeStage(0);
               }
             }}
-            className={`px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-2.5 py-1 rounded border text-[10px] font-semibold flex items-center gap-1 transition-all ${
               guidedDemoActive
                 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md font-bold'
                 : 'bg-slate-900 text-cyan-400 border-cyan-500/40 hover:bg-cyan-950/40'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3 h-3" />
             14-Stage Demo
           </button>
 
           {/* Presentation Mode Toggle */}
           <button
             onClick={() => setPresentationMode(!presentationMode)}
-            className="p-1.5 rounded-lg border bg-slate-900 text-slate-300 border-slate-800 hover:text-white"
+            className="p-1 rounded border bg-slate-900 text-slate-300 border-slate-800 hover:text-white"
             title="Full-Screen / Presentation Mode"
           >
-            {presentationMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {presentationMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
         </div>
       </header>
 
       {/* 2. FIVE HEIGHT-UNIFORM TOOLBAR CONTROL GROUPS (Phases 8 & 12) */}
-      <div className="bg-[#081220] border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs font-mono z-20">
+      <div className="bg-[#081220] border-b border-slate-800 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs font-mono z-20 shrink-0">
         {/* GROUP 1: NETWORK */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-9">
-          <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-          <span className="text-[10px] text-slate-400 uppercase shrink-0 font-bold">SLICE:</span>
+        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-8">
+          <Layers className="w-3 h-3 text-cyan-400 shrink-0" />
+          <span className="text-[9px] text-slate-400 uppercase shrink-0 font-bold">SLICE:</span>
           <select
             value={activeSlice}
             onChange={(e) => handleSliceChange(e.target.value)}
-            className="bg-transparent text-cyan-300 font-semibold focus:outline-none text-[11px] cursor-pointer"
+            className="bg-transparent text-cyan-300 font-semibold focus:outline-none text-[10px] cursor-pointer"
           >
             <option value="all" className="bg-slate-900 text-slate-200">All Slices (Global)</option>
             <option value="sst-1-sd-010203" className="bg-slate-900 text-slate-200">eMBB Slice #1</option>
@@ -707,7 +707,7 @@ export const DigitalTwinView: React.FC = () => {
         </div>
 
         {/* GROUP 2: SIMULATION */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-9">
+        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-8">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
             disabled={reducedMotion}
@@ -718,41 +718,41 @@ export const DigitalTwinView: React.FC = () => {
           </button>
           <button
             onClick={handleResetToHealthy}
-            className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] flex items-center gap-1 transition-colors"
+            className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[9px] flex items-center gap-1 transition-colors"
             title="Reset to Healthy Baseline"
           >
-            <RotateCcw className="w-3 h-3 text-cyan-400" />
+            <RotateCcw className="w-2.5 h-2.5 text-cyan-400" />
             <span>Reset</span>
           </button>
-          <div className="h-4 w-px bg-slate-800" />
-          <span className="text-[10px] text-slate-400 uppercase">SPEED:</span>
-          {[0.5, 1.0, 2.0, 5.0, 10.0].map((spd) => (
+          <div className="h-3 w-px bg-slate-800" />
+          <span className="text-[9px] text-slate-400 uppercase">SPD:</span>
+          {[0.5, 1.0, 2.0, 5.0].map((spd) => (
             <button
               key={spd}
               onClick={() => handleSpeedChange(spd)}
-              className={`px-1 py-0.5 rounded text-[10px] font-bold ${
+              className={`px-1 py-0.5 rounded text-[9px] font-bold ${
                 simulationSpeed === spd ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
               {spd}x
             </button>
           ))}
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="h-3 w-px bg-slate-800" />
           {/* Data Mode */}
           <select
             value={dataMode}
             onChange={(e) => handleDataModeChange(e.target.value as any)}
-            className="bg-transparent text-slate-300 text-[10px] focus:outline-none cursor-pointer"
+            className="bg-transparent text-slate-300 text-[9px] focus:outline-none cursor-pointer"
             title="Telemetry Data Mode"
           >
-            <option value="LIVE_SIMULATION" className="bg-slate-900 text-slate-200">LIVE SIMULATION</option>
-            <option value="REAL_DATASET" className="bg-slate-900 text-slate-200">REAL DATASET (5G-NIDD)</option>
-            <option value="HYBRID" className="bg-slate-900 text-slate-200">HYBRID FUSED</option>
+            <option value="LIVE_SIMULATION" className="bg-slate-900 text-slate-200">LIVE SIM</option>
+            <option value="REAL_DATASET" className="bg-slate-900 text-slate-200">REAL DATA</option>
+            <option value="HYBRID" className="bg-slate-900 text-slate-200">HYBRID</option>
           </select>
           {/* Synthetic Toggle */}
           <button
             onClick={handleSyntheticToggle}
-            className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${
+            className={`px-1 py-0.5 rounded text-[8px] font-bold border transition-colors ${
               syntheticEnabled ? 'bg-amber-950 text-amber-300 border-amber-700' : 'bg-slate-800 text-slate-400 border-slate-700'
             }`}
             title="Toggle Synthetic Data Injection"
@@ -762,54 +762,53 @@ export const DigitalTwinView: React.FC = () => {
         </div>
 
         {/* GROUP 3: SCENARIO & WHAT-IF LAB */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-9" title="What-If Scenario Sandbox">
-          <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-8" title="What-If Scenario Sandbox">
+          <Flame className="w-3 h-3 text-rose-400 shrink-0" />
           <select
             value={launcherAttackType}
             onChange={(e) => setLauncherAttackType(e.target.value)}
-            className="bg-transparent text-rose-300 font-semibold focus:outline-none text-[11px] cursor-pointer"
+            className="bg-transparent text-rose-300 font-semibold focus:outline-none text-[10px] cursor-pointer"
           >
             <option value="Distributed DDoS" className="bg-slate-900 text-slate-200">Distributed DDoS</option>
             <option value="Volumetric DDoS" className="bg-slate-900 text-slate-200">Volumetric UDP Flood</option>
             <option value="SYN Flood" className="bg-slate-900 text-slate-200">TCP SYN Flood</option>
-            <option value="HTTP Flood" className="bg-slate-900 text-slate-200">HTTP Application Flood</option>
+            <option value="HTTP Flood" className="bg-slate-900 text-slate-200">HTTP App Flood</option>
             <option value="Slow-rate DoS" className="bg-slate-900 text-slate-200">Slow-rate DoS</option>
             <option value="Signalling Storm" className="bg-slate-900 text-slate-200">Signalling Storm</option>
-            <option value="Port Scanning" className="bg-slate-900 text-slate-200">Port Scanning</option>
           </select>
           <button
             onClick={() => setLauncherSource(launcherSource === 'distributed' ? 'single' : 'distributed')}
-            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+            className={`px-1 py-0.5 rounded text-[9px] font-bold border transition-colors ${
               launcherSource === 'distributed' ? 'bg-purple-950 text-purple-300 border-purple-700' : 'bg-slate-800 text-slate-400 border-slate-700'
             }`}
             title="Attacker Distribution Mode"
           >
-            {launcherSource === 'distributed' ? 'DISTRIBUTED' : 'SINGLE'}
+            {launcherSource === 'distributed' ? 'DIST' : 'SNGL'}
           </button>
           {!isAttackActive ? (
             <button
               onClick={handleStartAttack}
-              className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] flex items-center gap-1 transition-colors shadow-sm"
+              className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[9px] flex items-center gap-1 transition-colors shadow-sm"
               title="Launch Attack"
             >
-              <Flame className="w-3 h-3" /> Launch Attack
+              <Flame className="w-2.5 h-2.5" /> Launch Attack
             </button>
           ) : (
             <button
               onClick={handleStopAttack}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-rose-950 text-rose-300 font-bold text-[10px] border border-rose-800 flex items-center gap-1 transition-colors"
+              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-rose-950 text-rose-300 font-bold text-[9px] border border-rose-800 flex items-center gap-1 transition-colors"
             >
-              <X className="w-3 h-3" /> Stop
+              <X className="w-2.5 h-2.5" /> Stop
             </button>
           )}
         </div>
 
         {/* GROUP 4: COMMSHIELD */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-9">
-          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-8">
+          <ShieldCheck className="w-3 h-3 text-cyan-400 shrink-0" />
           <button
             onClick={handleDefenceModeToggle}
-            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-all ${
+            className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-all ${
               defenceMode === 'AUTOMATIC' ? 'bg-purple-950 text-purple-300 border-purple-700' : 'bg-amber-950 text-amber-300 border-amber-700'
             }`}
           >
@@ -820,7 +819,7 @@ export const DigitalTwinView: React.FC = () => {
               <button
                 key={lvl}
                 onClick={() => handleSensitivityChange(lvl)}
-                className={`px-1 py-0.5 rounded text-[9px] font-bold ${
+                className={`px-1 py-0.5 rounded text-[8px] font-bold ${
                   detectionConfig.sensitivity === lvl ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -830,7 +829,7 @@ export const DigitalTwinView: React.FC = () => {
           </div>
           <button
             onClick={handleEnsembleFusionToggle}
-            className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${
+            className={`px-1 py-0.5 rounded text-[8px] font-bold border transition-colors ${
               ensembleFusion ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-slate-800 text-slate-400 border-slate-700'
             }`}
             title="Multi-Engine Ensemble Fusion Agreement"
@@ -840,10 +839,10 @@ export const DigitalTwinView: React.FC = () => {
         </div>
 
         {/* GROUP 5: VIEW */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-9">
+        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2 h-8">
           <button
             onClick={() => setViewMode3D(!viewMode3D)}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition-colors"
+            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[9px] font-bold transition-colors"
           >
             {viewMode3D ? '3D CAMPUS' : '2D FLOOR'}
           </button>
@@ -853,10 +852,10 @@ export const DigitalTwinView: React.FC = () => {
               setSelectedType(null);
               setActiveCameraPreset('full');
             }}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[10px] font-bold transition-colors flex items-center gap-1"
+            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[9px] font-bold transition-colors flex items-center gap-1"
             title="Reset camera to fit entire campus topology"
           >
-            <RotateCcw className="w-3 h-3 text-cyan-400" />
+            <RotateCcw className="w-2.5 h-2.5 text-cyan-400" />
             Fit Network
           </button>
         </div>
@@ -939,10 +938,10 @@ export const DigitalTwinView: React.FC = () => {
       )}
 
       {/* 3. MAIN 3-COLUMN WORKSPACE */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 p-2.5 min-h-0 overflow-hidden">
         {/* LEFT PANEL — TELEMETRY & ATTACK/DETECTION CONTROLS (3 cols) */}
         {!presentationMode && (
-          <aside className="lg:col-span-3 flex flex-col gap-3">
+          <aside className="lg:col-span-3 flex flex-col gap-2.5 overflow-y-auto min-h-0 max-h-full pr-1">
             {/* Network Health & Baseline Telemetry */}
             <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -1175,8 +1174,8 @@ export const DigitalTwinView: React.FC = () => {
         )}
 
         {/* CENTER — INTERACTIVE 3D DIGITAL TWIN (6 cols in standard; 9 cols in presentation) */}
-        <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-3 relative min-h-[580px]`}>
-          <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col">
+        <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col min-h-0 relative`}>
+          <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col min-h-0">
             {/* Top Scene Status Strip */}
             <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
               <div className="px-3 py-1.5 rounded-lg bg-[#0a1628]/90 border border-slate-700/80 backdrop-blur-md text-xs font-mono text-slate-300 flex items-center gap-2 shadow-lg pointer-events-auto">
@@ -1209,28 +1208,30 @@ export const DigitalTwinView: React.FC = () => {
 
             {/* 3D Scene Viewport */}
             {viewMode3D ? (
-              <ThreeTwinScene
-                nodes={data?.topology?.nodes || []}
-                links={data?.topology?.links || []}
-                slices={data?.slices || []}
-                devices={data?.devices || []}
-                selectedId={selectedId}
-                onSelect={(id, type) => {
-                  setSelectedId(id);
-                  setSelectedType(type);
-                }}
-                onHover={setHoveredItem}
-                attackPath={attackPath}
-                attackPaths={attackPaths}
-                attackerSources={attackerSources}
-                isDistributed={isDistributed}
-                mitigationActive={verificationResult?.verdict === 'CONTAINMENT_VERIFIED' || data?.lifecycle_state === 'RECOVERED'}
-                reducedMotion={reducedMotion}
-                activeCameraPreset={activeCameraPreset}
-                onPresetChange={setActiveCameraPreset}
-                traceAttackPath={traceAttackPath}
-                lifecycleState={isAttackActive ? 'THREAT_DETECTED' : verificationResult ? 'VERIFYING_MITIGATION' : 'NORMAL'}
-              />
+              <div className="flex-1 w-full h-full min-h-0 relative">
+                <ThreeTwinScene
+                  nodes={data?.topology?.nodes || []}
+                  links={data?.topology?.links || []}
+                  slices={data?.slices || []}
+                  devices={data?.devices || []}
+                  selectedId={selectedId}
+                  onSelect={(id, type) => {
+                    setSelectedId(id);
+                    setSelectedType(type);
+                  }}
+                  onHover={setHoveredItem}
+                  attackPath={attackPath}
+                  attackPaths={attackPaths}
+                  attackerSources={attackerSources}
+                  isDistributed={isDistributed}
+                  mitigationActive={verificationResult?.verdict === 'CONTAINMENT_VERIFIED' || data?.lifecycle_state === 'RECOVERED'}
+                  reducedMotion={reducedMotion}
+                  activeCameraPreset={activeCameraPreset}
+                  onPresetChange={setActiveCameraPreset}
+                  traceAttackPath={traceAttackPath}
+                  lifecycleState={isAttackActive ? 'THREAT_DETECTED' : verificationResult ? 'VERIFYING_MITIGATION' : 'NORMAL'}
+                />
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center p-6 text-slate-400 text-xs font-mono">
                 <span>2D Floorplan view selected. Toggle 3D CAMPUS in header to return.</span>
@@ -1238,7 +1239,7 @@ export const DigitalTwinView: React.FC = () => {
             )}
 
             {/* Scrubber & Timeline Bar */}
-            <div className="h-12 px-4 bg-[#0a1628]/95 border-t border-slate-800 flex items-center justify-between text-xs">
+            <div className="h-10 px-3 bg-[#0a1628]/95 border-t border-slate-800 flex items-center justify-between text-xs shrink-0">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsPlaying(!isPlaying)}
@@ -1278,8 +1279,8 @@ export const DigitalTwinView: React.FC = () => {
         </main>
 
         {/* RIGHT OPERATIONS PANEL — 4 DEDICATED TABS */}
-        <aside className="lg:col-span-3 flex flex-col gap-3">
-          <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+        <aside className="lg:col-span-3 flex flex-col min-h-0 max-h-full">
+          <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col min-h-0">
             {/* 4 Operations Tabs Navigation */}
             <div className="grid grid-cols-4 border-b border-slate-800 text-[11px] font-mono text-center bg-[#091322]">
               {[
@@ -1650,10 +1651,10 @@ export const DigitalTwinView: React.FC = () => {
       </div>
 
       {/* 4. BOTTOM PANEL — 5 DEDICATED TABS */}
-      <footer className="px-3">
+      <footer className="px-2.5 pb-2 shrink-0">
         <div className="bg-[#0a1628] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl">
           {/* Bottom Tabs Navigation */}
-          <div className="flex items-center border-b border-[#1b2b46] px-4 bg-[#081220] text-xs overflow-x-auto">
+          <div className="flex items-center border-b border-[#1b2b46] px-3 bg-[#081220] text-xs overflow-x-auto">
             {[
               { id: 'timeline', label: 'Event Timeline', icon: Terminal },
               { id: 'traffic', label: 'Traffic Analysis', icon: Activity },
@@ -1664,7 +1665,7 @@ export const DigitalTwinView: React.FC = () => {
               <button
                 key={id}
                 onClick={() => setActiveBottomTab(id as any)}
-                className={`py-3 px-4 font-semibold flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap ${
+                className={`py-2 px-3 font-semibold flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap text-[11px] ${
                   activeBottomTab === id
                     ? 'border-cyan-400 text-cyan-300'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -1677,7 +1678,7 @@ export const DigitalTwinView: React.FC = () => {
           </div>
 
           {/* Bottom Tab Content */}
-          <div className="p-4">
+          <div className="p-3 max-h-36 overflow-y-auto">
             {/* TAB 1: EVENT TIMELINE */}
             {activeBottomTab === 'timeline' && (
               <div className="flex flex-col gap-2 max-h-48 overflow-y-auto font-mono text-xs">

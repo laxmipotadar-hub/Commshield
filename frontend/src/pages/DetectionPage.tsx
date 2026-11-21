@@ -242,16 +242,20 @@ export const DetectionPage: React.FC = () => {
 
   // Selected window metrics
   const activeOutput = detectorData;
-  const ifPct = activeOutput?.isolation_forest?.benign_percentile ?? 50.0;
+  const rawIfPct = activeOutput?.isolation_forest?.benign_percentile ?? 50.0;
+  const ifPct = Math.min(100.0, Math.max(0.0, rawIfPct > 1.0 ? rawIfPct : rawIfPct * 100));
   const ifRaw = activeOutput?.isolation_forest?.raw_score_negated ?? 0.5;
   const ifFlagged = activeOutput?.isolation_forest?.is_flagged ?? false;
 
-  const aePct = activeOutput?.autoencoder?.benign_percentile ?? 50.0;
+  const rawAePct = activeOutput?.autoencoder?.benign_percentile ?? 50.0;
+  const aePct = Math.min(100.0, Math.max(0.0, rawAePct > 1.0 ? rawAePct : rawAePct * 100));
   const aeMse = activeOutput?.autoencoder?.reconstruction_mse ?? 0.01;
   const aeFlagged = activeOutput?.autoencoder?.is_flagged ?? false;
 
-  const fusedPct = activeOutput?.fusion?.fused_percentile ?? Math.max(ifPct, aePct);
-  const secondaryMean = activeOutput?.fusion?.secondary_mean_percentile ?? (ifPct + aePct) / 2.0;
+  const rawFusedPct = activeOutput?.fusion?.fused_percentile ?? Math.max(ifPct, aePct);
+  const fusedPct = Math.min(100.0, Math.max(0.0, rawFusedPct > 1.0 ? rawFusedPct : rawFusedPct * 100));
+  const rawSecondaryMean = activeOutput?.fusion?.secondary_mean_percentile ?? (ifPct + aePct) / 2.0;
+  const secondaryMean = Math.min(100.0, Math.max(0.0, rawSecondaryMean > 1.0 ? rawSecondaryMean : rawSecondaryMean * 100));
   const isAnomalous = activeOutput?.fusion?.is_anomalous ?? false;
 
   const agreementState = activeOutput?.fusion?.agreement_state || 'neither';
