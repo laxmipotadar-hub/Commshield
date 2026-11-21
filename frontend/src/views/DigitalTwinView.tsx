@@ -9,12 +9,13 @@ import {
   RotateCcw,
   Database,
   Radio,
-  Cpu,
   Lock,
   Layers,
   Activity,
   FileCheck,
   Zap,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   api,
@@ -47,6 +48,7 @@ export const DigitalTwinView: React.FC = () => {
     setDemoReducedMotion(val);
   };
   const [selectedDevice, setSelectedDevice] = useState<DigitalTwinDevice | null>(null);
+  const [copiedHmac, setCopiedHmac] = useState<boolean>(false);
 
   // Check system prefers-reduced-motion on mount
   useEffect(() => {
@@ -69,6 +71,9 @@ export const DigitalTwinView: React.FC = () => {
       // Auto-select first device if none selected
       if (!selectedDevice && res.devices.length > 0) {
         setSelectedDevice(res.devices[0]);
+      } else if (selectedDevice) {
+        const updatedDev = res.devices.find((d) => d.id === selectedDevice.id);
+        if (updatedDev) setSelectedDevice(updatedDev);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load Digital Twin data';
@@ -121,221 +126,199 @@ export const DigitalTwinView: React.FC = () => {
     return () => cancelAnimationFrame(animId);
   }, [reducedMotion]);
 
+  const handleCopyHmac = (hmac: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(hmac);
+      setCopiedHmac(true);
+      setTimeout(() => setCopiedHmac(false), 2000);
+    }
+  };
+
+  // Device summary stats
+  const deviceCounts = useMemo(() => {
+    const devList = data?.devices || [];
+    let benign = 0;
+    let attack = 0;
+    let uncertain = 0;
+    let quarantined = 0;
+    devList.forEach((d) => {
+      if (d.action === 'quarantine' || d.verdict === 'quarantined') quarantined++;
+      else if (d.verdict === 'attack') attack++;
+      else if (d.verdict === 'uncertain') uncertain++;
+      else benign++;
+    });
+    return { benign, attack, uncertain, quarantined, total: devList.length };
+  }, [data]);
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col w-full gap-space-md pb-space-2xl">
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg text-xs flex items-center justify-between">
+        <div className="bg-error-container text-on-error-container p-3 rounded-lg text-xs flex items-center justify-between border border-error/30">
           <span>Telemetry Error: {error}</span>
-          <button onClick={fetchData} className="underline hover:text-white">Retry</button>
+          <button onClick={fetchData} className="underline font-bold hover:opacity-80">
+            Retry
+          </button>
         </div>
       )}
 
-      {/* 1. Header Bar with Scenario Selector, Time Scrubber, Motion & Source Badge */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
-                <Cpu className="w-6 h-6 text-blue" />
-                5G Slice Digital Twin & Telemetry Floor Map
-              </h1>
-
-              {/* Loading Indicator */}
-              {loading && !data && (
-                <span className="text-xs text-muted font-mono animate-pulse">Syncing Twin...</span>
-              )}
-
-              {/* Source Badge taken directly from data.source */}
-              {data && (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                    data.source_badge === 'Live lab'
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/40'
-                      : data.source_badge === 'Real recorded'
-                      ? 'bg-blue/20 text-blue border border-blue/40'
-                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                  }`}
-                >
-                  <Activity className="w-3.5 h-3.5" />
-                  {data.source_badge}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted mt-1">
-              Deterministic floor-plan telemetry, per-device conformal bounds, and zero-trust onboarding governance.
-            </p>
-          </div>
-
-          {/* Controls: Source toggle (if lab validated), Reduced Motion & Scenario */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Lab Source Toggle - Enabled only when lab is validated */}
-            {data?.lab_validated && (
-              <div className="flex items-center gap-1 bg-bg border border-border rounded-lg p-1 text-xs">
-                <button
-                  onClick={() => setActiveSource('simulated_twin')}
-                  className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                    activeSource === 'simulated_twin' ? 'bg-blue text-white shadow-sm' : 'text-muted hover:text-text'
-                  }`}
-                >
-                  Simulated Twin
-                </button>
-                <button
-                  onClick={() => setActiveSource('lab')}
-                  className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                    activeSource === 'lab' ? 'bg-purple-600 text-white shadow-sm' : 'text-muted hover:text-text'
-                  }`}
-                >
-                  Live Lab Core
-                </button>
-              </div>
+      {/* 1. Command Header & Spatial Controls matching Stitch */}
+      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border">
+        <div className="flex flex-col gap-space-2xs min-w-0">
+          <div className="flex items-center gap-space-xs font-label-mono text-body-xs text-primary uppercase tracking-wider">
+            <Radio className="w-4 h-4 text-primary" />
+            <span>Physical-to-Virtual Real-time Mirror</span>
+            {loading && !data && (
+              <span className="text-[10px] font-mono text-secondary animate-pulse ml-2">Syncing Twin...</span>
             )}
+          </div>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight truncate">
+            Digital Twin — 5G Facility Floor Plan & Telemetry Mesh
+          </h1>
+          <p className="font-body-xs text-body-xs text-secondary truncate">
+            Synchronized topological digital twin mapping ultra-reliable low latency UPF slices to factory spatial assets.
+          </p>
+        </div>
 
-            {/* Reduced Motion Toggle Button */}
-            <button
-              onClick={() => setReducedMotion(!reducedMotion)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                reducedMotion
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'bg-bg text-muted hover:text-text border-border'
-              }`}
-              title="Toggle packet particle animations and pulsing rings"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>{reducedMotion ? 'Reduced Motion: ON' : 'Animations: ON'}</span>
-            </button>
-
-            {/* Scenario Dropdown */}
-            <div className="relative">
+        {/* Controls Palette */}
+        <div className="flex flex-wrap items-center gap-space-sm self-start lg:self-center">
+          {/* Scenario Selector */}
+          <div className="flex items-center gap-space-xs bg-surface-container-low dark:bg-bg px-space-sm py-1.5 rounded-lg border border-outline-variant/50 dark:border-border text-on-surface">
+            <Layers className="w-4 h-4 text-primary" />
+            <div className="flex flex-col">
+              <span className="font-body-xs text-[10px] text-secondary font-medium leading-none">SCENARIO</span>
               <select
                 value={selectedScenario}
                 onChange={(e) => {
                   setSelectedScenario(e.target.value);
                   setTimeStep(15);
                 }}
-                className="bg-bg border border-border text-xs rounded-lg px-3 py-2 text-text font-medium focus:ring-1 focus:ring-blue focus:outline-none"
+                aria-label="Digital twin scenario"
+                className="bg-transparent text-xs font-semibold text-on-surface focus:outline-none cursor-pointer max-w-[220px] truncate"
               >
                 {SCENARIOS.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
+                  <option key={sc.id} value={sc.id} className="bg-surface dark:bg-card text-on-surface">
                     {sc.label}
                   </option>
                 ))}
               </select>
             </div>
           </div>
-        </div>
 
-        {/* Timeline Scrubber */}
-        <div className="mt-4 pt-4 border-t border-border flex items-center gap-4">
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            disabled={reducedMotion}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue/20 hover:bg-blue/30 text-blue border border-blue/40 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40"
-          >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span>{isPlaying ? 'Pause' : 'Play'}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setIsPlaying(false);
-              setTimeStep(0);
-            }}
-            className="p-1.5 bg-bg hover:bg-slate/20 text-muted hover:text-text border border-border rounded-lg text-xs transition-colors"
-            title="Reset to t=0"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="flex-1 flex items-center gap-3">
-            <span className="text-xs font-mono text-muted w-14">t = {timeStep}m</span>
-            <input
-              type="range"
-              min={0}
-              max={29}
-              value={timeStep}
-              onChange={(e) => {
-                setIsPlaying(false);
-                setTimeStep(Number(e.target.value));
-              }}
-              className="flex-1 accent-blue cursor-pointer h-1.5 bg-slate/30 rounded-lg"
-            />
-            <span className="text-xs font-mono text-muted w-14 text-right">t = 29m</span>
-          </div>
-
-          <div className="text-xs text-muted font-medium hidden sm:block">
-            {timeStep < 10
-              ? 'Phase: Baseline Streaming'
-              : timeStep < 20
-              ? 'Phase: Batch 1 Ingress / Surge'
-              : 'Phase: Batch 2 Ingress / Sustained'}
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Interactive SVG Floor Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-blue" />
-              <h2 className="text-sm font-semibold text-text">Facility Floor Plan & Core Network Topology</h2>
+          {/* Source Toggle if lab validated */}
+          {data?.lab_validated ? (
+            <div className="flex items-center bg-surface-container-low dark:bg-bg p-1 rounded-lg border border-outline-variant/50 dark:border-border text-xs">
+              <button
+                onClick={() => setActiveSource('simulated_twin')}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                  activeSource === 'simulated_twin' ? 'bg-primary text-white shadow-xs' : 'text-secondary hover:text-on-surface'
+                }`}
+              >
+                Simulated Twin
+              </button>
+              <button
+                onClick={() => setActiveSource('lab')}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                  activeSource === 'lab' ? 'bg-purple-600 text-white shadow-xs' : 'text-secondary hover:text-on-surface'
+                }`}
+              >
+                Live Lab Core
+              </button>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-muted">Benign</span>
+          ) : (
+            data && (
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                  data.source_badge === 'Live lab'
+                    ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-400/40'
+                    : data.source_badge === 'Real recorded'
+                    ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-400/40'
+                    : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-400/40'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                {data.source_badge}
+              </span>
+            )
+          )}
+
+          {/* Reduced Motion Toggle Button */}
+          <button
+            onClick={() => setReducedMotion(!reducedMotion)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              reducedMotion
+                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-400/40'
+                : 'bg-surface-container-low dark:bg-bg text-secondary hover:text-on-surface border-outline-variant/50 dark:border-border'
+            }`}
+            title="Toggle particle animations and pulsing rings"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>{reducedMotion ? 'Reduced Motion: ON' : 'Anim: ON'}</span>
+          </button>
+        </div>
+      </section>
+
+      {/* 2. Main Canvas + Inspector Split (72% / 28%) matching Stitch */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-start w-full">
+        {/* Spatial Canvas Workspace (Central/Left 72%) */}
+        <div className="xl:col-span-8 flex flex-col bg-[#0b1329] rounded-xl overflow-hidden shadow-xl relative min-h-[560px] border border-[#1e293b]">
+          {/* Canvas HUD Overlay Top */}
+          <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-space-sm pointer-events-auto flex-wrap">
+              <div className="flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-white font-label-mono text-body-xs shadow-md border border-[#334155]">
+                <span className={`h-2 w-2 rounded-full ${reducedMotion ? 'bg-emerald-400' : 'bg-emerald-400 animate-ping'}`} />
+                <span className="text-emerald-400 font-bold">5G URLLC / eMBB MESH</span>
+                <span className="text-[#64748b]">|</span>
+                <span className="text-[#cbd5e1]">t = {timeStep}m</span>
+                <span className="text-[#64748b]">|</span>
+                <span className="text-[#cbd5e1]">{deviceCounts.total} NODES</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                <span className="text-muted">Attack</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span className="text-muted">Uncertain</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                <span className="text-muted">Quarantined</span>
-              </div>
+              {deviceCounts.quarantined > 0 && (
+                <div className="flex items-center gap-1.5 bg-[#1e293b]/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-white font-label-mono text-body-xs shadow-md border border-purple-500/40">
+                  <ShieldAlert className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="text-purple-300 font-semibold">{deviceCounts.quarantined} QUARANTINED</span>
+                </div>
+              )}
+              {deviceCounts.attack > 0 && (
+                <div className="flex items-center gap-1.5 bg-[#1e293b]/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-white font-label-mono text-body-xs shadow-md border border-red-500/40">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-red-300 font-semibold">{deviceCounts.attack} ATTACK</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pointer-events-auto">
+              <button
+                onClick={() => setTimeStep(0)}
+                className="p-1.5 rounded-lg bg-[#1e293b]/90 hover:bg-[#334155] text-[#94a3b8] hover:text-white transition-colors border border-[#334155]"
+                title="Reset Timeline to t=0"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* SVG Floor Canvas */}
-          <div className="relative w-full overflow-hidden rounded-lg border border-border bg-[#0B132B]/90">
+          {/* SVG Floor Canvas Floor Plan matching Stitch */}
+          <div className="relative w-full h-[560px] flex items-center justify-center select-none overflow-hidden bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px]">
             <svg
               viewBox="0 0 880 500"
-              className="w-full h-auto select-none"
-              style={{ minHeight: '440px' }}
+              className="w-full h-full"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              {/* Subtle Floor Map Grid Pattern */}
               <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <pattern id="twinGrid" width="40" height="40" patternUnits="userSpaceOnUse">
                   <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
                 </pattern>
-                {/* Glow Filter for Quarantine & Core nodes */}
-                <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
               </defs>
+              <rect width="880" height="500" fill="url(#twinGrid)" />
 
-              <rect width="880" height="500" fill="url(#grid)" />
+              {/* Perimeter Structural Walls */}
+              <path d="M 20 20 L 860 20 L 860 480 L 20 480 Z" fill="#0b1329" fillOpacity="0.4" stroke="#334155" strokeWidth="2" />
 
               {/* A. Slice Zones */}
               {data?.slices.map((slice) => (
                 <g key={slice.slice_id}>
-                  {/* Zone Rect */}
                   <rect
                     x={slice.zone.x}
                     y={slice.zone.y}
@@ -347,10 +330,18 @@ export const DigitalTwinView: React.FC = () => {
                     strokeWidth="1.2"
                     strokeDasharray="4 2"
                   />
-                  {/* Zone Header Label */}
+                  <rect
+                    x={slice.zone.x + 8}
+                    y={slice.zone.y + 8}
+                    width={180}
+                    height="20"
+                    rx="4"
+                    fill="#1e293b"
+                    fillOpacity="0.9"
+                  />
                   <text
-                    x={slice.zone.x + 10}
-                    y={slice.zone.y + 18}
+                    x={slice.zone.x + 14}
+                    y={slice.zone.y + 22}
                     fill={slice.color}
                     fontSize="10"
                     fontWeight="600"
@@ -359,10 +350,11 @@ export const DigitalTwinView: React.FC = () => {
                     {slice.zone.label.toUpperCase()} ({slice.packet_rate_pps} PPS)
                   </text>
                   <text
-                    x={slice.zone.x + 10}
-                    y={slice.zone.y + 30}
+                    x={slice.zone.x + 14}
+                    y={slice.zone.y + 40}
                     fill="#94A3B8"
                     fontSize="9"
+                    fontFamily="monospace"
                   >
                     Slice: {slice.slice_id}
                   </text>
@@ -376,20 +368,17 @@ export const DigitalTwinView: React.FC = () => {
                 <line x1="280" y1="425" x2="340" y2="270" />
               </g>
 
-              {/* C. Infrastructure Links between 5G Core Nodes (Clamped to 8 particles max) */}
+              {/* C. Infrastructure Links between 5G Core Nodes */}
               {data?.topology?.links.map((link, linkIdx) => {
                 const s = nodeMap.get(link.source);
                 const t = nodeMap.get(link.target);
                 if (!s || !t) return null;
                 const strokeColor = link.type === 'user_plane' ? '#10B981' : '#3B82F6';
-
-                // Particle position calculation
                 const px = s.x + (t.x - s.x) * particleOffset;
                 const py = s.y + (t.y - s.y) * particleOffset;
 
                 return (
                   <g key={`${link.source}-${link.target}`}>
-                    {/* Link Base Line */}
                     <line
                       x1={s.x}
                       y1={s.y}
@@ -400,18 +389,15 @@ export const DigitalTwinView: React.FC = () => {
                       strokeOpacity="0.7"
                     />
 
-                    {/* Animated Link Packet Particle (clamped to max 8 particles; disabled on low-motion) */}
                     {!reducedMotion && linkIdx < 8 && (
                       <circle
                         cx={px}
                         cy={py}
                         r="3.5"
                         fill="#FFFFFF"
-                        filter="drop-shadow(0 0 3px rgba(255,255,255,0.8))"
                       />
                     )}
 
-                    {/* Link Label Tag */}
                     <rect
                       x={(s.x + t.x) / 2 - 38}
                       y={(s.y + t.y) / 2 - 9}
@@ -454,7 +440,6 @@ export const DigitalTwinView: React.FC = () => {
                       fill={nodeBg}
                       stroke={nodeBorder}
                       strokeWidth="1.8"
-                      className="shadow-lg"
                     />
                     <text
                       x="0"
@@ -504,8 +489,6 @@ export const DigitalTwinView: React.FC = () => {
                           stroke="#8B5CF6"
                           strokeWidth="1.5"
                           strokeDasharray="3 2"
-                          className={reducedMotion ? '' : 'animate-spin'}
-                          style={{ transformOrigin: '0 0', animationDuration: '6s' }}
                         />
                         {!reducedMotion && (
                           <circle
@@ -516,8 +499,6 @@ export const DigitalTwinView: React.FC = () => {
                             stroke="#EF4444"
                             strokeWidth="1"
                             strokeOpacity="0.4"
-                            className="animate-ping"
-                            style={{ animationDuration: '2.5s' }}
                           />
                         )}
                       </g>
@@ -536,16 +517,23 @@ export const DigitalTwinView: React.FC = () => {
                       />
                     )}
 
-                    {/* Selected Device Ring */}
+                    {/* Selected Device Targeting Reticle matching Stitch */}
                     {isSelected && (
-                      <circle
-                        cx="0"
-                        cy="0"
-                        r="13"
-                        fill="none"
-                        stroke="#FFFFFF"
-                        strokeWidth="2"
-                      />
+                      <g>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="18"
+                          fill="none"
+                          stroke="#60a5fa"
+                          strokeWidth="1.5"
+                          strokeDasharray="4 2"
+                        />
+                        <line x1="0" y1="-22" x2="0" y2="-15" stroke="#93c5fd" strokeWidth="1.5" />
+                        <line x1="0" y1="15" x2="0" y2="22" stroke="#93c5fd" strokeWidth="1.5" />
+                        <line x1="-22" y1="0" x2="-15" y2="0" stroke="#93c5fd" strokeWidth="1.5" />
+                        <line x1="15" y1="0" x2="22" y2="0" stroke="#93c5fd" strokeWidth="1.5" />
+                      </g>
                     )}
 
                     {/* Core Device Circle */}
@@ -568,107 +556,213 @@ export const DigitalTwinView: React.FC = () => {
                 );
               })}
             </svg>
+
+            {/* Canvas Legend Overlay Bottom-Left matching Stitch */}
+            <div className="absolute bottom-4 left-4 z-20 flex items-center gap-3 bg-[#0a1628]/95 backdrop-blur-md px-3.5 py-2 rounded-lg text-white font-label-mono text-[11px] shadow-lg border border-[#1e293b]">
+              <span className="text-[#64748b] font-semibold">SIGNAL STATUS:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="text-[#cbd5e1]">Nominal ({deviceCounts.benign})</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span className="text-[#cbd5e1]">Uncertain ({deviceCounts.uncertain})</span>
+              </div>
+              {deviceCounts.attack > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                  <span className="text-rose-400 font-bold">Attack ({deviceCounts.attack})</span>
+                </div>
+              )}
+              {deviceCounts.quarantined > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-purple-500" />
+                  <span className="text-purple-300 font-bold">Quarantined ({deviceCounts.quarantined})</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* 3. Selected Device Inspector Panel */}
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Radio className="w-4 h-4 text-blue" />
-                <h3 className="text-sm font-semibold text-text">Device Inspector</h3>
+        {/* Inspector Panel (Right 28%) matching Stitch */}
+        <div className="xl:col-span-4 flex flex-col gap-space-md">
+          <div className="bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col gap-space-md">
+            {/* Inspector Title & State */}
+            <div className="flex items-start justify-between gap-space-sm">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5 font-label-mono text-body-xs text-primary font-semibold">
+                  <Radio className="w-4 h-4 text-primary" />
+                  <span>NODE DEEP INSPECTOR</span>
+                </div>
+                <h2 className="font-headline-md text-headline-md text-on-surface font-bold tracking-tight mt-0.5">
+                  {selectedDevice ? selectedDevice.id : 'NO NODE SELECTED'}
+                </h2>
+                <span className="font-body-xs text-body-xs text-secondary">
+                  {selectedDevice ? `Class: ${selectedDevice.device_class.toUpperCase()} on ${selectedDevice.slice_id}` : 'Select a node on the floor canvas'}
+                </span>
               </div>
               {selectedDevice && (
                 <span
-                  className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                  className="font-badge-status text-badge-status px-2.5 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1.5"
                   style={{
                     backgroundColor: `${getDeviceColor(selectedDevice)}20`,
                     color: getDeviceColor(selectedDevice),
                   }}
                 >
-                  {selectedDevice.verdict}
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: getDeviceColor(selectedDevice) }}
+                  />
+                  {selectedDevice.verdict.toUpperCase()}
                 </span>
               )}
             </div>
 
             {selectedDevice ? (
-              <div className="mt-4 space-y-3.5 text-xs">
-                <div>
-                  <span className="text-muted block text-[11px]">Device Identifier</span>
-                  <span className="font-mono font-bold text-text text-sm">{selectedDevice.id}</span>
+              <div className="flex flex-col gap-3">
+                {/* Identity & Cryptographic Attestation Metadata */}
+                <div className="flex flex-col gap-2 p-space-sm bg-surface-container-low dark:bg-bg rounded-lg border border-outline-variant/30 dark:border-border/60">
+                  <div className="flex items-center justify-between font-body-xs text-body-xs">
+                    <span className="text-secondary font-medium">Assigned Zone</span>
+                    <span className="font-semibold text-on-surface">{selectedDevice.slice_id}</span>
+                  </div>
+                  <div className="flex items-center justify-between font-body-xs text-body-xs">
+                    <span className="text-secondary font-medium">Device Class</span>
+                    <span className="font-label-mono font-medium text-on-surface uppercase">{selectedDevice.device_class}</span>
+                  </div>
+                  <div className="flex items-center justify-between font-body-xs text-body-xs">
+                    <span className="text-secondary font-medium">Telemetry Rate</span>
+                    <span className="font-label-mono text-primary font-semibold">{selectedDevice.rate_pps.toFixed(1)} pps</span>
+                  </div>
+                  <div className="flex items-center justify-between font-body-xs text-body-xs">
+                    <span className="text-secondary font-medium">Provisioned</span>
+                    <span className={`font-semibold ${selectedDevice.is_provisioned ? 'text-emerald-600 dark:text-emerald-400' : 'text-error'}`}>
+                      {selectedDevice.is_provisioned ? 'VERIFIED' : 'UNREGISTERED'}
+                    </span>
+                  </div>
+
+                  <div className="mt-1 pt-2 flex flex-col gap-1 border-t border-outline-variant/20 dark:border-border/40">
+                    <div className="flex items-center justify-between text-[11px] font-label-mono">
+                      <span className="text-secondary">HMAC TPM 2.0 DIGEST</span>
+                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> VERIFIED
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between bg-surface-container-lowest dark:bg-card px-2 py-1.5 rounded text-secondary font-label-mono text-body-xs border border-outline-variant/30 dark:border-border/40">
+                      <span className="truncate text-on-surface font-mono max-w-[190px]">
+                        {selectedDevice.device_id_hash}
+                      </span>
+                      <button
+                        onClick={() => handleCopyHmac(selectedDevice.device_id_hash)}
+                        className="text-outline hover:text-primary transition-colors ml-1 p-0.5"
+                        title="Copy HMAC"
+                      >
+                        {copiedHmac ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <span className="text-muted block text-[11px]">HMAC Hash (Zero-Trust Key)</span>
-                  <span className="font-mono text-[10px] text-slate-300 break-all bg-bg p-1.5 rounded border border-border block">
-                    {selectedDevice.device_id_hash}
+                {/* State & Telemetry Verdict Box */}
+                <div className="p-2.5 rounded-lg bg-surface-container-low dark:bg-bg border border-outline-variant/30 dark:border-border/60">
+                  <span className="text-secondary block text-[10px] mb-1 font-label-mono uppercase">
+                    Zero-Trust Decision
                   </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-bg p-2 rounded border border-border">
-                    <span className="text-muted block text-[10px]">Class</span>
-                    <span className="font-semibold text-text uppercase">{selectedDevice.device_class}</span>
-                  </div>
-                  <div className="bg-bg p-2 rounded border border-border">
-                    <span className="text-muted block text-[10px]">Slice</span>
-                    <span className="font-mono font-semibold text-blue text-[11px] truncate block">
-                      {selectedDevice.slice_id.split('-')[0]}-{selectedDevice.slice_id.split('-')[1]}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-bg p-2 rounded border border-border">
-                    <span className="text-muted block text-[10px]">Telemetry Rate</span>
-                    <span className="font-mono font-bold text-text">{selectedDevice.rate_pps.toFixed(1)} pps</span>
-                  </div>
-                  <div className="bg-bg p-2 rounded border border-border">
-                    <span className="text-muted block text-[10px]">Catalog Provisioned</span>
-                    <span className={`font-semibold ${selectedDevice.is_provisioned ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {selectedDevice.is_provisioned ? 'Verified' : 'Unregistered'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-bg p-2.5 rounded border border-border">
-                  <span className="text-muted block text-[10px] mb-1">State & Telemetry Verdict</span>
                   <div className="flex items-center gap-2">
                     {selectedDevice.action === 'quarantine' ? (
-                      <ShieldAlert className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                      <ShieldAlert className="w-4 h-4 text-purple-500 shrink-0" />
                     ) : (
-                      <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
                     )}
-                    <span className="text-text font-medium">{selectedDevice.status_label}</span>
+                    <span className="text-on-surface text-xs font-semibold">{selectedDevice.status_label}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-muted mt-6 text-center">Click any device circle on the floor plan to inspect telemetry.</p>
+              <p className="text-xs text-secondary py-6 text-center">
+                Click any device circle on the floor canvas to inspect its telemetry.
+              </p>
             )}
-          </div>
-
-          <div className="pt-4 border-t border-border mt-4 text-[11px] text-muted">
-            <span>Tip: Devices appear dynamically at approved onboarding intervals (t=10m, t=20m).</span>
           </div>
         </div>
       </div>
 
-      {/* 4. Provisioning Card & Contamination Meters */}
+      {/* 3. Bottom Interactive Time Scrubber matching Stitch */}
+      <div className="w-full bg-surface-container-lowest dark:bg-card p-space-md rounded-xl shadow-sm border border-outline-variant/40 dark:border-border flex flex-col gap-space-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+          {/* Media Playback Deck */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setIsPlaying(false);
+                setTimeStep((prev) => Math.max(0, prev - 1));
+              }}
+              className="p-2 rounded-lg bg-surface-container-low dark:bg-bg hover:bg-surface-container dark:hover:bg-slate-800 text-on-surface border border-outline-variant/40 dark:border-border transition-colors"
+              title="Step Back 1m"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              disabled={reducedMotion}
+              className="px-4 py-2 rounded-lg bg-primary text-on-primary font-body-sm text-body-sm font-semibold flex items-center gap-2 hover:bg-surface-tint transition-all shadow-sm disabled:opacity-40"
+            >
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              <span>{isPlaying ? 'Pause' : 'Play Live Stream'}</span>
+            </button>
+            <button
+              onClick={() => {
+                setIsPlaying(false);
+                setTimeStep((prev) => Math.min(29, prev + 1));
+              }}
+              className="p-2 rounded-lg bg-surface-container-low dark:bg-bg hover:bg-surface-container dark:hover:bg-slate-800 text-on-surface border border-outline-variant/40 dark:border-border transition-colors"
+              title="Step Forward 1m"
+            >
+              <Play className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 flex-1 max-w-xl mx-4">
+            <span className="font-label-mono text-body-xs text-secondary">t = {timeStep}m</span>
+            <input
+              type="range"
+              min={0}
+              max={29}
+              value={timeStep}
+              onChange={(e) => {
+                setIsPlaying(false);
+                setTimeStep(Number(e.target.value));
+              }}
+              aria-label="Simulation time scrubber"
+              className="flex-1 accent-primary cursor-pointer h-2 bg-surface-container dark:bg-slate-800 rounded-full"
+            />
+            <span className="font-label-mono text-body-xs text-secondary">t = 29m</span>
+          </div>
+
+          <div className="text-xs text-secondary font-medium font-label-mono">
+            {timeStep < 10
+              ? 'Phase: Baseline Nominal'
+              : timeStep < 20
+              ? 'Phase: Batch 1 Ingress / Surge'
+              : 'Phase: Batch 2 Ingress / Sustained'}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Provisioning Card & Contamination Meters matching Stitch */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Provisioning Card */}
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
+        <div className="bg-surface-container-lowest dark:bg-card border border-outline-variant/40 dark:border-border rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30 dark:border-border">
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-blue" />
-              <h3 className="text-sm font-semibold text-text">Provisioning & Change Event Evidence</h3>
+              <Database className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-on-surface">Provisioning & Change Event Evidence</h3>
             </div>
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                 data?.provisioning_card.fitting_volume
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'bg-red-500/20 text-red-400'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                  : 'bg-error-container text-on-error-container'
               }`}
             >
               {data?.provisioning_card.verdict || 'EVALUATING'}
@@ -676,52 +770,52 @@ export const DigitalTwinView: React.FC = () => {
           </div>
 
           <div className="mt-4 space-y-3 text-xs">
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <span className="text-muted">Total Catalog SIMs</span>
-              <span className="font-mono font-bold text-text">
+            <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/20 dark:border-border/40">
+              <span className="text-secondary">Total Catalog SIMs</span>
+              <span className="font-mono font-bold text-on-surface">
                 {data?.provisioning_card.total_catalog_sims ?? 200} Devices
               </span>
             </div>
 
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <span className="text-muted">Active Window Provisioned Share</span>
-              <span className="font-mono font-bold text-text">
+            <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/20 dark:border-border/40">
+              <span className="text-secondary">Active Window Provisioned Share</span>
+              <span className="font-mono font-bold text-on-surface">
                 {((data?.provisioning_card.provisioned_share ?? 1.0) * 100).toFixed(1)}%
               </span>
             </div>
 
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <span className="text-muted">Matched Onboarding Event</span>
-              <span className="font-mono font-semibold text-blue">
+            <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/20 dark:border-border/40">
+              <span className="text-secondary">Matched Onboarding Event</span>
+              <span className="font-mono font-semibold text-primary">
                 {data?.provisioning_card.matched_event?.batch_id ?? 'None (Unscheduled)'}
               </span>
             </div>
 
             {data?.provisioning_card.matched_event && (
-              <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                <span className="text-muted">Scheduled Batch Volume</span>
-                <span className="font-mono text-text">
+              <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/20 dark:border-border/40">
+                <span className="text-secondary">Scheduled Batch Volume</span>
+                <span className="font-mono text-on-surface">
                   {data.provisioning_card.matched_event.count} devices on {data.provisioning_card.matched_event.slice}
                 </span>
               </div>
             )}
 
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <span className="text-muted">Volume Scaling Consistency</span>
-              <span className={`font-semibold ${data?.provisioning_card.fitting_volume ? 'text-emerald-400' : 'text-amber-400'}`}>
+            <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/20 dark:border-border/40">
+              <span className="text-secondary">Volume Scaling Consistency</span>
+              <span className={`font-semibold ${data?.provisioning_card.fitting_volume ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                 {data?.provisioning_card.fitting_volume ? 'Volume Fits Batch Size' : 'Surge Exceeds Schedule'}
               </span>
             </div>
 
             <div className="pt-2">
-              <span className="text-muted block text-[11px] mb-1">Gate Action & Recommendation</span>
-              <div className="p-2.5 rounded bg-bg border border-border flex items-start gap-2">
+              <span className="text-secondary block text-[11px] mb-1">Gate Action & Recommendation</span>
+              <div className="p-2.5 rounded bg-surface-container-low dark:bg-bg border border-outline-variant/30 dark:border-border flex items-start gap-2">
                 {data?.provisioning_card.action === 'quarantine' ? (
-                  <Lock className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                  <Lock className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 )}
-                <span className="text-[11px] text-text font-medium leading-relaxed">
+                <span className="text-[11px] text-on-surface font-medium leading-relaxed">
                   {data?.provisioning_card.action_description}
                 </span>
               </div>
@@ -730,34 +824,33 @@ export const DigitalTwinView: React.FC = () => {
         </div>
 
         {/* Two Contamination Meters: Naive vs CommShield Twin */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-surface-container-lowest dark:bg-card border border-outline-variant/40 dark:border-border rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-border">
+            <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30 dark:border-border">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-blue" />
-                <h3 className="text-sm font-semibold text-text">Three-Arm Contamination & Retraining Meters</h3>
+                <Shield className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-on-surface">Three-Arm Contamination & Retraining Meters</h3>
               </div>
-              <span className="text-[11px] text-muted font-mono">
+              <span className="text-[11px] text-secondary font-mono">
                 Source: {data?.saved_metrics_reference.summary_file}
               </span>
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Arm 1: Naive Retraining */}
-              <div className="p-4 rounded-xl bg-bg border border-red-500/30">
+              <div className="p-4 rounded-xl bg-surface-container-low dark:bg-bg border border-error/30">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-red-400 uppercase tracking-wide">
+                  <span className="text-xs font-bold text-error uppercase tracking-wide">
                     {data?.contamination_meters.naive.name ?? 'Naive Retraining'}
                   </span>
-                  <span className="text-xs font-mono font-bold text-red-400">
+                  <span className="text-xs font-mono font-bold text-error">
                     {((data?.contamination_meters.naive.contamination_mean ?? 0) * 100).toFixed(1)}%
                   </span>
                 </div>
 
-                {/* Meter Bar */}
-                <div className="w-full bg-slate-800 rounded-full h-3 mt-3 overflow-hidden">
+                <div className="w-full bg-surface-container dark:bg-slate-800 rounded-full h-3 mt-3 overflow-hidden">
                   <div
-                    className="bg-red-500 h-3 rounded-full transition-all duration-500"
+                    className="bg-error h-3 rounded-full transition-all duration-500"
                     style={{
                       width: `${Math.min(100, Math.max(3, (data?.contamination_meters.naive.contamination_mean ?? 0) * 100))}%`,
                     }}
@@ -765,45 +858,44 @@ export const DigitalTwinView: React.FC = () => {
                 </div>
 
                 <div className="mt-3 space-y-1 text-[11px]">
-                  <div className="flex justify-between text-muted">
+                  <div className="flex justify-between text-secondary">
                     <span>95% Bootstrap CI:</span>
-                    <span className="font-mono text-text font-semibold">
+                    <span className="font-mono text-on-surface font-semibold">
                       [
                       {((data?.contamination_meters.naive.contamination_ci_95[0] ?? 0) * 100).toFixed(1)}%,{' '}
                       {((data?.contamination_meters.naive.contamination_ci_95[1] ?? 0) * 100).toFixed(1)}%
                       ]
                     </span>
                   </div>
-                  <div className="flex justify-between text-muted">
+                  <div className="flex justify-between text-secondary">
                     <span>False Positive Rate:</span>
-                    <span className="font-mono text-text">
+                    <span className="font-mono text-on-surface">
                       {((data?.contamination_meters.naive.fpr_mean ?? 0) * 100).toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between text-muted">
+                  <div className="flex justify-between text-secondary">
                     <span>Onboardings Adapted:</span>
-                    <span className="font-mono text-text font-semibold">
+                    <span className="font-mono text-on-surface font-semibold">
                       {(data?.contamination_meters.naive.onboardings_adapted ?? 0).toFixed(1)} batches
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Arm 2: CommShield Twin (Provisioning & Conformal Gated) */}
-              <div className="p-4 rounded-xl bg-bg border border-emerald-500/40">
+              {/* Arm 2: CommShield Twin */}
+              <div className="p-4 rounded-xl bg-surface-container-low dark:bg-bg border border-emerald-500/30">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
                     {data?.contamination_meters.commshield_twin.name ?? 'CommShield Twin'}
                   </span>
-                  <span className="text-xs font-mono font-bold text-emerald-400">
+                  <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
                     {((data?.contamination_meters.commshield_twin.contamination_mean ?? 0) * 100).toFixed(1)}%
                   </span>
                 </div>
 
-                {/* Meter Bar */}
-                <div className="w-full bg-slate-800 rounded-full h-3 mt-3 overflow-hidden">
+                <div className="w-full bg-surface-container dark:bg-slate-800 rounded-full h-3 mt-3 overflow-hidden">
                   <div
-                    className="bg-emerald-500 h-3 rounded-full transition-all duration-500"
+                    className="bg-emerald-600 dark:bg-emerald-500 h-3 rounded-full transition-all duration-500"
                     style={{
                       width: `${Math.min(100, Math.max(3, (data?.contamination_meters.commshield_twin.contamination_mean ?? 0) * 100))}%`,
                     }}
@@ -811,24 +903,24 @@ export const DigitalTwinView: React.FC = () => {
                 </div>
 
                 <div className="mt-3 space-y-1 text-[11px]">
-                  <div className="flex justify-between text-muted">
+                  <div className="flex justify-between text-secondary">
                     <span>95% Bootstrap CI:</span>
-                    <span className="font-mono text-text font-semibold">
+                    <span className="font-mono text-on-surface font-semibold">
                       [
                       {((data?.contamination_meters.commshield_twin.contamination_ci_95[0] ?? 0) * 100).toFixed(1)}%,{' '}
                       {((data?.contamination_meters.commshield_twin.contamination_ci_95[1] ?? 0) * 100).toFixed(1)}%
                       ]
                     </span>
                   </div>
-                  <div className="flex justify-between text-muted">
+                  <div className="flex justify-between text-secondary">
                     <span>False Positive Rate:</span>
-                    <span className="font-mono text-text">
+                    <span className="font-mono text-on-surface">
                       {((data?.contamination_meters.commshield_twin.fpr_mean ?? 0) * 100).toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between text-muted">
+                  <div className="flex justify-between text-secondary">
                     <span>Onboardings Adapted:</span>
-                    <span className="font-mono text-text font-semibold">
+                    <span className="font-mono text-on-surface font-semibold">
                       {(data?.contamination_meters.commshield_twin.onboardings_adapted ?? 0).toFixed(1)} batches
                     </span>
                   </div>
@@ -837,40 +929,42 @@ export const DigitalTwinView: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted">
+          <div className="mt-4 pt-3 border-t border-outline-variant/20 dark:border-border flex items-center justify-between text-[11px] text-secondary">
             <span>Audit Guarantee: All figures read strictly from verified results files without extrapolation.</span>
-            <span className="font-mono">Total Benchmark Windows: {data?.saved_metrics_reference.aggregate_windows ?? 11870}</span>
+            <span className="font-mono">Total Windows: {data?.saved_metrics_reference.aggregate_windows ?? 11870}</span>
           </div>
         </div>
       </div>
 
-      {/* 5. Decision Trace with Provisioning & Split-Conformal Checks */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-        <div className="flex items-center justify-between pb-3 border-b border-border">
+      {/* 5. Decision Trace with Sequential Checks matching Stitch */}
+      <div className="bg-surface-container-lowest dark:bg-card border border-outline-variant/40 dark:border-border rounded-xl p-5 shadow-sm">
+        <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30 dark:border-border">
           <div className="flex items-center gap-2">
-            <FileCheck className="w-4 h-4 text-blue" />
-            <h3 className="text-sm font-semibold text-text">Governance Decision Trace (Sequential Verification)</h3>
+            <FileCheck className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-on-surface">Governance Decision Trace (Sequential Verification)</h3>
           </div>
-          <span className="text-xs text-muted">5-Gate Multi-Layer Attribution Audit</span>
+          <span className="text-xs text-secondary">5-Gate Multi-Layer Attribution Audit</span>
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
           {data?.decision_trace.map((step) => {
             const isApproved = step.status === 'VERIFIED' || step.status === 'APPROVED' || step.status === 'PASSED' || step.status === 'CLEAR';
             const isSpike = step.status === 'GROWTH_DETECTED' || step.status === 'MATCHED';
-            const statusColor = isApproved ? 'text-emerald-400 border-emerald-500/30' : isSpike ? 'text-blue border-blue/30' : 'text-amber-400 border-amber-500/30';
+            const statusColor = isApproved ? 'text-emerald-700 dark:text-emerald-400 border-emerald-500/30' : isSpike ? 'text-primary border-primary/30' : 'text-amber-700 dark:text-amber-400 border-amber-500/30';
 
             return (
-              <div key={step.step} className={`p-3 rounded-lg bg-bg border ${statusColor} flex flex-col justify-between`}>
+              <div key={step.step} className={`p-3 rounded-lg bg-surface-container-low dark:bg-bg border ${statusColor} flex flex-col justify-between`}>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-mono text-muted uppercase">Step 0{step.step}</span>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isApproved ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
+                    <span className="text-[10px] font-mono text-secondary uppercase">Step 0{step.step}</span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                      isApproved ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-surface-container dark:bg-slate-700 text-on-surface'
+                    }`}>
                       {step.status}
                     </span>
                   </div>
-                  <h4 className="text-xs font-semibold text-text mb-1">{step.name}</h4>
-                  <p className="text-[11px] text-muted leading-relaxed">{step.result}</p>
+                  <h4 className="text-xs font-semibold text-on-surface mb-1">{step.name}</h4>
+                  <p className="text-[11px] text-secondary leading-relaxed">{step.result}</p>
                 </div>
               </div>
             );
