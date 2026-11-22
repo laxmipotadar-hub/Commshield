@@ -1,6 +1,6 @@
 {
   "config_version": "v1.0.0",
-  "generated_at": "2026-11-21T17:52:07.101445+00:00",
+  "generated_at": "2026-11-21T20:07:23.690782+00:00",
   "scenarios": [
     "stable_benign",
     "legitimate_growth",
