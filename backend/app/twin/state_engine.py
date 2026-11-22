@@ -84,7 +84,7 @@ class CentralDigitalTwinStateEngine:
         self._simulation_speed: float = 1.0  # 0.5, 1.0, 2.0, 5.0, 10.0
         self._data_mode: str = "LIVE_SIMULATION"  # "REAL_DATASET", "LIVE_SIMULATION", "HYBRID"
         self._synthetic_data_enabled: bool = True
-        self._active_slice_id: str = "sst-1-sd-010203"
+        self._active_slice_id: str = "all"
         self._ensemble_fusion_enabled: bool = True
 
         # Current attack propagation & blast radius analysis
@@ -663,15 +663,16 @@ class CentralDigitalTwinStateEngine:
 
     def set_active_slice(self, slice_id: str) -> str:
         with self._lock:
-            if slice_id in self._slices:
+            if slice_id == "all" or slice_id in self._slices:
                 self._active_slice_id = slice_id
                 self._state_version += 1
+                slice_name = self._slices[slice_id].name if slice_id in self._slices else "All Slices (Global)"
                 self.record_event(
                     event_type="ACTIVE_SLICE_CHANGED",
                     source="operator_interface",
                     severity="INFO",
                     status=slice_id,
-                    description=f"Active slice changed to {self._slices[slice_id].name} ({slice_id}).",
+                    description=f"Active slice changed to {slice_name} ({slice_id}).",
                 )
                 self._notify_subscribers("ACTIVE_SLICE_CHANGED", {"slice_id": slice_id})
             return self._active_slice_id

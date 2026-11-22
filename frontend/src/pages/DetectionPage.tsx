@@ -139,7 +139,14 @@ export const DetectionPage: React.FC = () => {
   useEffect(() => {
     if (!selectedWindowId) return;
 
-    api.analyzeWindow({ window_id: selectedWindowId })
+    const win = windows.find((w) => w.window_id === selectedWindowId);
+    api
+      .analyzeWindow({
+        window_id: selectedWindowId,
+        window: win,
+        slice_id: win?.slice_id,
+        ratio_features: win?.ratio_features,
+      })
       .then((detRes) => {
         if (detRes) {
           setDetectorData(detRes);
@@ -149,7 +156,7 @@ export const DetectionPage: React.FC = () => {
       .catch((err) => {
         console.error('Failed to analyze window:', err);
       });
-  }, [selectedWindowId]);
+  }, [selectedWindowId, windows]);
 
   // Batch analyze recent windows for history trend if not cached
   useEffect(() => {
@@ -161,7 +168,12 @@ export const DetectionPage: React.FC = () => {
     Promise.all(
       uncached.map((w) =>
         api
-          .analyzeWindow({ window_id: w.window_id })
+          .analyzeWindow({
+            window_id: w.window_id,
+            window: w,
+            slice_id: w.slice_id,
+            ratio_features: w.ratio_features,
+          })
           .then((res) => ({ id: w.window_id, res }))
           .catch(() => null)
       )
@@ -243,20 +255,20 @@ export const DetectionPage: React.FC = () => {
   // Selected window metrics
   const activeOutput = detectorData;
   const rawIfPct = activeOutput?.isolation_forest?.benign_percentile ?? 50.0;
-  const ifPct = Math.min(100.0, Math.max(0.0, rawIfPct > 1.0 ? rawIfPct : rawIfPct * 100));
+  const ifPct = Math.min(100.0, Math.max(0.0, rawIfPct));
   const ifRaw = activeOutput?.isolation_forest?.raw_score_negated ?? 0.5;
-  const ifFlagged = activeOutput?.isolation_forest?.is_flagged ?? false;
+  const ifFlagged = activeOutput?.isolation_forest?.is_flagged ?? (ifPct >= 95.0);
 
   const rawAePct = activeOutput?.autoencoder?.benign_percentile ?? 50.0;
-  const aePct = Math.min(100.0, Math.max(0.0, rawAePct > 1.0 ? rawAePct : rawAePct * 100));
+  const aePct = Math.min(100.0, Math.max(0.0, rawAePct));
   const aeMse = activeOutput?.autoencoder?.reconstruction_mse ?? 0.01;
-  const aeFlagged = activeOutput?.autoencoder?.is_flagged ?? false;
+  const aeFlagged = activeOutput?.autoencoder?.is_flagged ?? (aePct >= 95.0);
 
   const rawFusedPct = activeOutput?.fusion?.fused_percentile ?? Math.max(ifPct, aePct);
-  const fusedPct = Math.min(100.0, Math.max(0.0, rawFusedPct > 1.0 ? rawFusedPct : rawFusedPct * 100));
+  const fusedPct = Math.min(100.0, Math.max(0.0, rawFusedPct));
   const rawSecondaryMean = activeOutput?.fusion?.secondary_mean_percentile ?? (ifPct + aePct) / 2.0;
-  const secondaryMean = Math.min(100.0, Math.max(0.0, rawSecondaryMean > 1.0 ? rawSecondaryMean : rawSecondaryMean * 100));
-  const isAnomalous = activeOutput?.fusion?.is_anomalous ?? false;
+  const secondaryMean = Math.min(100.0, Math.max(0.0, rawSecondaryMean));
+  const isAnomalous = activeOutput?.fusion?.is_anomalous ?? (fusedPct >= 95.0);
 
   const agreementState = activeOutput?.fusion?.agreement_state || 'neither';
   const cusumStat = activeOutput?.cusum?.accumulated_statistic ?? 0.0;
@@ -694,7 +706,12 @@ export const DetectionPage: React.FC = () => {
                   <span className="font-medium text-on-surface">GTP / Packet Rate Volatility</span>
                   <span className="font-label-mono text-primary dark:text-blue-400 font-semibold">
                     {selectedWindow?.raw_counters
-                      ? `${(selectedWindow.raw_counters['packet_count'] ?? selectedWindow.raw_counters['packets'] ?? 0).toLocaleString()} pkts`
+                      ? `${(
+                          selectedWindow.raw_counters['total_packets'] ??
+                          selectedWindow.raw_counters['packet_count'] ??
+                          selectedWindow.raw_counters['packets'] ??
+                          0
+                        ).toLocaleString()} pkts`
                       : 'Nominal'}
                   </span>
                 </div>
@@ -708,7 +725,12 @@ export const DetectionPage: React.FC = () => {
                   <span className="font-medium text-on-surface">Byte Volume Rate</span>
                   <span className="font-label-mono text-primary-container dark:text-blue-300 font-semibold">
                     {selectedWindow?.raw_counters
-                      ? `${((selectedWindow.raw_counters['byte_count'] ?? selectedWindow.raw_counters['bytes'] ?? 0) / (1024 * 1024)).toFixed(2)} MB`
+                      ? `${(
+                          ((selectedWindow.raw_counters['total_bytes_uplink'] ?? 0) +
+                            (selectedWindow.raw_counters['total_bytes_downlink'] ?? 0) ||
+                            (selectedWindow.raw_counters['byte_count'] ?? selectedWindow.raw_counters['bytes'] ?? 0)) /
+                          (1024 * 1024)
+                        ).toFixed(2)} MB`
                       : 'Nominal'}
                   </span>
                 </div>

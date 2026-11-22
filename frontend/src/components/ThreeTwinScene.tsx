@@ -37,7 +37,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   attackPaths = [],
   attackerSources = [],
   isDistributed = false,
-  attackType = 'Volumetric DDoS',
+  attackType = 'volumetric_ddos',
   mitigationActive = false,
   reducedMotion = false,
   activeCameraPreset = 'full',
@@ -52,15 +52,6 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   const animFrameId = useRef<number | null>(null);
   const isLerpingRef = useRef<boolean>(false);
-
-  // Group container holding dynamic campus entities that update with simulation state
-  const contentGroupRef = useRef<THREE.Group>(new THREE.Group());
-  const interactiveMeshesRef = useRef<THREE.Mesh[]>([]);
-  const packetListRef = useRef<Array<{ mesh: THREE.Mesh; pair: any; progress: number }>>([]);
-  const towerWaveMeshesRef = useRef<THREE.Mesh[]>([]);
-  const sensorWaveMeshesRef = useRef<THREE.Mesh[]>([]);
-  const enforcementMeshesRef = useRef<THREE.Mesh[]>([]);
-  const aiEngineMeshRef = useRef<THREE.Mesh | null>(null);
 
   // 8-Layer Visibility Controls
   const [layers, setLayers] = useState<{
@@ -181,13 +172,13 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     return [worldX, zBase, worldZ];
   };
 
-  // 1. Permanent Scene & WebGLRenderer initialization (runs ONCE on mount)
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
+    // 1. Scene, Camera & WebGL Renderer Setup
     const width = container.clientWidth || 800;
-    const height = container.clientHeight || 520;
+    const height = container.clientHeight || 580;
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
@@ -199,52 +190,66 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     camera.position.set(0, 52, 70);
     camera.lookAt(0, 0, 0);
 
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        alpha: false,
-        powerPreference: 'default',
-      });
-    } catch {
-      renderer = new THREE.WebGLRenderer({ antialias: false });
-    }
-
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
     rendererRef.current = renderer;
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
+    // 2. Interactive OrbitControls (Zoom, Pan, Rotate)
     const controls = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controls;
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.maxPolarAngle = Math.PI / 2 - 0.04;
+    controls.maxPolarAngle = Math.PI / 2 - 0.04; // Prevent going below campus ground
     controls.minDistance = 12;
     controls.maxDistance = 180;
     controls.target.set(0, 0, 0);
 
+    // Stop programmatic lerp immediately whenever user manually orbits, pans, or zooms
     controls.addEventListener('start', () => {
       isLerpingRef.current = false;
     });
 
-    // PBR Lighting System
-    const ambientLight = new THREE.AmbientLight(0xdce7fe, 0.7);
+    // 3. PBR Lighting System
+    const ambientLight = new THREE.AmbientLight(0xdce7fe, 0.65);
     scene.add(ambientLight);
 
     const sunLight = new THREE.DirectionalLight(0x7dd3fc, 1.4);
     sunLight.position.set(45, 75, 45);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 200;
+    const d = 50;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
     scene.add(sunLight);
 
     const fillLight = new THREE.DirectionalLight(0x818cf8, 0.6);
     fillLight.position.set(-45, 40, -40);
     scene.add(fillLight);
 
-    // Ground Environment
+    // Core NOC Glow Light
+    const nocPointLight = new THREE.PointLight(0x38bdf8, 2.0, 35);
+    nocPointLight.position.set(0, 6, 0);
+    scene.add(nocPointLight);
+
+    // 4. Ground Environment (Engineered 5G Campus Platform)
+    // Main campus concrete platform
     const platformGeo = new THREE.BoxGeometry(96, 1.2, 72);
     const platformMat = new THREE.MeshStandardMaterial({
       color: 0x0f172a,
@@ -253,228 +258,56 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     });
     const platform = new THREE.Mesh(platformGeo, platformMat);
     platform.position.y = -0.6;
+    platform.receiveShadow = true;
     scene.add(platform);
 
+    // Chamfered platform border
+    const borderMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, wireframe: false });
+    const borderGeo = new THREE.RingGeometry(48, 49.5, 64);
+    const borderMesh = new THREE.Mesh(borderGeo, borderMat);
+    borderMesh.rotation.x = -Math.PI / 2;
+    borderMesh.position.y = 0.02;
+    scene.add(borderMesh);
+
+    // Campus Roadways / Access Pathways
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+    // North-South Main Road
     const roadNSGeo = new THREE.PlaneGeometry(6, 68);
     const roadNS = new THREE.Mesh(roadNSGeo, roadMat);
     roadNS.rotation.x = -Math.PI / 2;
     roadNS.position.set(0, 0.03, 0);
+    roadNS.receiveShadow = true;
     scene.add(roadNS);
 
+    // East-West Main Road
     const roadEWGeo = new THREE.PlaneGeometry(90, 6);
     const roadEW = new THREE.Mesh(roadEWGeo, roadMat);
     roadEW.rotation.x = -Math.PI / 2;
     roadEW.position.set(0, 0.03, 0);
+    roadEW.receiveShadow = true;
     scene.add(roadEW);
 
+    // Technical campus grid
     const gridHelper = new THREE.GridHelper(96, 48, 0x1e3a8a, 0x0f2347);
     gridHelper.position.y = 0.04;
     scene.add(gridHelper);
 
-    // Attach dynamic content group to scene
-    scene.add(contentGroupRef.current);
-
-    // Raycasting for Component Selection & Tooltip Hover
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    const handlePointerMove = (e: MouseEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(interactiveMeshesRef.current);
-
-      if (intersects.length > 0) {
-        const hit = intersects[0].object;
-        renderer.domElement.style.cursor = 'pointer';
-        onHover({
-          id: hit.userData.id,
-          name: hit.userData.label || hit.userData.id,
-          type: hit.userData.role || hit.userData.type,
-          status: hit.userData.status || 'Active',
-        });
-      } else {
-        renderer.domElement.style.cursor = 'default';
-        onHover(null);
-      }
-    };
-
-    const handleClick = () => {
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(interactiveMeshesRef.current);
-      if (intersects.length > 0) {
-        const hit = intersects[0].object;
-        onSelect(hit.userData.id, hit.userData.type);
-      } else {
-        onSelect(null, null);
-      }
-    };
-
-    const domElement = renderer.domElement;
-    domElement.addEventListener('pointermove', handlePointerMove);
-    domElement.addEventListener('click', handleClick);
-
-    // Animation Loop
-    const animate = () => {
-      controls.update();
-
-      if (isLerpingRef.current && !reducedMotion) {
-        camera.position.lerp(targetCamPos.current, 0.05);
-        controls.target.lerp(targetLookAt.current, 0.05);
-        if (
-          camera.position.distanceTo(targetCamPos.current) < 0.1 &&
-          controls.target.distanceTo(targetLookAt.current) < 0.1
-        ) {
-          camera.position.copy(targetCamPos.current);
-          controls.target.copy(targetLookAt.current);
-          isLerpingRef.current = false;
-        }
-      }
-
-      // Animate Waves
-      towerWaveMeshesRef.current.forEach((w) => {
-        const s = (w.scale.x + 0.02) % 3.5;
-        w.scale.set(s, s, s);
-        (w.material as THREE.MeshBasicMaterial).opacity = Math.max(0.0, 0.7 - s / 3.5);
-      });
-
-      // Animate AI Diamond
-      if (aiEngineMeshRef.current) {
-        aiEngineMeshRef.current.rotation.y += 0.02;
-        aiEngineMeshRef.current.rotation.z = Math.sin(Date.now() * 0.002) * 0.15;
-        aiEngineMeshRef.current.position.y = 9.5 + Math.sin(Date.now() * 0.003) * 0.4;
-      }
-
-      // Animate Probes & Enforcement
-      sensorWaveMeshesRef.current.forEach((s, idx) => {
-        s.rotation.z += 0.015 * (idx % 2 === 0 ? 1 : -1);
-      });
-      enforcementMeshesRef.current.forEach((b) => {
-        b.rotation.y += 0.01;
-      });
-
-      // Move packet particles along conduits
-      packetListRef.current.forEach((p) => {
-        if (p.pair.isAttack && mitigationActive) {
-          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.42);
-          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.25;
-        } else if (p.pair.isIsolated) {
-          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.2);
-        } else {
-          p.progress = (p.progress + p.pair.speed) % 1.0;
-          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, p.progress);
-          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.9;
-        }
-      });
-
-      renderer.render(scene, camera);
-      animFrameId.current = requestAnimationFrame(animate);
-    };
-
-    animFrameId.current = requestAnimationFrame(animate);
-
-    // Responsive Viewport Resize
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width: w, height: h } = entry.contentRect;
-        if (w > 0 && h > 0) {
-          camera.aspect = w / h;
-          camera.updateProjectionMatrix();
-          renderer.setSize(w, h);
-        }
-      }
-    });
-    resizeObserver.observe(container);
-
-    const handleResize = () => {
-      if (!container) return;
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 520;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener('resize', handleResize);
-
-    // Permanent cleanup only when unmounting component
-    return () => {
-      if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', handleResize);
-      domElement.removeEventListener('pointermove', handlePointerMove);
-      domElement.removeEventListener('click', handleClick);
-      controls.dispose();
-
-      contentGroupRef.current.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh) {
-          if (obj.geometry) obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((m) => m.dispose());
-          } else if (obj.material) {
-            obj.material.dispose();
-          }
-        }
-      });
-
-      platformGeo.dispose();
-      platformMat.dispose();
-      roadNSGeo.dispose();
-      roadEWGeo.dispose();
-      roadMat.dispose();
-      renderer.dispose();
-      if (container.contains(domElement)) {
-        container.removeChild(domElement);
-      }
-    };
-  }, []);
-
-  // 2. Dynamic Entity Builder (Updates scene content when simulation telemetry changes)
-  useEffect(() => {
-    const group = contentGroupRef.current;
-    if (!group) return;
-
-    // Explicitly dispose old meshes in content group
-    group.traverse((obj: THREE.Object3D) => {
-      if (obj instanceof THREE.Mesh) {
-        if (obj.geometry) obj.geometry.dispose();
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((m) => m.dispose());
-        } else if (obj.material) {
-          obj.material.dispose();
-        }
-      }
-    });
-    group.clear();
-
+    // Interactive object lookup containers
     const interactiveMeshes: THREE.Mesh[] = [];
     const nodePositionMap = new Map<string, THREE.Vector3>();
-    const towerWaveMeshes: THREE.Mesh[] = [];
+
+    // CommShield Security Fabric Entities
+    let aiEngineMesh: THREE.Mesh | null = null;
     const sensorWaveMeshes: THREE.Mesh[] = [];
     const enforcementMeshes: THREE.Mesh[] = [];
-    let aiEngineMesh: THREE.Mesh | null = null;
 
-    // Default fallback macro nodes if nodes list is temporarily empty
-    const effectiveNodes: TwinNode[] = (nodes && nodes.length > 0) ? nodes : [
-      { id: 'gnb-01', label: 'gNodeB-01 (North Tower)', type: 'ran', x: 220, y: 120, role: '5G-NR Cell Tower', operationalStatus: 'ACTIVE', coordinates3d: { x: -28.0, y: 0.0, z: -20.0 } },
-      { id: 'gnb-02', label: 'gNodeB-02 (East Tower)', type: 'ran', x: 620, y: 120, role: '5G-NR Cell Tower', operationalStatus: 'ACTIVE', coordinates3d: { x: 28.0, y: 0.0, z: -20.0 } },
-      { id: 'gnb-03', label: 'gNodeB-03 (South Tower)', type: 'ran', x: 620, y: 380, role: '5G-NR Cell Tower', operationalStatus: 'ACTIVE', coordinates3d: { x: 28.0, y: 0.0, z: 20.0 } },
-      { id: 'gnb-04', label: 'gNodeB-04 (West Tower)', type: 'ran', x: 220, y: 380, role: '5G-NR Cell Tower', operationalStatus: 'ACTIVE', coordinates3d: { x: -28.0, y: 0.0, z: 20.0 } },
-      { id: 'upf-01', label: 'UPF-01 (Data Center)', type: 'core_user', x: 440, y: 250, role: 'User Plane Gateway', operationalStatus: 'ACTIVE', coordinates3d: { x: 0.0, y: 0.0, z: -8.0 } },
-      { id: 'edge-01', label: 'Edge-MEC-01', type: 'edge', x: 300, y: 250, role: 'Multi-access Edge Computing', operationalStatus: 'ACTIVE', coordinates3d: { x: -16.0, y: 0.0, z: 8.0 } },
-      { id: 'amf-01', label: 'AMF-01 (Control Plane)', type: 'core_control', x: 440, y: 200, role: 'Access and Mobility Mgmt', operationalStatus: 'ACTIVE', coordinates3d: { x: 8.0, y: 0.0, z: -16.0 } },
-      { id: 'smf-01', label: 'SMF-01 (Session Mgmt)', type: 'core_control', x: 480, y: 200, role: 'Session Mgmt Function', operationalStatus: 'ACTIVE', coordinates3d: { x: 16.0, y: 0.0, z: -16.0 } },
-    ];
-
-    const isThreat = lifecycleState === 'THREAT_DETECTED' || lifecycleState === 'ATTACK_INITIATED';
-    const isAnalysing = lifecycleState === 'ANALYSING' || lifecycleState === 'SUSPICIOUS_ACTIVITY';
-    const isRecoveredOrMit = mitigationActive || lifecycleState === 'RECOVERED' || lifecycleState === 'VERIFYING_MITIGATION';
-
-    // 1. CommShield AI Detection & Decision Engine Core
     if (layers.security) {
+      // 1. CommShield AI Detection & Decision Engine Core (Floating Diamond above Data Center)
       const aiGeo = new THREE.OctahedronGeometry(1.6);
+      const isThreat = lifecycleState === 'THREAT_DETECTED' || lifecycleState === 'ATTACK_INITIATED';
+      const isAnalysing = lifecycleState === 'ANALYSING' || lifecycleState === 'SUSPICIOUS_ACTIVITY';
+      const isRecoveredOrMit = mitigationActive || lifecycleState === 'RECOVERED' || lifecycleState === 'VERIFYING_MITIGATION';
+      
       const aiColor = isRecoveredOrMit ? 0x10b981 : isThreat ? 0xef4444 : isAnalysing ? 0xf59e0b : 0x06b6d4;
       const aiMat = new THREE.MeshStandardMaterial({
         color: aiColor,
@@ -484,23 +317,24 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         emissiveIntensity: 0.9,
       });
       aiEngineMesh = new THREE.Mesh(aiGeo, aiMat);
-      aiEngineMesh.position.set(0, 9.5, 0);
+      aiEngineMesh.position.set(0, 9.5, 0); // Directly above 5G Core NOC
       aiEngineMesh.userData = {
         id: 'sec-ai-engine',
         label: 'CommShield AI Detection & Decision Engine',
         role: 'Autonomous Cyber Defence Fabric',
         status: isThreat ? 'Threat Active' : isRecoveredOrMit ? 'Mitigated / Protected' : 'Monitoring',
       };
-      group.add(aiEngineMesh);
+      scene.add(aiEngineMesh);
       interactiveMeshes.push(aiEngineMesh);
 
+      // AI Halo Ring
       const haloGeo = new THREE.RingGeometry(2.2, 2.35, 32);
       const haloMat = new THREE.MeshBasicMaterial({ color: aiColor, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
       const haloMesh = new THREE.Mesh(haloGeo, haloMat);
       haloMesh.rotation.x = Math.PI / 2;
       aiEngineMesh.add(haloMesh);
 
-      // Tower RF Probes
+      // 2. Monitoring Sensor Probes on Macro Cell Towers
       const towerSensorPositions = [
         new THREE.Vector3(-28.0, 14.5, -20.0),
         new THREE.Vector3(28.0, 14.5, -20.0),
@@ -518,13 +352,13 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         sensorRing.rotation.x = Math.PI / 2;
         sensorRing.position.copy(pos);
         sensorRing.userData = { id: `sensor-gnb-${idx + 1}`, label: `CommShield RF Sensor Probe #0${idx + 1}`, role: 'Security Telemetry Probe', status: 'Active' };
-        group.add(sensorRing);
+        scene.add(sensorRing);
         sensorWaveMeshes.push(sensorRing);
         interactiveMeshes.push(sensorRing);
       });
     }
 
-    // 2. Policy Enforcement Gateways
+    // 3. Policy Enforcement Gateways (Visual Barrier Shields)
     if (layers.enforcementPoints) {
       const gateConfigs = [
         { pos: new THREE.Vector3(-14, 2.2, -10), label: 'N3 Policy Enforcement Gateway (UPF Ingress)' },
@@ -546,20 +380,33 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           role: 'Enforcement Point',
           status: mitigationActive ? 'ACTIVE ENFORCEMENT (Dropping Attack Packets)' : 'PASSIVE MONITORING',
         };
-        group.add(barrier);
+        scene.add(barrier);
         enforcementMeshes.push(barrier);
         interactiveMeshes.push(barrier);
       });
     }
 
-    // 3. Render 5G Network Slices
-    const effectiveSlices: TwinSlice[] = (slices && slices.length > 0) ? slices : [
-      { slice_id: 'sst-1-sd-010203', name: 'eMBB Slice #1', device_class: 'eMBB', color: '#38bdf8', packet_rate_pps: 1200, throughput_mbps: 75, latency_ms: 2.1, health_status: 'NOMINAL', zone: { x: 220, y: 150, width: 280, height: 180, label: 'eMBB' } },
-      { slice_id: 'sst-2-sd-020202', name: 'URLLC Slice #2', device_class: 'URLLC', color: '#ec4899', packet_rate_pps: 850, throughput_mbps: 45, latency_ms: 1.2, health_status: 'NOMINAL', zone: { x: 550, y: 150, width: 280, height: 180, label: 'URLLC' } },
-      { slice_id: 'sst-3-sd-030303', name: 'mMTC Slice #3', device_class: 'mMTC', color: '#10b981', packet_rate_pps: 400, throughput_mbps: 15, latency_ms: 8.5, health_status: 'NOMINAL', zone: { x: 380, y: 350, width: 320, height: 160, label: 'mMTC' } },
-    ];
+    // 4. Illuminated Attack Path Trace
+    if ((traceAttackPath || attackPath.length > 0) && layers.suspiciousTraffic) {
+      const tracePoints = [
+        new THREE.Vector3(-28.0, 0.8, -16.0), // Rogue Camera
+        new THREE.Vector3(-28.0, 14.5, -20.0), // gNodeB-01 Tower
+        new THREE.Vector3(-14.0, 2.2, -10.0), // N3 Enforcement Barrier
+        new THREE.Vector3(0.0, 3.5, -12.0), // UPF Data Center
+      ];
+      const traceCurve = new THREE.CatmullRomCurve3(tracePoints);
+      const traceTubeGeo = new THREE.TubeGeometry(traceCurve, 32, 0.35, 8, false);
+      const traceMat = new THREE.MeshBasicMaterial({
+        color: 0xff0044,
+        transparent: true,
+        opacity: 0.92,
+      });
+      const traceTube = new THREE.Mesh(traceTubeGeo, traceMat);
+      scene.add(traceTube);
+    }
 
-    effectiveSlices.forEach((slice) => {
+    // 5. Render 5G Network Slices (Translucent Pedestal Zones)
+    slices.forEach((slice) => {
       const [zx, , zz] = mapCoord(slice.zone.x + slice.zone.width / 2, slice.zone.y + slice.zone.height / 2);
       const zw = slice.zone.width * 0.12;
       const zh = slice.zone.height * 0.12;
@@ -568,14 +415,15 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       const zoneMat = new THREE.MeshBasicMaterial({
         color: new THREE.Color(slice.color),
         transparent: true,
-        opacity: 0.12,
+        opacity: 0.09,
         side: THREE.DoubleSide,
       });
       const zoneMesh = new THREE.Mesh(zoneGeo, zoneMat);
       zoneMesh.rotation.x = -Math.PI / 2;
       zoneMesh.position.set(zx, 0.06, zz);
-      group.add(zoneMesh);
+      scene.add(zoneMesh);
 
+      // Zone Luminous Border
       const edgeGeo = new THREE.EdgesGeometry(zoneGeo);
       const edgeMat = new THREE.LineBasicMaterial({
         color: new THREE.Color(slice.color),
@@ -585,47 +433,77 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       const edgeLine = new THREE.LineSegments(edgeGeo, edgeMat);
       edgeLine.rotation.x = -Math.PI / 2;
       edgeLine.position.set(zx, 0.07, zz);
-      group.add(edgeLine);
+      scene.add(edgeLine);
     });
 
-    // 4. Cellular Tower Builder
+    // 6. Realistic 5G Cellular Tower Builder Helper
+    const towerWaveMeshes: THREE.Mesh[] = [];
+
     const buildCellularTower = (pos: THREE.Vector3, id: string, name: string, isAttacked: boolean, isSelected: boolean) => {
       const towerGroup = new THREE.Group();
       towerGroup.position.copy(pos);
 
+      // Concrete foundation base
       const baseGeo = new THREE.BoxGeometry(4.5, 0.8, 4.5);
       const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
       const baseMesh = new THREE.Mesh(baseGeo, baseMat);
       baseMesh.position.y = 0.4;
+      baseMesh.castShadow = true;
+      baseMesh.receiveShadow = true;
       towerGroup.add(baseMesh);
 
-      const mastHeight = 15.0;
-      const legGeo = new THREE.CylinderGeometry(0.12, 0.22, mastHeight, 6);
+      // Base Equipment Cabinet / Shelter (Power + Fiber Breakout)
+      const cabGeo = new THREE.BoxGeometry(2.0, 1.8, 1.6);
+      const cabMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.3 });
+      const cabMesh = new THREE.Mesh(cabGeo, cabMat);
+      cabMesh.position.set(1.2, 1.3, 1.2);
+      cabMesh.castShadow = true;
+      towerGroup.add(cabMesh);
+
+      // Steel Lattice Mast (4 corner vertical columns + diagonal bracing)
+      const mastHeight = 16.0;
+      const legGeo = new THREE.CylinderGeometry(0.12, 0.16, mastHeight, 6);
       const steelMat = new THREE.MeshStandardMaterial({
         color: isAttacked ? 0xef4444 : isSelected ? 0x38bdf8 : 0x94a3b8,
         metalness: 0.85,
         roughness: 0.25,
       });
 
-      const halfW = 1.1;
+      const halfW = 1.0;
       const legPositions = [
         [-halfW, -halfW],
         [halfW, -halfW],
         [halfW, halfW],
         [-halfW, halfW],
       ];
+
       legPositions.forEach(([lx, lz]) => {
         const leg = new THREE.Mesh(legGeo, steelMat);
         leg.position.set(lx, mastHeight / 2 + 0.8, lz);
+        leg.castShadow = true;
         towerGroup.add(leg);
       });
 
+      // Horizontal and diagonal cross struts every 2 units
+      const strutGeo = new THREE.BoxGeometry(halfW * 2, 0.08, 0.08);
+      for (let h = 2.5; h < mastHeight; h += 2.2) {
+        const strut1 = new THREE.Mesh(strutGeo, steelMat);
+        strut1.position.set(0, h, halfW);
+        towerGroup.add(strut1);
+
+        const strut2 = new THREE.Mesh(strutGeo, steelMat);
+        strut2.position.set(0, h, -halfW);
+        towerGroup.add(strut2);
+      }
+
+      // Upper Maintenance Platform at masthead
       const platGeo = new THREE.CylinderGeometry(1.8, 1.4, 0.4, 8);
       const platMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
       const platMesh = new THREE.Mesh(platGeo, platMat);
       platMesh.position.y = mastHeight + 0.8;
       towerGroup.add(platMesh);
 
+      // Antenna Array Mount Head + 3 Sector Panel Antennas (120 deg apart)
       const antGeo = new THREE.BoxGeometry(0.4, 2.4, 0.8);
       const antMat = new THREE.MeshStandardMaterial({
         color: isAttacked ? 0xff0000 : 0xf8fafc,
@@ -639,14 +517,28 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         antMesh.position.set(Math.cos(rad) * 1.5, mastHeight + 2.2, Math.sin(rad) * 1.5);
         antMesh.rotation.y = -rad + Math.PI / 2;
         towerGroup.add(antMesh);
+
+        // Remote Radio Unit (RRU) box mounted behind panel
+        const rruGeo = new THREE.BoxGeometry(0.3, 0.8, 0.5);
+        const rruMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 });
+        const rruMesh = new THREE.Mesh(rruGeo, rruMat);
+        rruMesh.position.set(Math.cos(rad) * 0.9, mastHeight + 2.0, Math.sin(rad) * 0.9);
+        towerGroup.add(rruMesh);
       }
 
-      const beaconGeo = new THREE.SphereGeometry(0.25, 8, 8);
+      // Lightning Rod Tip with Flashing Beacon
+      const rodGeo = new THREE.CylinderGeometry(0.04, 0.08, 2.5, 6);
+      const rodMesh = new THREE.Mesh(rodGeo, steelMat);
+      rodMesh.position.y = mastHeight + 3.8;
+      towerGroup.add(rodMesh);
+
+      const beaconGeo = new THREE.SphereGeometry(0.2, 8, 8);
       const beaconMat = new THREE.MeshBasicMaterial({ color: isAttacked ? 0xef4444 : 0x38bdf8 });
       const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
       beaconMesh.position.y = mastHeight + 5.1;
       towerGroup.add(beaconMesh);
 
+      // Concentric Pulsing RF Signal Waves
       const waveGeo = new THREE.RingGeometry(2.5, 2.7, 32);
       const waveMat = new THREE.MeshBasicMaterial({
         color: isAttacked ? 0xef4444 : 0x38bdf8,
@@ -657,11 +549,13 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       const waveMesh = new THREE.Mesh(waveGeo, waveMat);
       waveMesh.rotation.x = -Math.PI / 2;
       waveMesh.position.y = mastHeight + 2.2;
+      waveMesh.userData = { isWave: true, baseScale: 1.0, maxScale: 4.5 };
       towerGroup.add(waveMesh);
       towerWaveMeshes.push(waveMesh);
 
+      // Raycasting Hit Box (Covers whole tower)
       const hitBoxGeo = new THREE.CylinderGeometry(2.5, 2.5, mastHeight + 5, 8);
-      const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
+      const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, wireframe: false });
       const hitBox = new THREE.Mesh(hitBoxGeo, hitBoxMat);
       hitBox.position.y = mastHeight / 2 + 1;
       hitBox.userData = {
@@ -674,10 +568,10 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       towerGroup.add(hitBox);
       interactiveMeshes.push(hitBox);
 
-      group.add(towerGroup);
+      scene.add(towerGroup);
     };
 
-    // Calculate Attack Scope
+    // 7. Calculate Attack and Threat Scope from Single Source of Truth
     const isAttackActive = (
       lifecycleState !== 'NORMAL' &&
       lifecycleState !== 'RECOVERED' &&
@@ -720,8 +614,9 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       }
     }
 
-    // 5. Render Infrastructure Nodes & Technical Campus Buildings
-    effectiveNodes.forEach((n) => {
+    // Render Infrastructure Nodes & Technical Campus Buildings
+    nodes.forEach((n) => {
+      // Determine world position
       let pos: THREE.Vector3;
       if (n.coordinates3d) {
         pos = new THREE.Vector3(n.coordinates3d.x, n.coordinates3d.y, n.coordinates3d.z);
@@ -737,16 +632,19 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       );
       const isSelected = selectedId === n.id;
 
+      // Check if this node is one of the 4 RAN Towers
       if (n.type === 'ran') {
         buildCellularTower(pos, n.id, n.label, isUnderAttack, isSelected);
         return;
       }
 
+      // Otherwise build architectural tech buildings or core function racks
       if (n.id === 'upf' || n.id === 'upf-01') {
-        // UPF Core User Plane Building
+        // High-Throughput Core User Plane Facility (UPF Building)
         const bGroup = new THREE.Group();
         bGroup.position.copy(pos);
 
+        // Building Body
         const bGeo = new THREE.BoxGeometry(9.0, 5.0, 9.0);
         const bMat = new THREE.MeshStandardMaterial({
           color: isUnderAttack ? 0xef4444 : isSelected ? 0x38bdf8 : 0x1e293b,
@@ -757,10 +655,38 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         });
         const bMesh = new THREE.Mesh(bGeo, bMat);
         bMesh.position.y = 2.5;
-        bMesh.userData = { id: n.id, type: 'core_user', label: n.label, role: n.role, status: isUnderAttack ? 'CRITICAL (Under DDoS)' : 'Active' };
+        bMesh.castShadow = true;
+        bMesh.receiveShadow = true;
+        bMesh.userData = { id: n.id, type: 'core_user', label: n.label, role: n.role, status: isUnderAttack ? 'CRITICAL' : 'Active' };
         bGroup.add(bMesh);
         interactiveMeshes.push(bMesh);
 
+        // Glass Curtain Wall Accents
+        const glassGeo = new THREE.PlaneGeometry(7.0, 3.5);
+        const glassMat = new THREE.MeshBasicMaterial({ color: isUnderAttack ? 0xff4d4f : 0x38bdf8, transparent: true, opacity: 0.45 });
+        const glassFront = new THREE.Mesh(glassGeo, glassMat);
+        glassFront.position.set(0, 2.5, 4.55);
+        bGroup.add(glassFront);
+
+        // Rooftop HVAC Chiller units
+        const hvacGeo = new THREE.BoxGeometry(2.0, 1.2, 2.0);
+        const hvacMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+        const hvac1 = new THREE.Mesh(hvacGeo, hvacMat);
+        hvac1.position.set(-2.2, 5.6, -2.0);
+        bGroup.add(hvac1);
+        const hvac2 = new THREE.Mesh(hvacGeo, hvacMat);
+        hvac2.position.set(2.2, 5.6, -2.0);
+        bGroup.add(hvac2);
+
+        // Rooftop Satellite Communication Dish
+        const dishGeo = new THREE.SphereGeometry(1.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+        const dishMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide });
+        const dish = new THREE.Mesh(dishGeo, dishMat);
+        dish.position.set(0, 6.2, 1.8);
+        dish.rotation.x = -Math.PI / 4;
+        bGroup.add(dish);
+
+        // Pulsing status ring on roof
         const ringGeo = new THREE.RingGeometry(3.5, 3.8, 32);
         const ringMat = new THREE.MeshBasicMaterial({
           color: isUnderAttack ? 0xef4444 : 0x10b981,
@@ -771,9 +697,9 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         ring.position.y = 5.05;
         bGroup.add(ring);
 
-        group.add(bGroup);
+        scene.add(bGroup);
       } else if (n.type === 'edge') {
-        // Edge MEC Facility
+        // Edge Computing Facility (MEC Micro Datacenter)
         const eGroup = new THREE.Group();
         eGroup.position.copy(pos);
 
@@ -785,108 +711,132 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         });
         const eMesh = new THREE.Mesh(eGeo, eMat);
         eMesh.position.y = 1.9;
+        eMesh.castShadow = true;
+        eMesh.receiveShadow = true;
         eMesh.userData = { id: n.id, type: 'edge', label: n.label, role: n.role, status: 'Active' };
         eGroup.add(eMesh);
         interactiveMeshes.push(eMesh);
 
-        group.add(eGroup);
-      } else {
-        // Core Control Plane Servers (AMF, SMF, UDM, etc.)
-        const cGroup = new THREE.Group();
-        cGroup.position.copy(pos);
+        // Edge Datacenter LED Vent Strip
+        const ventGeo = new THREE.PlaneGeometry(5.0, 1.0);
+        const ventMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.85 });
+        const vent = new THREE.Mesh(ventGeo, ventMat);
+        vent.position.set(0, 2.0, 2.8);
+        eGroup.add(vent);
 
+        scene.add(eGroup);
+      } else if (n.type === 'gateway' || n.type === 'switch') {
+        // Perimeter Gateway / Core Switch Infrastructure
+        const gGroup = new THREE.Group();
+        gGroup.position.copy(pos);
+
+        const gGeo = new THREE.BoxGeometry(5.5, 3.2, 4.5);
+        const gMat = new THREE.MeshStandardMaterial({
+          color: isSelected ? 0x38bdf8 : isUnderAttack ? 0xf59e0b : 0x334155,
+          roughness: 0.4,
+          metalness: 0.6,
+        });
+        const gMesh = new THREE.Mesh(gGeo, gMat);
+        gMesh.position.y = 1.6;
+        gMesh.castShadow = true;
+        gMesh.receiveShadow = true;
+        gMesh.userData = { id: n.id, type: n.type, label: n.label, role: n.role, status: 'Active' };
+        gGroup.add(gMesh);
+        interactiveMeshes.push(gMesh);
+
+        scene.add(gGroup);
+      } else {
+        // 5G Core Control Plane Server Blade (AMF, SMF, UDM, AUSF, etc.)
         const cGeo = new THREE.BoxGeometry(2.4, 2.8, 1.8);
         const cMat = new THREE.MeshStandardMaterial({
-          color: isSelected ? 0x38bdf8 : isUnderAttack ? 0xf59e0b : 0x334155,
-          metalness: 0.8,
-          roughness: 0.25,
+          color: isSelected ? 0x38bdf8 : 0x0284c7,
+          roughness: 0.3,
+          metalness: 0.7,
+          emissive: isSelected ? 0x0284c7 : 0x0369a1,
+          emissiveIntensity: isSelected ? 0.8 : 0.25,
         });
         const cMesh = new THREE.Mesh(cGeo, cMat);
+        cMesh.position.copy(pos);
         cMesh.position.y = 1.4;
-        cMesh.userData = { id: n.id, type: n.type, label: n.label, role: n.role, status: 'Active' };
-        cGroup.add(cMesh);
+        cMesh.castShadow = true;
+        cMesh.userData = { id: n.id, type: 'core_control', label: n.label, role: n.role, status: 'Active' };
+        scene.add(cMesh);
         interactiveMeshes.push(cMesh);
 
-        group.add(cGroup);
+        // Blinking Status LED
+        const ledGeo = new THREE.SphereGeometry(0.12, 6, 6);
+        const ledMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+        const led = new THREE.Mesh(ledGeo, ledMat);
+        led.position.set(pos.x, 2.2, pos.z + 0.95);
+        scene.add(led);
       }
     });
 
-    // 6. Render UE Devices
-    const effectiveDevices: TwinDevice[] = (devices && devices.length > 0) ? devices : [
-      { id: 'ue-cam-01', device_id_hash: 'ue-cam-01', device_class: 'camera', slice_id: 'sst-1-sd-010203', x: 180, y: 160, rate_pps: 150, verdict: 'benign', action: 'none', status_label: 'Nominal', servingGnb: 'gnb-01', visible: true, is_onboarded: true, is_provisioned: true },
-      { id: 'ue-cam-02', device_id_hash: 'ue-cam-02', device_class: 'camera', slice_id: 'sst-1-sd-010203', x: 260, y: 160, rate_pps: 150, verdict: 'benign', action: 'none', status_label: 'Nominal', servingGnb: 'gnb-01', visible: true, is_onboarded: true, is_provisioned: true },
-      { id: 'ue-agv-01', device_id_hash: 'ue-agv-01', device_class: 'AGV', slice_id: 'sst-2-sd-020202', x: 580, y: 160, rate_pps: 200, verdict: 'benign', action: 'none', status_label: 'Nominal', servingGnb: 'gnb-02', visible: true, is_onboarded: true, is_provisioned: true },
-      { id: 'ue-sensor-01', device_id_hash: 'ue-sensor-01', device_class: 'sensor', slice_id: 'sst-3-sd-030303', x: 420, y: 380, rate_pps: 50, verdict: 'benign', action: 'none', status_label: 'Nominal', servingGnb: 'gnb-04', visible: true, is_onboarded: true, is_provisioned: true },
-    ];
+    // 8. Render Connected UE Devices (Cameras, AGVs, Sensors)
+    devices.forEach((d) => {
+      if (!d.visible) return;
+      const [dx, dy, dz] = mapCoord(d.x, d.y, 0.6);
+      const dPos = new THREE.Vector3(dx, dy, dz);
 
-    effectiveDevices.forEach((dev) => {
-      const [dx, , dz] = mapCoord(dev.x, dev.y, 0.4);
-      const isAttacker = isAttackActive && (
-        dev.verdict === 'attack' ||
-        attackNodeSet.has(dev.id) ||
-        (attackerSources && attackerSources.includes(dev.id))
-      );
-      const isQuarantined = dev.verdict === 'quarantined' || dev.action === 'quarantine';
-      const isSelected = selectedId === dev.id;
+      const isQuarantined = d.action === 'quarantine' || d.verdict === 'quarantined';
+      const isAttack = d.verdict === 'attack';
+      const isSelected = selectedId === d.id;
 
-      const dGroup = new THREE.Group();
-      dGroup.position.set(dx, 0.4, dz);
+      const devColor = isQuarantined
+        ? 0x8b5cf6
+        : isAttack
+        ? 0xef4444
+        : 0x10b981;
 
-      let dGeo: THREE.BufferGeometry;
-      if (dev.device_class === 'camera') {
-        dGeo = new THREE.BoxGeometry(0.8, 0.6, 1.0);
-      } else if (dev.device_class === 'AGV') {
-        dGeo = new THREE.BoxGeometry(1.4, 0.7, 1.8);
+      let devGeo: THREE.BufferGeometry;
+      if (d.device_class === 'camera') {
+        // High-definition surveillance camera pole & housing
+        devGeo = new THREE.BoxGeometry(1.2, 0.9, 1.2);
+      } else if (d.device_class === 'AGV') {
+        // Sleek autonomous robot rover
+        devGeo = new THREE.BoxGeometry(1.8, 0.7, 1.3);
       } else {
-        dGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.8, 12);
+        // Cylindrical telemetry sensor pod
+        devGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.0, 8);
       }
 
-      const dColor = isAttacker ? 0xef4444 : isQuarantined ? 0xa855f7 : isSelected ? 0x38bdf8 : 0x0ea5e9;
-      const dMat = new THREE.MeshStandardMaterial({
-        color: dColor,
-        roughness: 0.3,
-        metalness: 0.7,
-        emissive: isAttacker ? 0xff0000 : 0x000000,
-        emissiveIntensity: isAttacker ? 0.7 : 0.0,
+      const devMat = new THREE.MeshStandardMaterial({
+        color: isSelected ? 0xffffff : devColor,
+        roughness: 0.4,
+        metalness: 0.5,
+        emissive: isSelected ? 0x38bdf8 : devColor,
+        emissiveIntensity: isSelected || isAttack ? 0.85 : 0.25,
       });
 
-      const dMesh = new THREE.Mesh(dGeo, dMat);
-      dMesh.userData = {
-        id: dev.id,
+      const devMesh = new THREE.Mesh(devGeo, devMat);
+      devMesh.position.copy(dPos);
+      devMesh.castShadow = true;
+      devMesh.userData = {
+        id: d.id,
         type: 'device',
-        label: `${dev.device_class.toUpperCase()} (${dev.id})`,
-        role: `5G UE Asset [Slice: ${dev.slice_id}]`,
-        status: isAttacker ? 'ATTACKING BOTNET' : isQuarantined ? 'QUARANTINED' : 'NOMINAL',
+        label: d.id,
+        role: `${d.device_class.toUpperCase()} (Serving: ${d.servingGnb || 'gNB-01'})`,
+        status: d.status_label,
       };
-      dGroup.add(dMesh);
-      interactiveMeshes.push(dMesh);
+      scene.add(devMesh);
+      interactiveMeshes.push(devMesh);
 
-      // Flashing beacon for attacker devices
-      if (isAttacker) {
-        const bGeo = new THREE.SphereGeometry(0.3, 8, 8);
-        const bMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const bMesh = new THREE.Mesh(bGeo, bMat);
-        bMesh.position.y = 1.0;
-        dGroup.add(bMesh);
+      // Quarantine Barrier Wireframe Cage if isolated
+      if (isQuarantined) {
+        const barrierGeo = new THREE.CylinderGeometry(1.8, 1.8, 2.5, 16, 1, true);
+        const barrierMat = new THREE.MeshBasicMaterial({
+          color: 0x8b5cf6,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.8,
+        });
+        const barrier = new THREE.Mesh(barrierGeo, barrierMat);
+        barrier.position.copy(dPos);
+        scene.add(barrier);
       }
-
-      nodePositionMap.set(dev.id, new THREE.Vector3(dx, 0.4, dz));
-      group.add(dGroup);
     });
 
-    // 7. Render Network Conduits & Flow Links
-    const effectiveLinks: TwinLink[] = (links && links.length > 0) ? links : [
-      { id: 'link-gnb01-upf', source: 'gnb-01', target: 'upf-01', label: 'N3 Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-gnb02-upf', source: 'gnb-02', target: 'upf-01', label: 'N3 Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-gnb03-upf', source: 'gnb-03', target: 'upf-01', label: 'N3 Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-gnb04-upf', source: 'gnb-04', target: 'upf-01', label: 'N3 Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-upf-edge', source: 'upf-01', target: 'edge-01', label: 'N6 Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-cam01-gnb01', source: 'ue-cam-01', target: 'gnb-01', label: '5G-Uu Air Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-cam02-gnb01', source: 'ue-cam-02', target: 'gnb-01', label: '5G-Uu Air Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-agv01-gnb02', source: 'ue-agv-01', target: 'gnb-02', label: '5G-Uu Air Interface', type: 'user_plane', status: 'NORMAL', active: true },
-      { id: 'link-sensor-gnb04', source: 'ue-sensor-01', target: 'gnb-04', label: '5G-Uu Air Interface', type: 'user_plane', status: 'NORMAL', active: true },
-    ];
-
+    // 9. Render Live Network Links & Active Conduits
     const linkPairs: Array<{
       start: THREE.Vector3;
       end: THREE.Vector3;
@@ -896,58 +846,61 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       isIsolated: boolean;
     }> = [];
 
-    effectiveLinks.forEach((link) => {
-      const startPos = nodePositionMap.get(link.source);
-      const endPos = nodePositionMap.get(link.target);
-      if (!startPos || !endPos) return;
+    links.forEach((l) => {
+      const sPos = nodePositionMap.get(l.source);
+      const tPos = nodePositionMap.get(l.target);
+      if (!sPos || !tPos) return;
 
-      const isAttackConduit = isAttackActive && (
-        attackLinkSet.has(`${link.source}->${link.target}`) ||
-        attackLinkSet.has(`${link.target}->${link.source}`) ||
-        (attackNodeSet.has(link.source) && (link.target === 'upf-01' || link.target === 'upf'))
+      const isAttackLink = (attackPath.includes(l.source) && attackPath.includes(l.target)) ||
+                           (l.source === 'gnb-01' && l.target === 'upf' && attackPath.length > 0);
+      const isIsolated = mitigationActive && (l.source === 'gnb-01' || l.target === 'gnb-01');
+
+      let linkColor = 0x38bdf8; // Default Control Plane Cyan
+      if (isAttackLink) {
+        linkColor = 0xef4444; // Red
+      } else if (isIsolated) {
+        linkColor = 0x8b5cf6; // Purple
+      } else if (l.type === 'user_plane') {
+        linkColor = 0x10b981; // Green
+      } else if (l.type === 'edge') {
+        linkColor = 0x6366f1; // Indigo
+      }
+
+      // 3D Tube / Beam conduit
+      const curve = new THREE.LineCurve3(
+        new THREE.Vector3(sPos.x, Math.max(1.0, sPos.y), sPos.z),
+        new THREE.Vector3(tPos.x, Math.max(1.0, tPos.y), tPos.z)
       );
 
-      const isIsolated = Boolean(
-        link.status === 'WARNING' ||
-        (effectiveDevices.find((d) => d.id === link.source)?.action === 'quarantine')
-      );
-
-      const conduitColor = isAttackConduit ? 0xef4444 : isIsolated ? 0xa855f7 : link.type === 'control' ? 0x818cf8 : 0x06b6d4;
-
-      // Clickable Conduit Tube
-      const curve = new THREE.LineCurve3(startPos, endPos);
-      const tubeGeo = new THREE.TubeGeometry(curve, 16, isAttackConduit ? 0.28 : 0.12, 8, false);
+      const tubeGeo = new THREE.TubeGeometry(curve, 12, isAttackLink ? 0.22 : 0.12, 6, false);
       const tubeMat = new THREE.MeshBasicMaterial({
-        color: conduitColor,
+        color: linkColor,
         transparent: true,
-        opacity: isAttackConduit ? 0.85 : 0.45,
+        opacity: isAttackLink ? 0.95 : isIsolated ? 0.25 : 0.65,
       });
-      const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
-      tubeMesh.userData = {
-        id: link.id,
-        type: 'link',
-        label: `5G Conduit: ${link.id}`,
-        role: `${link.type === 'control' ? 'Control Plane (N2/N4)' : 'User Plane (N3/N6)'} Conduit`,
-        status: isAttackConduit ? 'COMPROMISED (Attack Conduit)' : isIsolated ? 'THROTTLED / ISOLATED' : 'ACTIVE',
-      };
-      group.add(tubeMesh);
-      interactiveMeshes.push(tubeMesh);
+      const tube = new THREE.Mesh(tubeGeo, tubeMat);
+      scene.add(tube);
 
       linkPairs.push({
-        start: startPos.clone(),
-        end: endPos.clone(),
-        color: conduitColor,
-        speed: isAttackConduit ? 0.024 : 0.012,
-        isAttack: isAttackConduit,
+        start: curve.v1.clone(),
+        end: curve.v2.clone(),
+        color: linkColor,
+        speed: isAttackLink ? 0.035 : l.type === 'user_plane' ? 0.022 : 0.014,
+        isAttack: isAttackLink,
         isIsolated,
       });
     });
 
-    // 8. Clamped Packet Particles
-    const particleCount = isAttackActive ? 96 : 48;
+    // 10. Live Packet & Traffic Simulation Particles
+    // High-performance instanced packet particles with clamped particle count
+    const particleCount = attackPath.length > 0 ? 96 : 48;
     const maxParticles = particleCount;
     const packetGeo = new THREE.SphereGeometry(0.32, 8, 8);
-    const packetList: Array<{ mesh: THREE.Mesh; pair: typeof linkPairs[0]; progress: number }> = [];
+    const packetList: Array<{
+      mesh: THREE.Mesh;
+      pair: typeof linkPairs[0];
+      progress: number;
+    }> = [];
 
     for (let i = 0; i < maxParticles; i++) {
       if (linkPairs.length === 0) break;
@@ -958,7 +911,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         opacity: 0.9,
       });
       const pMesh = new THREE.Mesh(packetGeo, pMat);
-      group.add(pMesh);
+      scene.add(pMesh);
       packetList.push({
         mesh: pMesh,
         pair,
@@ -966,36 +919,183 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       });
     }
 
-    // Update active refs for continuous animation loop
-    interactiveMeshesRef.current = interactiveMeshes;
-    packetListRef.current = packetList;
-    towerWaveMeshesRef.current = towerWaveMeshes;
-    sensorWaveMeshesRef.current = sensorWaveMeshes;
-    enforcementMeshesRef.current = enforcementMeshes;
-    aiEngineMeshRef.current = aiEngineMesh;
-  }, [nodes, links, slices, devices, selectedId, attackPath, attackPaths, attackerSources, isDistributed, attackType, mitigationActive, traceAttackPath, lifecycleState, layers]);
+    // 11. Raycasting for Component Selection & Tooltip Hover
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const handlePointerMove = (e: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveMeshes);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        renderer.domElement.style.cursor = 'pointer';
+        onHover({
+          id: hit.userData.id,
+          name: hit.userData.label || hit.userData.id,
+          type: hit.userData.role || hit.userData.type,
+          status: hit.userData.status || 'Active',
+        });
+      } else {
+        renderer.domElement.style.cursor = 'default';
+        onHover(null);
+      }
+    };
+
+    const handleClick = () => {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveMeshes);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        onSelect(hit.userData.id, hit.userData.type);
+      } else {
+        onSelect(null, null);
+      }
+    };
+
+    const domElement = renderer.domElement;
+    domElement.addEventListener('pointermove', handlePointerMove);
+    domElement.addEventListener('click', handleClick);
+
+    // 12. Smooth Animation Loop
+    const animate = () => {
+      controls.update();
+
+      // Smooth camera interpolation towards target presets only when triggered
+      if (isLerpingRef.current && !reducedMotion) {
+        camera.position.lerp(targetCamPos.current, 0.05);
+        controls.target.lerp(targetLookAt.current, 0.05);
+        if (
+          camera.position.distanceTo(targetCamPos.current) < 0.1 &&
+          controls.target.distanceTo(targetLookAt.current) < 0.1
+        ) {
+          camera.position.copy(targetCamPos.current);
+          controls.target.copy(targetLookAt.current);
+          isLerpingRef.current = false;
+        }
+      }
+
+      // Animate Tower Signal Waves
+      towerWaveMeshes.forEach((w) => {
+        const s = (w.scale.x + 0.02) % 3.5;
+        w.scale.set(s, s, s);
+        (w.material as THREE.MeshBasicMaterial).opacity = Math.max(0.0, 0.7 - s / 3.5);
+      });
+
+      // Animate CommShield AI Detection Engine (Spin & Bob)
+      if (aiEngineMesh) {
+        aiEngineMesh.rotation.y += 0.02;
+        aiEngineMesh.rotation.z = Math.sin(Date.now() * 0.002) * 0.15;
+        aiEngineMesh.position.y = 9.5 + Math.sin(Date.now() * 0.003) * 0.4;
+      }
+
+      // Animate Security Probes & Enforcement Gateways
+      sensorWaveMeshes.forEach((s, idx) => {
+        s.rotation.z += 0.015 * (idx % 2 === 0 ? 1 : -1);
+      });
+      enforcementMeshes.forEach((b) => {
+        b.rotation.y += 0.01;
+      });
+
+      // Move packet particles along conduits (Dual stream: cyan legitimate continues vs red attack dropped at barrier)
+      packetList.forEach((p) => {
+        if (p.pair.isAttack && mitigationActive) {
+          // Drop and filter malicious traffic at the N3 Enforcement Gateway (halt at 0.42 progress)
+          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.42);
+          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(Date.now() * 0.01) * 0.25;
+        } else if (p.pair.isIsolated) {
+          // Quarantined device link halted
+          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, 0.2);
+        } else {
+          // Legitimate traffic continues unobstructed
+          p.progress = (p.progress + p.pair.speed) % 1.0;
+          p.mesh.position.lerpVectors(p.pair.start, p.pair.end, p.progress);
+          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.9;
+        }
+      });
+
+      renderer.render(scene, camera);
+      animFrameId.current = requestAnimationFrame(animate);
+    };
+
+    animFrameId.current = requestAnimationFrame(animate);
+
+    // 13. Dynamic ResizeObserver for Fluid Viewport
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: w, height: h } = entry.contentRect;
+        if (w > 0 && h > 0) {
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        }
+      }
+    });
+    resizeObserver.observe(container);
+
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 580;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // 14. Explicit Resource Disposal
+    return () => {
+      if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+      domElement.removeEventListener('pointermove', handlePointerMove);
+      domElement.removeEventListener('click', handleClick);
+      controls.dispose();
+
+      scene.traverse((obj: THREE.Object3D) => {
+        if (obj instanceof THREE.Mesh) {
+          if (obj.geometry) obj.geometry.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m: THREE.Material) => m.dispose());
+          } else if (obj.material) {
+            obj.material.dispose();
+          }
+        }
+      });
+
+      renderer.dispose();
+      if (container.contains(domElement)) {
+        container.removeChild(domElement);
+      }
+    };
+  }, [nodes, links, slices, devices, selectedId, attackPath, attackPaths, attackerSources, isDistributed, attackType, mitigationActive, reducedMotion, traceAttackPath, lifecycleState, layers]);
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-[#08101e]">
+    <div className="w-full h-full relative rounded-xl overflow-hidden shadow-2xl bg-[#08101e] border border-slate-800">
       {/* Three.js Canvas Container */}
-      <div ref={mountRef} className="w-full h-full" style={{ minHeight: '400px' }} />
+      <div ref={mountRef} className="w-full h-full" style={{ minHeight: '580px' }} />
 
       {/* Floating HUD: Camera Preset & Navigation Controls */}
-      <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700/60 shadow-lg text-xs font-mono">
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs">
         <span className="text-slate-400 font-medium mr-1 flex items-center">
           <Camera className="w-3.5 h-3.5 mr-1 text-sky-400" /> View:
         </span>
         {[
-          { id: 'full', label: 'Campus', icon: Eye },
+          { id: 'full', label: 'Full Campus', icon: Eye },
           { id: 'ran', label: 'Towers', icon: Zap },
           { id: 'core', label: 'Core', icon: Cpu },
           { id: 'edge', label: 'MEC', icon: Activity },
-          { id: 'attack', label: 'Attack', icon: ShieldAlert },
+          { id: 'attack', label: 'Attack Focus', icon: ShieldAlert },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => applyCameraPreset(id)}
-            className={`px-2 py-0.5 rounded flex items-center gap-1 transition-all ${
+            className={`px-2 py-1 rounded flex items-center space-x-1 transition-all ${
               currentPreset === id
                 ? 'bg-sky-600 text-white font-medium shadow-sm'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -1006,7 +1106,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           </button>
         ))}
 
-        <div className="h-3 w-px bg-slate-700/70 mx-1" />
+        <div className="h-4 w-px bg-slate-700/70 mx-1" />
 
         {/* Manual Precision Navigation */}
         <button
@@ -1024,14 +1124,14 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           <RotateCw className="w-3.5 h-3.5" />
         </button>
         <button
-          onClick={() => handleManualZoom(-10)}
+          onClick={() => handleManualZoom(-12)}
           title="Zoom In"
           className="p-1 rounded text-slate-300 hover:bg-slate-800 hover:text-white"
         >
           <ZoomIn className="w-3.5 h-3.5" />
         </button>
         <button
-          onClick={() => handleManualZoom(10)}
+          onClick={() => handleManualZoom(12)}
           title="Zoom Out"
           className="p-1 rounded text-slate-300 hover:bg-slate-800 hover:text-white"
         >
@@ -1039,42 +1139,49 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         </button>
         <button
           onClick={handleFitNetwork}
-          title="Fit Network Overview"
-          className="p-1 rounded text-cyan-400 hover:bg-slate-800 hover:text-white flex items-center gap-1 font-bold"
+          title="Fit Entire Network"
+          className="px-2 py-1 rounded text-sky-400 bg-sky-950/60 border border-sky-800/60 hover:bg-sky-900/80 flex items-center space-x-1 font-medium"
         >
-          <Maximize2 className="w-3.5 h-3.5" />
+          <Maximize2 className="w-3 h-3" />
+          <span>Fit Network</span>
         </button>
       </div>
 
-      {/* Layer Visibility Pills */}
-      <div className="absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-1 bg-slate-900/80 backdrop-blur-md p-1 rounded-lg border border-slate-800 text-[10px] font-mono">
-        <button
-          onClick={toggleAllLayers}
-          className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold"
-        >
-          LAYERS
-        </button>
-        {(
-          [
-            ['physical', 'TOWERS'],
-            ['connectivity', 'CONDUITS'],
-            ['security', 'AI FABRIC'],
-            ['enforcementPoints', 'GATES'],
-          ] as const
-        ).map(([key, label]) => (
+      {/* Floating HUD: 8-Layer Visibility Controls */}
+      <div className="absolute top-4 right-4 z-10 hidden md:flex flex-wrap items-center gap-1 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs max-w-lg justify-end">
+        <span className="text-slate-400 font-medium mr-1 text-[11px]">3D Layers:</span>
+        {[
+          { key: 'physical', label: 'Physical' },
+          { key: 'connectivity', label: 'Conduits' },
+          { key: 'security', label: 'Security Fabric' },
+          { key: 'legitimateTraffic', label: 'Legitimate (Cyan)' },
+          { key: 'suspiciousTraffic', label: 'Suspicious (Red)' },
+          { key: 'enforcementPoints', label: 'Enforcement Gateways' },
+        ].map(({ key, label }) => (
           <button
             key={key}
-            onClick={() => toggleLayer(key)}
-            className={`px-1.5 py-0.5 rounded transition-all font-semibold ${
-              layers[key] ? 'bg-cyan-950 text-cyan-300 border border-cyan-800' : 'text-slate-500 hover:text-slate-300'
+            onClick={() => toggleLayer(key as keyof typeof layers)}
+            className={`px-2 py-0.5 rounded text-[11px] transition-all ${
+              layers[key as keyof typeof layers]
+                ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/50 font-medium'
+                : 'bg-slate-800 text-slate-500 border border-slate-700/50'
             }`}
           >
             {label}
           </button>
         ))}
+        <button
+          onClick={toggleAllLayers}
+          className="px-2 py-0.5 rounded text-[11px] bg-sky-950 text-sky-400 border border-sky-700/60 font-medium hover:bg-sky-900 ml-1"
+        >
+          All Layers
+        </button>
+      </div>
+
+      {/* Floating Navigation Tip */}
+      <div className="absolute bottom-4 left-4 z-10 text-[11px] text-slate-400 bg-slate-950/70 backdrop-blur-sm px-2.5 py-1 rounded border border-slate-800 pointer-events-none">
+        Left Click: Rotate • Right Click: Pan • Scroll: Zoom • Click Object: Inspect & Focus
       </div>
     </div>
   );
 };
-
-export default ThreeTwinScene;

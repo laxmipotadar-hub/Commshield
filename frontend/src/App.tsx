@@ -220,29 +220,28 @@ const AppLayout: React.FC = () => {
 
       {/* 2. Main Area with Analytical Canvas Header */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar Header (Dedicated analytical header for dashboard pages; hidden on digital twin for full-screen immersive 3D canvas) */}
-        {location.pathname !== '/digital-twin' && (
-          <header className="h-16 bg-surface-container-lowest border-b border-border px-6 flex items-center justify-between flex-shrink-0 z-40 shadow-xs gap-4">
-            {/* Left: Breadcrumbs & Enclave Status */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
-                <span className="font-bold text-on-surface">CommShield</span>
-                <ChevronRight className="w-3.5 h-3.5 text-outline" />
-                <span className="text-slate-500">5G Slice</span>
-                <ChevronRight className="w-3.5 h-3.5 text-outline" />
-                <span className="text-primary font-semibold">{currentNav?.name || 'Security Command'}</span>
-              </div>
-
-              <div className="h-4 w-px bg-border" />
-
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
-                </span>
-                <span className="font-mono text-[11px] font-semibold">5G-CORE-UPF</span>
-              </div>
+        {/* Top Bar Header */}
+        <header className="h-16 bg-surface-container-lowest border-b border-border px-6 flex items-center justify-between flex-shrink-0 z-40 shadow-xs gap-4">
+          {/* Left: Breadcrumbs & Enclave Status */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
+              <span className="font-bold text-on-surface">CommShield</span>
+              <ChevronRight className="w-3.5 h-3.5 text-outline" />
+              <span className="text-slate-500">5G Slice</span>
+              <ChevronRight className="w-3.5 h-3.5 text-outline" />
+              <span className="text-primary font-semibold">{currentNav?.name || 'Security Command'}</span>
             </div>
+
+            <div className="h-4 w-px bg-border" />
+
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+              </span>
+              <span className="font-mono text-[11px] font-semibold">5G-CORE-UPF</span>
+            </div>
+          </div>
 
           {/* Right: Selectors, Controls, Baseline Badge, Theme & Motion */}
           <div className="flex items-center gap-2.5 flex-wrap justify-end">
@@ -379,41 +378,29 @@ const AppLayout: React.FC = () => {
             </button>
           </div>
         </header>
-        )}
 
         {/* 3. Independently Scrolling Content Area */}
-        <main
-          className={
-            location.pathname === '/digital-twin'
-              ? 'flex-1 overflow-hidden flex flex-col bg-[#070e1b]'
-              : 'flex-1 overflow-y-auto p-6 bg-surface'
-          }
-        >
-          {location.pathname === '/digital-twin' ? (
+        <main className="flex-1 overflow-y-auto p-6 bg-surface">
+          <div className="max-w-7xl mx-auto space-y-4">
+            {/* Presentation Demo Mode Key Event &amp; Scenario 4 Banner */}
+            <DemoEventBanner />
+
+            {/* Data Provenance &amp; Real Data Honest Labeling Strip */}
+            <DataProvenanceStrip />
+
             <Routes>
+              <Route path="/" element={<OverviewPage />} />
+              <Route path="/monitoring" element={<MonitoringPage />} />
+              <Route path="/detection" element={<DetectionPage />} />
+              <Route path="/attribution" element={<AttributionView />} />
+              <Route path="/governance" element={<GovernanceView />} />
+              <Route path="/investigation" element={<InvestigationView />} />
+              <Route path="/investigation/:id" element={<InvestigationView />} />
+              <Route path="/experiments" element={<ExperimentsView />} />
               <Route path="/digital-twin" element={<DigitalTwinView />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          ) : (
-            <div className="max-w-7xl mx-auto space-y-4">
-              {/* Presentation Demo Mode Key Event & Scenario 4 Banner */}
-              <DemoEventBanner />
-
-              {/* Data Provenance & Real Data Honest Labeling Strip */}
-              <DataProvenanceStrip />
-
-              <Routes>
-                <Route path="/" element={<OverviewPage />} />
-                <Route path="/monitoring" element={<MonitoringPage />} />
-                <Route path="/detection" element={<DetectionPage />} />
-                <Route path="/attribution" element={<AttributionView />} />
-                <Route path="/governance" element={<GovernanceView />} />
-                <Route path="/investigation" element={<InvestigationView />} />
-                <Route path="/investigation/:id" element={<InvestigationView />} />
-                <Route path="/experiments" element={<ExperimentsView />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </div>
-          )}
+          </div>
         </main>
       </div>
 
