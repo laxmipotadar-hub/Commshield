@@ -178,7 +178,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
 
     // 1. Scene, Camera & WebGL Renderer Setup
     const width = container.clientWidth || 800;
-    const height = container.clientHeight || 580;
+    const height = container.clientHeight || 450;
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
@@ -204,6 +204,9 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     container.innerHTML = '';
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
     container.appendChild(renderer.domElement);
 
     // 2. Interactive OrbitControls (Zoom, Pan, Rotate)
@@ -1027,7 +1030,8 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     // 13. Dynamic ResizeObserver for Fluid Viewport
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width: w, height: h } = entry.contentRect;
+        const w = Math.floor(entry.contentRect.width);
+        const h = Math.floor(entry.contentRect.height);
         if (w > 0 && h > 0) {
           camera.aspect = w / h;
           camera.updateProjectionMatrix();
@@ -1039,8 +1043,8 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
 
     const handleResize = () => {
       if (!container) return;
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 580;
+      const w = Math.floor(container.clientWidth) || 800;
+      const h = Math.floor(container.clientHeight) || 450;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -1076,9 +1080,9 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   }, [nodes, links, slices, devices, selectedId, attackPath, attackPaths, attackerSources, isDistributed, attackType, mitigationActive, reducedMotion, traceAttackPath, lifecycleState, layers]);
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden shadow-2xl bg-[#08101e] border border-slate-800">
+    <div className="w-full h-full min-h-0 relative rounded-xl overflow-hidden shadow-2xl bg-[#08101e] border border-slate-800">
       {/* Three.js Canvas Container */}
-      <div ref={mountRef} className="w-full h-full" style={{ minHeight: '580px' }} />
+      <div ref={mountRef} className="w-full h-full min-h-0 overflow-hidden relative" />
 
       {/* Floating HUD: Camera Preset & Navigation Controls */}
       <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs">

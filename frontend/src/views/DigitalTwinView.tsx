@@ -607,9 +607,9 @@ export const DigitalTwinView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full min-h-screen bg-[#070e1b] text-slate-100 font-sans select-none pb-12">
+    <div className="flex flex-col w-full h-full min-h-0 overflow-hidden bg-[#070e1b] text-slate-100 font-sans select-none">
       {/* 1. TOP HEADER BRAND & CONNECTIVITY */}
-      <header className="h-14 px-4 bg-[#0a1628]/95 backdrop-blur-md border-b border-[#1e293b] flex items-center justify-between z-30 shrink-0 sticky top-0">
+      <header className="h-14 px-4 bg-[#0a1628]/95 backdrop-blur-md border-b border-[#1e293b] flex items-center justify-between z-30 shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-cyan-400" />
@@ -939,10 +939,10 @@ export const DigitalTwinView: React.FC = () => {
       )}
 
       {/* 3. MAIN 3-COLUMN WORKSPACE */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 px-3 pt-2 pb-1 min-h-0 overflow-hidden">
         {/* LEFT PANEL — TELEMETRY & ATTACK/DETECTION CONTROLS (3 cols) */}
         {!presentationMode && (
-          <aside className="lg:col-span-3 flex flex-col gap-3">
+          <aside className="lg:col-span-3 flex flex-col gap-2.5 min-h-0 overflow-y-auto overflow-x-hidden pr-0.5">
             {/* Network Health & Baseline Telemetry */}
             <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl p-4 shadow-lg flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -1180,8 +1180,8 @@ export const DigitalTwinView: React.FC = () => {
         )}
 
         {/* CENTER — INTERACTIVE 3D DIGITAL TWIN (6 cols in standard; 9 cols in presentation) */}
-        <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-3 relative min-h-[580px]`}>
-          <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col">
+        <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-2 relative min-h-0 h-full overflow-hidden`}>
+          <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col min-h-0 h-full">
             {/* Top Scene Status Strip */}
             <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
               <div className="px-3 py-1.5 rounded-lg bg-[#0a1628]/90 border border-slate-700/80 backdrop-blur-md text-xs font-mono text-slate-300 flex items-center gap-2 shadow-lg pointer-events-auto">
@@ -1283,8 +1283,8 @@ export const DigitalTwinView: React.FC = () => {
         </main>
 
         {/* RIGHT OPERATIONS PANEL — 4 DEDICATED TABS */}
-        <aside className="lg:col-span-3 flex flex-col gap-3">
-          <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+        <aside className="lg:col-span-3 flex flex-col gap-2.5 min-h-0 overflow-hidden h-full">
+          <div className="bg-[#0b1728] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col min-h-0 h-full">
             {/* 4 Operations Tabs Navigation */}
             <div className="grid grid-cols-4 border-b border-slate-800 text-[11px] font-mono text-center bg-[#091322]">
               {[
@@ -1655,7 +1655,7 @@ export const DigitalTwinView: React.FC = () => {
       </div>
 
       {/* 4. BOTTOM PANEL — 5 DEDICATED TABS */}
-      <footer className="px-3">
+      <footer className="px-3 pb-2 shrink-0">
         <div className="bg-[#0a1628] border border-[#1b2b46] rounded-xl overflow-hidden shadow-xl">
           {/* Bottom Tabs Navigation */}
           <div className="flex items-center border-b border-[#1b2b46] px-4 bg-[#081220] text-xs overflow-x-auto">
@@ -1669,7 +1669,7 @@ export const DigitalTwinView: React.FC = () => {
               <button
                 key={id}
                 onClick={() => setActiveBottomTab(id as any)}
-                className={`py-3 px-4 font-semibold flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap ${
+                className={`py-2 px-3 font-semibold flex items-center gap-1.5 border-b-2 transition-colors whitespace-nowrap text-xs ${
                   activeBottomTab === id
                     ? 'border-cyan-400 text-cyan-300'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -1682,7 +1682,7 @@ export const DigitalTwinView: React.FC = () => {
           </div>
 
           {/* Bottom Tab Content */}
-          <div className="p-4">
+          <div className="p-3 max-h-36 overflow-y-auto">
             {/* TAB 1: EVENT TIMELINE */}
             {activeBottomTab === 'timeline' && (
               <div className="flex flex-col gap-2 max-h-48 overflow-y-auto font-mono text-xs">
