@@ -311,14 +311,14 @@ export const DetectionPage: React.FC = () => {
           }`}
           onClick={() => setSelectedWindowId(w.window_id)}
         >
-          {w.window_id.slice(0, 12)}...
+          {(w.window_id || '').slice(0, 12)}...
         </span>
       ),
     },
     {
       key: 'slice_id',
       header: 'Slice S-NSSAI',
-      render: (w) => <span className="text-xs font-semibold text-secondary dark:text-slate-300">{w.slice_id}</span>,
+      render: (w) => <span className="text-xs font-semibold text-secondary dark:text-slate-300">{w.slice_id || 'Global'}</span>,
     },
     {
       key: 'window_time',
@@ -327,7 +327,7 @@ export const DetectionPage: React.FC = () => {
         const d = new Date(w.window_start);
         return (
           <span className="text-xs font-mono text-on-surface-variant">
-            {isNaN(d.getTime()) ? w.window_start.slice(11, 19) : d.toLocaleTimeString()}
+            {isNaN(d.getTime()) ? (w.window_start ? String(w.window_start).slice(11, 19) : '--:--') : d.toLocaleTimeString()}
           </span>
         );
       },

@@ -18,7 +18,7 @@ from .api.replay import router as replay_router
 from .api.twin import router as twin_router
 from .api.twin_v2 import router as twin_v2_router
 from .api.validation import router as validation_router
-from .api.windows import list_windows
+from .api.windows import router as windows_router, list_windows
 from .database import Base, engine, get_db
 from .schemas import PaginatedWindowsResponse
 from .services.system import reset_runtime_database
@@ -85,6 +85,7 @@ app.include_router(twin_v2_router, prefix="/api")
 app.include_router(data_router, prefix="/api")
 app.include_router(real_router, prefix="/api")
 app.include_router(validation_router, prefix="/api")
+app.include_router(windows_router, prefix="/api")
 app.get("/api/traffic/windows", response_model=PaginatedWindowsResponse, tags=["Windows & Detection"])(list_windows)
 
 

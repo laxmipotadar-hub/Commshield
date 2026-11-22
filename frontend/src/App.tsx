@@ -36,6 +36,7 @@ import {
   DemoEventBanner,
   DataProvenanceStrip,
   DataPanelModal,
+  ErrorBoundary,
 } from './components';
 import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
@@ -388,18 +389,20 @@ const AppLayout: React.FC = () => {
             {/* Data Provenance &amp; Real Data Honest Labeling Strip */}
             <DataProvenanceStrip />
 
-            <Routes>
-              <Route path="/" element={<OverviewPage />} />
-              <Route path="/monitoring" element={<MonitoringPage />} />
-              <Route path="/detection" element={<DetectionPage />} />
-              <Route path="/attribution" element={<AttributionView />} />
-              <Route path="/governance" element={<GovernanceView />} />
-              <Route path="/investigation" element={<InvestigationView />} />
-              <Route path="/investigation/:id" element={<InvestigationView />} />
-              <Route path="/experiments" element={<ExperimentsView />} />
-              <Route path="/digital-twin" element={<DigitalTwinView />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <ErrorBoundary fallbackTitle="Security Navigation Error">
+              <Routes>
+                <Route path="/" element={<OverviewPage />} />
+                <Route path="/monitoring" element={<MonitoringPage />} />
+                <Route path="/detection" element={<DetectionPage />} />
+                <Route path="/attribution" element={<AttributionView />} />
+                <Route path="/governance" element={<GovernanceView />} />
+                <Route path="/investigation" element={<InvestigationView />} />
+                <Route path="/investigation/:id" element={<InvestigationView />} />
+                <Route path="/experiments" element={<ExperimentsView />} />
+                <Route path="/digital-twin" element={<DigitalTwinView />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </ErrorBoundary>
           </div>
         </main>
       </div>

@@ -12,6 +12,7 @@ export * from './DataProvenanceStrip';
 export * from './DataPanelModal';
 export * from './BuiltVsPlannedModal';
 export * from './ScenarioCharts';
+export * from './ErrorBoundary';
 
 
 // CommShield AI Core
