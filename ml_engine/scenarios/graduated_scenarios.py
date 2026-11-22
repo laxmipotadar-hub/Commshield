@@ -91,3 +91,4 @@ def get_scenario_by_id(scenario_id: str) -> Optional[Dict[str, Any]]:
         if s.scenario_id == scenario_id:
             return s.to_dict()
     return None
+# CommShield AI Core

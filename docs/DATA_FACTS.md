@@ -80,3 +80,4 @@ Slice identifiers are assigned by base station network topology:
   - Base Station 1 (`BS1` / `BTS1`) $\rightarrow$ `sst-1-sd-010203` (Assigned to eMBB slice)
   - Base Station 2 (`BS2` / `BTS2`) $\rightarrow$ `sst-2-sd-010203` (Assigned to URLLC slice)
 - **Disclosure Rule**: Every UI view, API response, and documentation table referencing 5G-NIDD slice metrics must carry the explicit label **"slices assigned"** to communicate that slices are topology proxies rather than 3GPP protocol headers.
+<!-- CommShield AI Core -->

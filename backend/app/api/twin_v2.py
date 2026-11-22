@@ -691,3 +691,4 @@ async def digital_twin_websocket(websocket: WebSocket):
         twin_state_engine.unsubscribe(on_state_event)
         sender.cancel()
         receiver.cancel()
+# CommShield AI Core

@@ -63,3 +63,4 @@ __all__ = [
     "compute_conformal_pvalue",
     "evaluate_conformal_abstention",
 ]
+# CommShield AI Core

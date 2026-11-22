@@ -1185,3 +1185,6 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     </div>
   );
 };
+
+export default ThreeTwinScene;
+// CommShield AI Core

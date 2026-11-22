@@ -335,3 +335,4 @@ Every extra mechanism adds an ablation to run and explain, and scope was already
 
 ### Limitations to state openly
 Synthetic or constructed drift scenarios, abstract-level literature check until the full-text reads are done, simulated slices if the lab fails, perfect-mimicry evasion (an identifiability limit, not only an engineering one), few attack families, canary data bringing attack knowledge into governance, budgets tuned by you, re-anchoring as a human step, no operator-scale or real-network validation, and attribution that is hypothesis, not proof.
+<!-- CommShield AI Core -->

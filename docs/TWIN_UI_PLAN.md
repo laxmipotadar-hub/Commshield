@@ -14,3 +14,4 @@
 13. Guided Demo & Presentation (TW7): Step-by-step walkthrough across 4 phases with playback controls, plus full-screen clutter-free presentation view.
 14. Mock Isolation: Strict dev mock fallback gated behind VITE_USE_MOCK=true with clear "MOCK" tags; real backend gaps logged to docs/API_GAPS.md.
 15. Verification: Comprehensive unit tests for service layer resilience, scene disposal, and zero hardcoded metrics, verified via npm build.
+<!-- CommShield AI Core -->

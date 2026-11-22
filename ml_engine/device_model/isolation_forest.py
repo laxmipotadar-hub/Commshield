@@ -184,3 +184,4 @@ class DeviceIsolationForest:
     def score_samples(self, X: List[List[float]]) -> List[float]:
         """Compute nonconformity scores for multiple feature vectors."""
         return [self.score(row) for row in X]
+# CommShield AI Core

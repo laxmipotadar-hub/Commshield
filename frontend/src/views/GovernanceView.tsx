@@ -12,7 +12,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
   X,
 } from 'lucide-react';
 import {
@@ -29,6 +28,8 @@ import {
   ErrorState,
   LoadingState,
   StatusBadge,
+  GovernanceBulletBars,
+  GovernanceMetricItem,
 } from '../components';
 import {
   api,
@@ -341,82 +342,78 @@ export const GovernanceView: React.FC = () => {
     const categories = gateMetrics.canary_retention_test?.metrics?.category_recalls;
     if (categories && Object.keys(categories).length > 0) {
       return Object.entries(categories).map(([cat, vals]) => {
-        const actVal = Math.round((vals.active ?? 0.95) * 100);
-        const candVal = Math.round((vals.candidate ?? 0.94) * 100);
+        const actVal = vals.active !== undefined ? Math.round(vals.active * 100) : 100;
+        const candVal = vals.candidate !== undefined ? Math.round(vals.candidate * 100) : 0;
         return {
-          category: cat,
+          category: cat.replace(/_/g, ' '),
           active: actVal,
           candidate: candVal,
         };
       });
     }
 
-    const baseActive = Math.round((gateMetrics.canary_retention_test?.metrics?.active_recall ?? 0.96) * 100);
-    const baseCand = Math.round((gateMetrics.canary_retention_test?.metrics?.candidate_recall ?? 0.95) * 100);
-    return [
-      { category: 'SYN Flood', active: 98, candidate: Math.min(100, Math.max(80, baseCand + 3)) },
-      { category: 'PFCP Flood', active: 96, candidate: Math.min(100, Math.max(80, baseCand + 1)) },
-      { category: 'UDP Flood', active: 94, candidate: Math.min(100, Math.max(78, baseCand - 1)) },
-      { category: 'ICMP Flood', active: 97, candidate: Math.min(100, Math.max(80, baseCand + 2)) },
-      { category: 'Port Scan', active: 92, candidate: Math.min(100, Math.max(75, baseCand - 2)) },
-      { category: 'Overall', active: baseActive, candidate: baseCand },
-    ];
+    const baseActive = gateMetrics.canary_retention_test?.metrics?.active_recall;
+    const baseCand = gateMetrics.canary_retention_test?.metrics?.candidate_recall;
+    if (baseActive !== undefined && baseCand !== undefined) {
+      return [
+        { category: 'Overall Canary Suite', active: Math.round(baseActive * 100), candidate: Math.round(baseCand * 100) },
+      ];
+    }
+    return [];
   }, [gateMetrics]);
 
-  // Drift gauges
-  const driftGauges = useMemo(() => {
-    const metrics = gateMetrics.drift_budget?.metrics || {};
-    const dStep = metrics.d_rms_active ?? 0.35;
-    const limitStep = metrics.step_limit ?? 1.5;
+  // Governance Bullet Bars (DP4)
+  const bulletMetrics: GovernanceMetricItem[] = useMemo(() => {
+    const dbMetrics = gateMetrics.drift_budget?.metrics;
+    const holdout = gateMetrics.normal_holdout_backtest?.metrics;
 
-    const dAnchor = metrics.d_rms_anchor ?? 0.85;
-    const limitAnchor = metrics.cumulative_limit ?? 2.5;
-
-    const dMax = metrics.d_max_anchor ?? 1.45;
-    const limitMax = metrics.max_feature_limit ?? 3.0;
-    const featureName = metrics.max_feature_name || 'bytes_per_session';
-
-    const dCan = metrics.delta_canary ?? 0.04;
-    const limitCan = metrics.canary_shift_limit ?? 10.0;
-
-    return [
-      {
-        title: 'Per-Update Step Distance',
-        subtitle: 'D_rms(candidate, active)',
-        value: dStep,
-        limit: limitStep,
-        unit: 'sigma',
-        passed: dStep <= limitStep,
-        ratio: Math.min(100, (dStep / (limitStep * 1.5)) * 100),
-      },
-      {
-        title: 'Cumulative Anchor Distance',
-        subtitle: 'D_rms(candidate, anchor)',
-        value: dAnchor,
-        limit: limitAnchor,
-        unit: 'sigma',
-        passed: dAnchor <= limitAnchor,
-        ratio: Math.min(100, (dAnchor / (limitAnchor * 1.5)) * 100),
-      },
-      {
-        title: 'Max Feature Deviation',
-        subtitle: `D_max (${featureName})`,
-        value: dMax,
-        limit: limitMax,
-        unit: 'sigma',
-        passed: dMax <= limitMax,
-        ratio: Math.min(100, (dMax / (limitMax * 1.5)) * 100),
-      },
-      {
-        title: 'Canary Shift',
-        subtitle: 'Delta_can percentile shift',
-        value: dCan,
-        limit: limitCan,
+    const list: GovernanceMetricItem[] = [];
+    if (dbMetrics?.d_rms_active !== undefined) {
+      list.push({
+        name: 'Step Drift D_rms(cand, active)',
+        value: dbMetrics.d_rms_active,
+        limit: dbMetrics.step_limit ?? 1.5,
+        unit: 'σ',
+        passed: dbMetrics.d_rms_active <= (dbMetrics.step_limit ?? 1.5),
+      });
+    }
+    if (dbMetrics?.d_rms_anchor !== undefined) {
+      list.push({
+        name: 'Cumulative Drift D_rms(cand, anchor)',
+        value: dbMetrics.d_rms_anchor,
+        limit: dbMetrics.cumulative_limit ?? 2.5,
+        unit: 'σ',
+        passed: dbMetrics.d_rms_anchor <= (dbMetrics.cumulative_limit ?? 2.5),
+      });
+    }
+    if (dbMetrics?.d_max_anchor !== undefined) {
+      list.push({
+        name: `Max Feature Drift D_max (${dbMetrics.max_feature_name || 'peak'})`,
+        value: dbMetrics.d_max_anchor,
+        limit: dbMetrics.max_feature_limit ?? 3.0,
+        unit: 'σ',
+        passed: dbMetrics.d_max_anchor <= (dbMetrics.max_feature_limit ?? 3.0),
+      });
+    }
+    if (dbMetrics?.delta_canary !== undefined) {
+      list.push({
+        name: 'Canary Shift Delta_canary',
+        value: dbMetrics.delta_canary,
+        limit: dbMetrics.canary_shift_limit ?? 10.0,
         unit: '%',
-        passed: dCan <= limitCan,
-        ratio: Math.min(100, (dCan / (limitCan * 1.5)) * 100),
-      },
-    ];
+        passed: dbMetrics.delta_canary <= (dbMetrics.canary_shift_limit ?? 10.0),
+      });
+    }
+    if (holdout?.holdout_fpr !== undefined) {
+      list.push({
+        name: 'Normal Holdout FPR',
+        value: holdout.holdout_fpr * 100,
+        limit: (holdout.max_allowed_fpr ?? 0.05) * 100,
+        unit: '%',
+        passed: holdout.holdout_fpr <= (holdout.max_allowed_fpr ?? 0.05),
+      });
+    }
+    return list;
   }, [gateMetrics]);
 
   // Version History Table Rows
@@ -782,47 +779,11 @@ export const GovernanceView: React.FC = () => {
 
         {/* Right Column (5 Cols): Cumulative Drift Budget & Telemetry */}
         <div className="lg:col-span-5 flex flex-col gap-4">
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-sm text-on-surface">Cumulative Drift Budget</h2>
-              </div>
-              <span className="font-mono text-xs text-muted">5G-CORE-UPF</span>
-            </div>
-
-            {/* Drift Gauges List */}
-            <div className="space-y-3">
-              {driftGauges.map((g, idx) => (
-                <div key={idx} className="p-3 rounded-lg bg-surface-container-low border border-border/60 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-semibold text-on-surface">{g.title}</span>
-                      <span className="text-[10px] text-muted font-mono block">{g.subtitle}</span>
-                    </div>
-                    <div className="text-right font-mono">
-                      <span className={`font-bold ${g.passed ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {g.value.toFixed(2)} {g.unit}
-                      </span>
-                      <span className="text-[10px] text-muted block">Limit: {g.limit.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${g.passed ? 'bg-emerald-600' : 'bg-red-600'}`}
-                      style={{ width: `${Math.min(100, Math.max(5, g.ratio))}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>Drift budget strictly bounded relative to genesis anchor.</span>
-            </div>
-          </div>
+          <GovernanceBulletBars
+            metrics={bulletMetrics}
+            n={shadowCandidate ? 20 : 0}
+            source="audit_ledger"
+          />
         </div>
       </div>
 
@@ -939,46 +900,75 @@ export const GovernanceView: React.FC = () => {
       </div>
 
       {/* 5. Canary Retention Paired Bar Chart */}
-      <div className="bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-base text-on-surface">
-              Canary Retention (Rescaled Attack Suite)
-            </h3>
-            <p className="text-xs text-on-surface-variant mt-0.5">
-              Held-out attack recall comparison: Active Baseline vs Candidate
-            </p>
+      {/* 5. Canary Retention Chart Section */}
+      <div className="bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between pb-3 border-b border-border/60">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base text-on-surface">
+                  Canary Retention (Rescaled Attack Suite)
+                </h3>
+                <span className="text-[11px] font-mono text-muted bg-border/40 px-2 py-0.5 rounded">
+                  n=40 canary attacks
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-mono font-semibold">
+                  AUDIT SUITE
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Held-out attack recall comparison: Active Baseline vs Candidate (Delta limit &le; 5.0%)
+              </p>
+            </div>
+            <span className="font-mono text-xs text-muted">Delta limit &le; 5.0%</span>
           </div>
-          <span className="font-mono text-xs text-muted">Delta limit &le; 5.0%</span>
+
+          {canaryChartData.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-muted">Chart hidden</span>
+              <p className="text-xs text-muted/80 mt-1">No candidate canary retention metrics registered for this slice.</p>
+            </div>
+          ) : (
+            <div className="h-64 w-full pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={canaryChartData} margin={{ top: 10, right: 10, left: 0, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                  <XAxis dataKey="category" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" label={{ value: 'Attack Category', position: 'insideBottom', offset: -15, fontSize: 11 }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" label={{ value: 'Recall (%)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(val: any) => [`${val}%`, 'Recall']}
+                    contentStyle={{
+                      backgroundColor: '#0a1628',
+                      borderRadius: '8px',
+                      border: '1px solid #1e293b',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                  <Bar dataKey="active" name="Active Baseline Recall (%)" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="candidate"
+                    name="Candidate Recall (%)"
+                    fill={gateMetrics.canary_retention_test?.passed === false ? '#dc2626' : '#007d57'}
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={canaryChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-              <XAxis dataKey="category" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" />
-              <YAxis domain={[70, 100]} tick={{ fontSize: 11 }} unit="%" />
-              <Tooltip
-                formatter={(val: any) => [`${val}%`, 'Recall']}
-                contentStyle={{
-                  backgroundColor: '#0a1628',
-                  borderRadius: '8px',
-                  border: '1px solid #1e293b',
-                  color: '#ffffff',
-                  fontSize: '12px',
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-              <Bar dataKey="active" name="Active Baseline Recall" fill="#2563eb" radius={[4, 4, 0, 0]} />
-              <Bar
-                dataKey="candidate"
-                name="Candidate Recall"
-                fill={gateMetrics.canary_retention_test?.passed === false ? '#dc2626' : '#007d57'}
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {canaryChartData.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-border/40 bg-surface/30 rounded-lg p-2.5 text-xs text-muted space-y-1">
+            <p>
+              <strong className="text-text/90 font-medium">What this shows:</strong> Side-by-side detection recall (%) of the active serving model versus the proposed candidate across historical canary attack vectors.
+            </p>
+            <p>
+              <strong className="text-text/90 font-medium">How to read it:</strong> Candidate recall cannot degrade by more than 5.0% relative to the active model on any canary category without failing Gate 4.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Rollback Confirmation Modal */}
@@ -1152,3 +1142,4 @@ export const GovernanceView: React.FC = () => {
     </div>
   );
 };
+// CommShield AI Core

@@ -340,3 +340,4 @@ class DetectionService:
 
 # Global detection service singleton
 detection_service = DetectionService()
+# CommShield AI Core

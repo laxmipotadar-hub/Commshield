@@ -244,3 +244,4 @@ def build_shadow_candidate(
         db.refresh(cand_row)
 
     return candidate_bundle, cand_row
+# CommShield AI Core

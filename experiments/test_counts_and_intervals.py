@@ -115,3 +115,4 @@ def test_three_arm_summary_carries_counts_and_slices_assigned():
             if arm.get("fpr_mean") is not None:
                 assert "fpr_n" in arm
                 assert "fpr_ci_text" in arm
+# CommShield AI Core

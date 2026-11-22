@@ -108,3 +108,4 @@ npm run dev
 - `docs/PRIVACY.md`: Telemetry privacy threat model, HMAC hashing, and analyst gating
 - `docs/CONTRACTS.md`: Canonical schemas, API endpoints, and database models
 - `docs/DEMO_SCRIPT.md`: Step-by-step presentation script for the 4-scene demo
+<!-- CommShield AI Core -->

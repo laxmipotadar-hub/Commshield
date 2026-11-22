@@ -106,3 +106,4 @@ During or after the four demo scenes, evaluators can inspect raw data and downlo
 4. Click **Download JSON** to export `commshield_<name>_<source>_seed<seed>.json` (capped at 20MB) starting with a structured `metadata` block and verified zero identifier leakage.
 5. Enter a custom random seed (e.g. `101`, `2024`) and click **Generate** to verify deterministic in-memory stream synthesis without altering stored files.
 
+<!-- CommShield AI Core -->

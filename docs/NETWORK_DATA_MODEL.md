@@ -153,3 +153,4 @@ The network partitions radio, transmission, and processing resources into 3 stan
 | `conn-uu-cam-01..04`| UEs | gnb-01 | USER_PLANE | 3GPP 5G-NR Uu | 100 Mbps ea |
 | `conn-uu-agv-01..03`| UEs | gnb-01 | USER_PLANE | 3GPP 5G-NR Uu | 100 Mbps ea |
 | `conn-uu-sns-01..06`| UEs | gnb-01 | USER_PLANE | 3GPP 5G-NR Uu | 50 Mbps ea |
+<!-- CommShield AI Core -->

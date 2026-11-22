@@ -396,3 +396,4 @@ def get_governance_lineage(
         "chain_head_hash": blocks[-1]["current_hash"] if blocks else None,
         "blocks": blocks,
     }
+# CommShield AI Core

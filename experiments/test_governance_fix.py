@@ -260,3 +260,4 @@ def test_poisoned_candidate_fails_at_least_one_gate(base_anchor_bundle):
 
     failed_checks = [c.name for c in eval_result.check_results if not c.passed]
     assert len(failed_checks) >= 1, f"Expected at least one failed check, got: {failed_checks}"
+# CommShield AI Core

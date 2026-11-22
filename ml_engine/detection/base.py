@@ -45,3 +45,4 @@ class BaseDetector(ABC):
             Percentile score in the closed interval [0.0, 100.0].
         """
         pass
+# CommShield AI Core

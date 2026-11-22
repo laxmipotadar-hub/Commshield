@@ -228,3 +228,4 @@ The design system implements a deliberate structural shape hierarchy that harmon
 
 ### Checkboxes & Radio Controls
 - Checkboxes feature an 8px radius for containers (square) and 16px circle for radio. Checked background `#2563eb` with a crisp white tick/dot. Inactive border `1.5px solid #cbd5e1`.
+<!-- CommShield AI Core -->

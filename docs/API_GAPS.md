@@ -105,3 +105,4 @@ The frontend requires the following backend endpoints to support complete real-t
   "simulation_tag": "PREDICTED"
 }
 ```
+<!-- CommShield AI Core -->

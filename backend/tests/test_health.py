@@ -36,3 +36,4 @@ def test_models_created():
         "audit_events",
     }
     assert expected_tables.issubset(set(tables))
+# CommShield AI Core

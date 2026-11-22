@@ -219,3 +219,4 @@ class DeviceModelManager:
             "abstain_reason": reason,
             "ground_truth": window["ground_truth"],
         }
+# CommShield AI Core

@@ -364,3 +364,4 @@ def test_poisoned_candidate_fails_governance(db_session, embb_baseline_bundles):
     drift_budget_res = next(r for r in eval_result.check_results if r.name == "drift_budget")
     prop_growth_res = next(r for r in eval_result.check_results if r.name == "proportional_growth")
     assert (not drift_budget_res.passed) or (not prop_growth_res.passed), "Expected drift budget or proportional growth to reject poisoned candidate"
+# CommShield AI Core

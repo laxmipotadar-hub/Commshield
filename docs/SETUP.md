@@ -204,3 +204,4 @@ Automated audit (`tools/audit_compat.py`) results:
    - `backend/tests/test_api.py:201`: Uses mock string `model_artifact_path="/tmp/model.joblib"` as a dummy database record value. It is never opened or accessed as a filesystem path on disk.
    - All runtime model artifact paths utilize `pathlib.Path` with relative references (`data/processed/baselines/`).
 4. **Filename Case Collisions**: **Zero**. Verified that no filenames conflict on case-insensitive filesystems (NTFS/FAT32).
+<!-- CommShield AI Core -->

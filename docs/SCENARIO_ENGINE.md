@@ -187,3 +187,4 @@ When a mitigation is applied via `/api/twin/mitigation/apply`:
    - Active threats are marked `is_mitigated = True`.
    - Node security status is reset to `SECURE` (or `QUARANTINED` if isolated).
    - Resilience Intelligence recomputes the global resilience score and issues a verifiable recovery event in the immutable ledger.
+<!-- CommShield AI Core -->

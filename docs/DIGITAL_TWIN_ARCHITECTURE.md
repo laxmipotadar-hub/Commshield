@@ -122,3 +122,4 @@ The backend provides full duplex WebSocket streaming over `/api/twin/ws`:
 - On connection, clients receive an `INITIAL_SNAPSHOT` containing all nodes, links, slices, active threats, and resilience metrics.
 - As the simulation ticks or mitigations occur, lightweight delta events (`COMPONENT_UPDATED`, `CONNECTION_UPDATED`, `THREAT_DETECTED`, `RESILIENCE_UPDATED`) are broadcast to all connected 3D dashboards.
 - Thread-safe queues bridge synchronous simulation workers with FastAPI's asynchronous event loop.
+<!-- CommShield AI Core -->

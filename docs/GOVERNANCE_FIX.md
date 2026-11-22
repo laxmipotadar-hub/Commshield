@@ -91,3 +91,4 @@ From `experiments/results/governance_fix/governance_fix_summary.json`:
 2. **What Did Not Change**:
    - Arm C does not match the rapid adaptation speed or lower FPR of naive retraining (Arm B FPR 37.5%). This is an inherent design trade-off: CommShield's zero-trust governance requires accumulating verified benign evidence and passing 4 gates before promotion, introducing adaptation inertia to guarantee zero contamination.
    - Gate threshold values (`MAX_HOLDOUT_FPR=0.05`, `MAX_JSD=0.035`, `CANARY_DELTA=0.05`, `B_RMS=2.5`, `B_MAX=3.0`) were strictly kept untouched.
+<!-- CommShield AI Core -->

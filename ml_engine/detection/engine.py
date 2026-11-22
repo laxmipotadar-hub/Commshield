@@ -106,3 +106,4 @@ class DetectionEngine:
             },
             "all_detectors": detector_results,
         }
+# CommShield AI Core

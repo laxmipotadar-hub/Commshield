@@ -57,3 +57,4 @@ backend\.venv\Scripts\python.exe tools/verify_frontend_numbers.py
 ```bash
 python3 tools/verify_frontend_numbers.py
 ```
+<!-- CommShield AI Core -->

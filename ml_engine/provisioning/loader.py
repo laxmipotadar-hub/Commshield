@@ -208,3 +208,4 @@ class ProvisioningLoader:
             "slice": info["slice"],
             "event_id": active_event_id,
         }
+# CommShield AI Core

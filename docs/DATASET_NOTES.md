@@ -133,3 +133,4 @@ To ensure valid evaluation without temporal data leakage:
 * **Non-Overlapping Invariant**:
   $$\max(T_{\text{train}}) < \min(T_{\text{val}}) \le \max(T_{\text{val}}) < \min(T_{\text{test}})$$
   Guarantees zero target leakage into baseline calibration.
+<!-- CommShield AI Core -->

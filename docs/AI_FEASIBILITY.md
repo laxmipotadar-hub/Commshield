@@ -243,3 +243,4 @@ The most effective and scientifically defensible path is to **retain the hand-wr
 - **AGENT_RULES.md**: Complies with strict empirical integrity; all numbers reflect persisted JSON artifacts (`experiments/results/` and `experiments/snapshot/`).
 - **CONTRACTS.md**: Respects canonical schemas (`CanonicalTrafficWindow`, `DetectorOutput`, `AttributionOutput`).
 - **No Browser / No UI Change**: Analyzed strictly through Python codebase, JSON artifacts, and theoretical statistical formulation without altering runtime code or result files.
+<!-- CommShield AI Core -->

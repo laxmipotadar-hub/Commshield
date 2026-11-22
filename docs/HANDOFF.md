@@ -104,3 +104,4 @@ npm run dev
 | **F4** (S6) | Minimum privacy & analyst token | **DONE** | Small-group suppression suppresses entropy with `-1.0` when active UEs $< 5$. |
 | **F5** (S7) | Boiling-frog creeping poisoning test | **DONE** | Step-only check accepts 10/10 attack steps; cumulative budget caps drift at step 5. |
 | **F6** (S9) | Documentation & honest claims | **DONE** | Documentation aligned strictly with implemented code and saved results. |
+<!-- CommShield AI Core -->

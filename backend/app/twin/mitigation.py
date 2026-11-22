@@ -559,3 +559,4 @@ class MitigationEngine:
 
 # Global singleton instance
 mitigation_engine = MitigationEngine()
+# CommShield AI Core

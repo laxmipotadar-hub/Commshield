@@ -334,3 +334,4 @@ def test_offline_snapshot_integrity():
     assert (snapshot_dir / "real" / "detection_evaluation.json").is_file()
     assert (snapshot_dir / "README.md").is_file()
 
+# CommShield AI Core

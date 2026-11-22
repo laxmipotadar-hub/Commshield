@@ -166,3 +166,4 @@ class SyntheticAdapter(TelemetryAdapter):
         }
 
         return enforce_aggregate_boundary(canonical_window)
+# CommShield AI Core

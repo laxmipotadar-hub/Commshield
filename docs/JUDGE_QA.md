@@ -105,3 +105,4 @@ $$\text{Block Hash} = \text{SHA-256}(\text{prev\_hash} \parallel \text{index} \p
 1. **Data Plane**: Ingests telemetry via UPF eBPF flow probes or 3GPP N4 (PFCP) session reporting without touching user payload encryption.
 2. **Control Plane / NWDAF**: Exposes standard 3GPP TS 29.520 **NWDAF** services (`Nnwdaf_AnalyticsInfo` and `Nnwdaf_EventsSubscription`) to stream anomaly verdicts directly to the Policy Control Function (PCF) for dynamic QoS modification or slice quarantine.
 3. **Audit & Compliance**: Supplies continuous cryptographic proof of model governance for regulatory audit compliance.
+<!-- CommShield AI Core -->

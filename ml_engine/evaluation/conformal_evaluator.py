@@ -812,3 +812,4 @@ if __name__ == "__main__":
     print(f"  Learned without Conformal: Recall = {abl['learned_without_conformal']['attack_in_growth']['attack_recall_mean']*100:.1f}%, Abstain = {abl['learned_without_conformal']['attack_in_growth']['abstention_rate_mean']*100:.1f}%")
     print(f"  Learned with Conformal:    Recall = {abl['learned_with_conformal']['attack_in_growth']['attack_recall_mean']*100:.1f}%, Abstain = {abl['learned_with_conformal']['attack_in_growth']['abstention_rate_mean']*100:.1f}%")
     print("=" * 80)
+# CommShield AI Core

@@ -88,3 +88,4 @@ All 4 scenarios include deterministic key event timelines with single-line prese
 2. **Missing Unit Tests for Demo Toggle and Scenarios Contract**:
    - *Cause*: While `tools/demo_check.py` verifies runtime API endpoints, unit tests in `backend/tests/` did not explicitly assert the four-scenario contract and toggle rendering behavior.
    - *Smallest Fix*: In S3, add explicit unit test assertions in [backend/tests/test_demo.py](file:///home/laxmi/Desktop/NETWORK/NETWORK_5G/backend/tests/test_demo.py) confirming that GET `/api/demo/scenarios` returns 4 scenarios with exact metadata and that the frontend components include the Demo toggle.
+<!-- CommShield AI Core -->

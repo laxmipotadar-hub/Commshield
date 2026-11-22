@@ -212,3 +212,4 @@ In ascending order of implementation effort:
    - **Where**: `ml_engine/governance/canary.py:rescale_canary_window()`.
    - **Fix**: Distinguish between entity-expansion growth (scaling UEs and sessions proportionally) vs payload-expansion growth. In proportional growth mode, keep `bytes_per_session` and `gtpu_volume_per_ue` invariant, rescaling only absolute flow/byte counters.
    - **Result**: Eliminates artificial distortion of ratio features during canary backtesting.
+<!-- CommShield AI Core -->

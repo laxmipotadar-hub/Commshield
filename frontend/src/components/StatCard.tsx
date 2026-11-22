@@ -45,7 +45,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
       <div className="mt-3 flex items-baseline gap-2">
         <span className="text-2xl font-bold tracking-tight text-text">
-          {value}
+          {value !== undefined && value !== null && value !== '' ? value : 'no data'}
         </span>
         {change && (
           <span
@@ -73,3 +73,4 @@ export const StatCard: React.FC<StatCardProps> = ({
     </div>
   );
 };
+// CommShield AI Core

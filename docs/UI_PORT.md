@@ -34,3 +34,4 @@ All static mockup values in the Stitch HTML templates were replaced with real, v
 - `1 - β = 0.992` &rarr; Replaced with empirical empirical power / TPR metrics from `summary_5seeds.json`.
 - `UPF-EDGE-09`, `ENCLAVE 04`, `Sarah Jenkins` &rarr; Sourced dynamically from authenticated analyst profile (`analyst_sec_01`) and active core node state (`5G-CORE-UPF`).
 - Verified zero static mockup leaks using `tools/verify_frontend_numbers.py`.
+<!-- CommShield AI Core -->

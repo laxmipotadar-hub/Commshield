@@ -229,3 +229,4 @@ Training set injected with real attack windows. Overall status: **REJECTED** (`a
 | **Ablation 5**: With vs without control-slice evidence | **MISSING** | `ml_engine/evaluation/` | **Absent**: No ablation exists (and control-slice telemetry is not operational). |
 | **Ablation 6**: Real backbone vs synthetic-only growth | **MISSING** | `ml_engine/evaluation/` | **Absent**: Real-data and synthetic runs were executed separately, but no controlled ablation isolates the backbone effect across matching conditions. |
 | **Ablation 7**: Global vs per-slice baselines | **MISSING** | `ml_engine/evaluation/` | **Absent**: No experiment compares per-slice baselines against an aggregated single global model. |
+<!-- CommShield AI Core -->

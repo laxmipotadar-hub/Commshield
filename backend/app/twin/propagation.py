@@ -220,3 +220,4 @@ class AttackPropagationEngine:
 
 # Global singleton instance
 propagation_engine = AttackPropagationEngine()
+# CommShield AI Core

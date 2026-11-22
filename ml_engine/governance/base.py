@@ -143,3 +143,4 @@ class GovernancePipeline:
             decision_trace_steps=decision_steps,
             gate_metrics=gate_metrics,
         )
+# CommShield AI Core
