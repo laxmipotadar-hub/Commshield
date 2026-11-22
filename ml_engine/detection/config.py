@@ -33,3 +33,4 @@ class DetectionConfig:
 
 
 DEFAULT_DETECTION_CONFIG = DetectionConfig()
+# CommShield AI Core

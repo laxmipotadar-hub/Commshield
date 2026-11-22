@@ -135,3 +135,4 @@ While CommShield is verified privacy-compliant on public benchmark datasets (5G-
    - Scheduled database partition dropping (e.g., PostgreSQL `pg_partman` or ClickHouse TTL expressions) enforcing strict 30-day data lifecycle.
 4. **Enterprise Identity Federation (OIDC / mTLS)**:
    - Upgrade static analyst bearer tokens to OpenID Connect (OIDC) / OAuth 2.0 with mutual TLS (mTLS), integrating with telecom SOC identity providers (Active Directory, Okta, Keycloak) with hardware MFA.
+<!-- CommShield AI Core -->

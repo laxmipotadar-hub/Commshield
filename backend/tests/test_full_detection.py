@@ -149,3 +149,4 @@ def test_autoencoder_trains_only_on_training_period():
     errs = ae.score(X_train)
     assert len(errs) == len(windows)
     assert np.all(errs >= 0.0)
+# CommShield AI Core

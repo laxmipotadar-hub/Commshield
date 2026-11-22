@@ -225,3 +225,4 @@ def validate_window(window: Dict[str, Any]) -> bool:
     if "device_id_hash" in window:
         return validate_device_window(window)
     return validate_slice_window(window)
+# CommShield AI Core

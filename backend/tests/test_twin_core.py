@@ -307,3 +307,4 @@ def test_websocket_streaming():
         websocket.send_text('{"action": "PING"}')
         pong_msg = websocket.receive_json()
         assert pong_msg["event_type"] == "PONG"
+# CommShield AI Core

@@ -396,3 +396,4 @@ class DigitalTwinStateSnapshot(BaseModel):
     defence_mode: str = "MANUAL"
     ensemble_fusion_enabled: bool = True
     data_integrity: Dict[str, Any] = Field(default_factory=dict)
+# CommShield AI Core

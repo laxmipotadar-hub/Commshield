@@ -186,3 +186,4 @@ class AutoencoderDetector(BaseDetector):
         percentile = self.score_percentile(raw_score)
         is_flagged = bool(percentile >= self.threshold_percentile)
         return raw_score, percentile, is_flagged
+# CommShield AI Core

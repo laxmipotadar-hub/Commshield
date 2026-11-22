@@ -432,3 +432,4 @@ async def get_digital_twin_dashboard(
             "aggregate_device_counts": window_counts.get("aggregate_device_counts", {"sensor": 6510, "camera": 2600, "AGV": 2400}),
         },
     }
+# CommShield AI Core

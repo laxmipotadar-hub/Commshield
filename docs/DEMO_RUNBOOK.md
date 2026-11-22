@@ -94,3 +94,4 @@ If backend database connectivity is lost or running entirely offline:
 1. **Frontend Snapshot Fallback**: When the backend API is unreachable, `DemoContext` automatically activates the hardcoded canonical presets (`FALLBACK_PRESETS`) and renders a visible `Snapshot Fallback` badge in the header.
 2. **Backend Snapshot Fallback**: When the database is uninitialized, `/api/demo/scenarios` reads fallback benchmark data from `experiments/snapshot/twin/three_arm_twin_summary.json`.
 3. **Data Panel Fallback**: The Data Catalog panel falls back to cached snapshots in `experiments/snapshot/` and provides deterministic client/in-memory generation.
+<!-- CommShield AI Core -->

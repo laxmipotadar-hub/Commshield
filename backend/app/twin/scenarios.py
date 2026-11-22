@@ -721,3 +721,4 @@ class ScenarioSimulationEngine:
 
 # Global singleton instance
 scenario_engine = ScenarioSimulationEngine()
+# CommShield AI Core

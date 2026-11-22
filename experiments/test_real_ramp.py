@@ -101,3 +101,4 @@ def test_saved_real_ramp_summary_results():
     # Arm B should exhibit positive contamination, Arm C should exhibit 0.0% contamination
     assert arms["arm_b_naive"]["contamination_mean"] > 0.0
     assert arms["arm_c_commshield"]["contamination_mean"] == 0.0
+# CommShield AI Core

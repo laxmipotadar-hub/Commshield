@@ -21,3 +21,4 @@ def __getattr__(name: str):
         from .validate import validate_lab_windows_file
         return validate_lab_windows_file
     raise AttributeError(f"module 'lab' has no attribute '{name}'")
+# CommShield AI Core

@@ -101,3 +101,4 @@ def stream_replay(
             yield f"data: {json.dumps(idle_event)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+# CommShield AI Core

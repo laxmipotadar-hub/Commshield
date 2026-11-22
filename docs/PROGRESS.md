@@ -371,3 +371,4 @@ Split-conformal calibration has been integrated into the attribution layer to pr
    - Execution commands:
      - PowerShell: `python -m pytest backend\tests; python tools\demo_check.py; cd frontend; npm run build`
      - Bash: `pytest backend/tests && python3 tools/demo_check.py && npm --prefix frontend run build`
+<!-- CommShield AI Core -->

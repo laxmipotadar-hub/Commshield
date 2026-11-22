@@ -117,3 +117,4 @@ python3 -m lab.validate data/lab/windows.jsonl
 # 3. Execute the lab adapter unit test suite (sample logs only, never a running core):
 python3 -m unittest lab/test_adapter.py -v
 ```
+<!-- CommShield AI Core -->

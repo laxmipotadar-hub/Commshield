@@ -60,3 +60,4 @@ def test_ablation_config_flags_correctly_disable_components():
     # Full gate blocks early due to normal holdout / proportional growth / canaries
     res_full = frog.run_configuration("full_gate", batches, anchor_bundle)
     assert res_full["accepted_steps"] <= res_budget["accepted_steps"]
+# CommShield AI Core

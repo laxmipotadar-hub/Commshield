@@ -15,3 +15,4 @@ __all__ = [
     "STREAM_NAMES",
     "DEVICE_CLASS_PROFILES",
 ]
+# CommShield AI Core

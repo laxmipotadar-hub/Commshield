@@ -54,3 +54,4 @@ echo "Lab setup script finished. To run the adapter offline on sample logs:"
 echo "  python3 -m lab.adapter"
 echo "  python3 -m lab.validate data/lab/windows.jsonl"
 echo "================================================================="
+# CommShield AI Core

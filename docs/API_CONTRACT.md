@@ -437,3 +437,4 @@ Supported event types:
 Clients may send JSON commands over the socket:
 - Ping: `{"action": "PING"}` $\rightarrow$ Server responds: `{"event_type": "PONG", "timestamp": "..."}`
 - Refresh Snapshot: `{"action": "GET_SNAPSHOT"}` $\rightarrow$ Server responds: `{"event_type": "SNAPSHOT_RESPONSE", "data": ...}`
+<!-- CommShield AI Core -->

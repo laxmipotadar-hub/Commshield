@@ -552,3 +552,4 @@ class GovernanceService:
 
 
 governance_service = GovernanceService()
+# CommShield AI Core

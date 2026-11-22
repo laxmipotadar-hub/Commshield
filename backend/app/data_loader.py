@@ -420,3 +420,4 @@ def generate_manifest(
             json.dump(manifest, f, indent=2)
 
     return manifest
+# CommShield AI Core

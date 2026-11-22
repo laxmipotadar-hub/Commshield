@@ -574,3 +574,4 @@ All tables use standard SQLAlchemy types with `JSON` column abstractions (stored
 | **OQ-C1** | Database | F4.A / Candidate versioning | Version naming convention across automated canary candidates. | Auto-increment format `v<major>.<minor>.<patch>-cand.<hash>`. |
 | **OQ-C2** | API | F5 / Dashboard SHAP | Real-time calculation latency of SHAP values for high-frequency windows. | Pre-compute KernelSHAP/TreeSHAP asynchronously only for windows where `is_anomalous == True`. |
 | **OQ-C3** | JSON | F3.B / JSD Null Threshold | Null distribution calculation window size for benign-vs-benign comparisons. | Store fixed calibration parameters `(mean, 99th_percentile)` calculated during tuning stream preprocessing. |
+<!-- CommShield AI Core -->

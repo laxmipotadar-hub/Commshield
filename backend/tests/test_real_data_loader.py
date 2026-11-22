@@ -167,3 +167,4 @@ def test_real_detection_endpoint(client):
     assert stats["total_evaluated"] > 50
     assert stats["true_positives"] + stats["false_positives"] + stats["true_negatives"] + stats["false_negatives"] == stats["total_evaluated"]
     assert data["source"] == "5G-NIDD (Real)"
+# CommShield AI Core

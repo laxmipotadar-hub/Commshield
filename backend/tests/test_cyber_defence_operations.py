@@ -188,3 +188,4 @@ def test_data_modes_and_integrity_panel():
     diag = diag_resp.json()
     assert diag["status"] in ("VALID", "DEGRADED")
     assert diag["rules_evaluated"] >= 12
+# CommShield AI Core

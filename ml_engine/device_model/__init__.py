@@ -27,3 +27,4 @@ __all__ = [
     "TRAINED_CLASSES",
     "FEATURE_NAMES",
 ]
+# CommShield AI Core

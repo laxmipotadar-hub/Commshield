@@ -226,3 +226,4 @@ flowchart TD
 | **OQ-A2** | Preprocessing | F1 / Context caveat | Day-of-week context conditioning requires multi-week continuous captures, which 5G-NIDD lacks. | Hour-of-day conditioning enabled only if capture exceeds 24h; otherwise default to global diurnal model. |
 | **OQ-A3** | Governance | F4.B / Canary rescaling | Spec notes two variants: proportional scaling vs fixed absolute volume. | Implement both: primary evaluation uses proportional ratio scaling; secondary ablation uses fixed volume. |
 | **OQ-A4** | Operator Layer | F5 / Investigation Dashboard | Real-time replay transport mechanism (WebSocket vs Server-Sent Events vs polled REST). | FastAPI REST endpoints with Server-Sent Events (SSE) `/api/v1/replay/stream` for real-time frontend chart updates. |
+<!-- CommShield AI Core -->

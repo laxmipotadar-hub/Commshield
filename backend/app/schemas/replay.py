@@ -45,3 +45,4 @@ class WindowReplayEvent(BaseModel):
     detector_output: Optional[Dict[str, Any]] = None
     attribution_output: Optional[Dict[str, Any]] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# CommShield AI Core

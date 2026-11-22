@@ -251,3 +251,4 @@ def test_scenario_metrics_and_print():
     for sc, m in metrics.items():
         assert 0.0 <= m["recall"] <= 1.0
         assert 0.0 <= m["fpr"] <= 1.0
+# CommShield AI Core

@@ -244,3 +244,4 @@ Evaluating across varying significance levels $\alpha \in [0.01, 0.50]$ on train
    - In contrast, per-device models normalize metrics per unit time per device (`packets_per_sec`, `bytes_per_packet`), successfully **preserving exchangeability across onboarding expansions** (94.54% late vs 94.77% early coverage).
 
 
+<!-- CommShield AI Core -->

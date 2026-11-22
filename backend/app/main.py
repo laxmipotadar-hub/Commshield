@@ -124,3 +124,4 @@ def health_check():
 def reset_database_endpoint(db: Session = Depends(get_db)):
     """Reset runtime database tables while preserving calibrated anchor baselines."""
     return reset_runtime_database(db=db)
+# CommShield AI Core

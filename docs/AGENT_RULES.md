@@ -9,3 +9,4 @@ All autonomous agents and contributors working on CommShield must strictly adher
 5. **Runtime Segregation**: Frontend never runs ML. Backend and `ml_engine` are Python.
 6. **UI Layout Constraints**: Frontend: `h-screen` layout, full-height fixed sidebar, colour tokens from the design.
 7. **Post-Task Completion Protocol**: After finishing: run relevant tests, then reply in at most 5 lines, no code in chat.
+<!-- CommShield AI Core -->

@@ -76,3 +76,4 @@ class CusumDetector:
             self._accumulators[slice_id] = 0.0
 
         return stat_to_report, is_alarm, status
+# CommShield AI Core

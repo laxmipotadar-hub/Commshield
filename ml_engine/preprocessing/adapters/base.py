@@ -207,3 +207,4 @@ class TelemetryAdapter(ABC):
             )
 
         return windows
+# CommShield AI Core

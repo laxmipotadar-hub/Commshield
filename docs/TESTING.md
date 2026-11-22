@@ -133,3 +133,4 @@
 | **OQ-T1** | Evaluation | F2 / Leave-one-out CI | Bootstrap sample count and confidence level definition. | 1,000 bootstrap iterations at 95% confidence intervals ($\alpha = 0.05$). |
 | **OQ-T2** | Attributor | F3.B / Informal analyst check | Automated test representation for the informal 3-to-5 analyst validation check. | Mock survey response fixture with inter-rater agreement metric (Fleiss' Kappa $\ge 0.70$). |
 | **OQ-T3** | Governance | F4.A / Dwell time | Specific default duration required between consecutive baseline promotions. | Default dwell time set to 3,600 seconds (1 hour of replay time). |
+<!-- CommShield AI Core -->

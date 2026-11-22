@@ -78,3 +78,4 @@ Grep scans across frontend, backend, and documentation confirmed:
 5. **Trickle Attack Visibility (0.0% ICMP Flood Recall)**:
    - *Challenge*: Why did all detectors achieve 0.0% recall on the 5G-NIDD ICMP flood?
    - *Answer & Location*: As documented in `experiments/README.md` and `backend/tests/test_fiveg_nidd.py`, the testbed ICMP flood generated only 613 packets over a 20-minute window (under 0.5 pps), which is mathematically undetectable inside 60-second window aggregations alongside normal background traffic.
+<!-- CommShield AI Core -->

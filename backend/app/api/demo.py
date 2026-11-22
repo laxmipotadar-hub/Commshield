@@ -372,3 +372,4 @@ def get_demo_scenarios() -> DemoScenariosResponse:
         source_attribution="CommShield 5G Digital Twin & Lab Telemetry",
         fixed_seed=42,
     )
+# CommShield AI Core

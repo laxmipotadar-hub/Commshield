@@ -391,3 +391,4 @@ def generate_telemetry_stream(req: GenerateDataRequest) -> Dict[str, Any]:
         "preview": windows[:20],
         "message": f"Successfully generated {len(windows)} deterministic windows for {req.stream} with seed {seed} in-memory without altering stored files.",
     }
+# CommShield AI Core

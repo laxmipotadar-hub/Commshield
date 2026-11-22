@@ -1142,3 +1142,4 @@ export const GovernanceView: React.FC = () => {
     </div>
   );
 };
+// CommShield AI Core

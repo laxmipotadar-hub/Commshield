@@ -77,3 +77,4 @@ if __name__ == "__main__":
     except AssertionError as e:
         print(f"\nGUARD TEST FAILED: {e}")
         sys.exit(1)
+# CommShield AI Core

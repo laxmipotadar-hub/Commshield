@@ -127,3 +127,4 @@ class AdwinSliceTracker:
             self.last_drift_windows[slice_id] = window_id
             return True, window_id
         return False, None
+# CommShield AI Core

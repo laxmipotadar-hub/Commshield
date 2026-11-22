@@ -256,3 +256,4 @@ class LineageProvenanceAdapter:
 
 # Global singleton instance
 lineage_adapter = LineageProvenanceAdapter()
+# CommShield AI Core

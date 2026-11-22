@@ -152,3 +152,4 @@ class ResilienceIntelligenceEngine:
 
 # Global singleton instance
 resilience_engine = ResilienceIntelligenceEngine()
+# CommShield AI Core

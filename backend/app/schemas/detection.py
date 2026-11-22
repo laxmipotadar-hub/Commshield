@@ -89,3 +89,4 @@ class DashboardOverviewResponse(BaseModel):
     pending_updates_count: int
     recent_alerts: List[Dict[str, Any]]
     traffic_over_time: List[Dict[str, Any]]
+# CommShield AI Core

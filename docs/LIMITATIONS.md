@@ -44,3 +44,4 @@ This document provides a strictly factual, transparent inventory of the known li
 
 2. **Open5GS Live Lab Prerequisites**:
    - The live lab adapter requires an operational Open5GS core and UERANSIM deployment on Linux. On Windows or environments without a running core, the adapter falls back to pre-recorded sample logs (`lab/sample_logs/`).
+<!-- CommShield AI Core -->

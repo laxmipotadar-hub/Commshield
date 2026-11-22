@@ -45,3 +45,4 @@ def validate_real_dataset() -> ValidationReport:
     windows = load_5g_nidd_csv()
     window_dicts: List[Dict[str, Any]] = [w.to_dict() for w in windows]
     return validate_telemetry_series(window_dicts)
+# CommShield AI Core

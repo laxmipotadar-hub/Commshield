@@ -273,3 +273,4 @@ def get_score_distribution(
         "histogram_bins": hist,
         "explanation": "Isolation Forest percentile ranks map scores to empirical benign CDF. Scores >= max training score saturate at 100.0%; raw negated scores preserve true anomaly magnitude.",
     }
+# CommShield AI Core

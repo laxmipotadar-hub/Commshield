@@ -23,3 +23,4 @@ __all__ = [
     "VALID_DEVICE_CLASSES",
     "VALID_LABELS",
 ]
+# CommShield AI Core

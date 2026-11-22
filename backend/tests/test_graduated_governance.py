@@ -192,3 +192,4 @@ def test_validation_engine_invariants():
     rep3 = validate_telemetry_series(bad_time)
     assert rep3.is_valid is False
     assert any(iss["category"] == "MONOTONICITY" for iss in rep3.issues)
+# CommShield AI Core
