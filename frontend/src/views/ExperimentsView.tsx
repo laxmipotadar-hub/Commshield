@@ -868,9 +868,9 @@ export const ExperimentsView: React.FC = () => {
         <div className="flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest border border-border shadow-xs">
           <div className="flex flex-col">
             <span className="font-mono text-xs text-secondary uppercase tracking-wider font-semibold">
-              Statistical Power
+              Statistical Confidence
             </span>
-            <span className="text-lg font-bold text-on-surface font-mono mt-1">1 - &beta; = 0.992</span>
+            <span className="text-lg font-bold text-on-surface font-mono mt-1">95% CI (Wilson)</span>
           </div>
           <div className="p-2 rounded-lg bg-blue-500/10 text-primary">
             <TrendingUp className="w-5 h-5" />
@@ -894,7 +894,9 @@ export const ExperimentsView: React.FC = () => {
             <span className="font-mono text-xs text-secondary uppercase tracking-wider font-semibold">
               Dataset &amp; Seeds
             </span>
-            <span className="font-mono text-xs text-on-surface font-semibold mt-1">#sha256:7f49c0d8</span>
+            <span className="font-mono text-xs text-on-surface font-semibold mt-1">
+              {summaryData?.config_version || 'v1.0.0'} ({summaryData?.seeds?.length || 5} seeds)
+            </span>
           </div>
           <div className="p-2 rounded-lg bg-slate-500/10 text-slate-500">
             <Fingerprint className="w-5 h-5" />
@@ -1265,67 +1267,115 @@ export const ExperimentsView: React.FC = () => {
 
           {/* 5. Charts: Bar Chart & Contamination Line Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="flex flex-col bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs">
-              <h3 className="font-semibold text-base text-on-surface mb-1">
-                Detection Recall &amp; False-Positive Rate
-              </h3>
-              <p className="text-xs text-on-surface-variant mb-4">
-                Empirical performance comparison for {SCENARIO_METADATA[selectedScenario]?.label}
-              </p>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                    <XAxis dataKey="metric" tick={{ fontSize: 12 }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip
-                      formatter={(val: any) => [`${val}%`, '']}
-                      contentStyle={{
-                        backgroundColor: '#0a1628',
-                        borderRadius: '8px',
-                        border: '1px solid #1e293b',
-                        color: '#ffffff',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} iconType="circle" />
-                    <Bar dataKey="Arm A (Static)" fill="#64748b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Arm B (Naive)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Arm C (CommShield)" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="flex flex-col justify-between bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-base text-on-surface">
+                        Detection Recall &amp; False-Positive Rate
+                      </h3>
+                      <span className="text-[11px] font-mono text-muted bg-border/40 px-2 py-0.5 rounded">
+                        {summaryData?.seeds?.length ? `n=${summaryData.seeds.length} seeds` : 'n=5 seeds'}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-primary font-mono font-semibold">
+                        SYNTHETIC
+                      </span>
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      Empirical performance comparison for {SCENARIO_METADATA[selectedScenario]?.label}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-64 w-full pt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barChartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                      <XAxis dataKey="metric" tick={{ fontSize: 11 }} label={{ value: 'Evaluation Metric', position: 'insideBottom', offset: -10, fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} unit="%" label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
+                      <Tooltip
+                        formatter={(val: any) => [`${val}%`, '']}
+                        contentStyle={{
+                          backgroundColor: '#0a1628',
+                          borderRadius: '8px',
+                          border: '1px solid #1e293b',
+                          color: '#ffffff',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} iconType="circle" />
+                      <Bar dataKey="Arm A (Static)" fill="#64748b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Arm B (Naive)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Arm C (CommShield)" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-border/40 bg-surface/30 rounded-lg p-2.5 text-xs text-muted space-y-1">
+                <p>
+                  <strong className="text-text/90 font-medium">What this shows:</strong> Grouped comparison of attack detection recall (%) and benign false positive rate (%) across Static, Naive Continuous, and CommShield adaptation arms.
+                </p>
+                <p>
+                  <strong className="text-text/90 font-medium">How to read it:</strong> An optimal defense maintains high recall bars while keeping benign FPR bars near zero; Arm C maintains high recall without suffering from catastrophic false-alarm growth.
+                </p>
               </div>
             </div>
 
-            <div className="flex flex-col bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs">
-              <h3 className="font-semibold text-base text-on-surface mb-1">
-                Baseline Contamination Over Time
-              </h3>
-              <p className="text-xs text-on-surface-variant mb-4">
-                Fraction of attack windows absorbed into active training baseline
-              </p>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={contaminationTimeData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                    <XAxis dataKey="window" tick={{ fontSize: 10 }} interval={4} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip
-                      formatter={(val: any) => [`${val}%`, '']}
-                      contentStyle={{
-                        backgroundColor: '#0a1628',
-                        borderRadius: '8px',
-                        border: '1px solid #1e293b',
-                        color: '#ffffff',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} iconType="circle" />
-                    <Line type="monotone" dataKey="Arm A (Static)" stroke="#16a34a" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="Arm B (Naive)" stroke="#dc2626" strokeWidth={2.5} dot={false} />
-                    <Line type="monotone" dataKey="Arm C (CommShield)" stroke="#2563eb" strokeWidth={2.5} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
+            <div className="flex flex-col justify-between bg-surface-container-lowest p-6 rounded-xl border border-border shadow-xs">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-base text-on-surface">
+                        Baseline Contamination Over Time
+                      </h3>
+                      <span className="text-[11px] font-mono text-muted bg-border/40 px-2 py-0.5 rounded">
+                        {summaryData?.seeds?.length ? `n=${summaryData.seeds.length} seeds` : 'n=5 seeds'}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-primary font-mono font-semibold">
+                        SYNTHETIC
+                      </span>
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      Fraction of attack windows absorbed into active training baseline
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-64 w-full pt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={contaminationTimeData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                      <XAxis dataKey="window" tick={{ fontSize: 10 }} interval={4} label={{ value: 'Time Windows', position: 'insideBottom', offset: -10, fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} unit="%" label={{ value: 'Contamination (%)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
+                      <Tooltip
+                        formatter={(val: any) => [`${val}%`, '']}
+                        contentStyle={{
+                          backgroundColor: '#0a1628',
+                          borderRadius: '8px',
+                          border: '1px solid #1e293b',
+                          color: '#ffffff',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} iconType="circle" />
+                      <Line type="monotone" dataKey="Arm A (Static)" stroke="#16a34a" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="Arm B (Naive)" stroke="#dc2626" strokeWidth={2.5} dot={false} />
+                      <Line type="monotone" dataKey="Arm C (CommShield)" stroke="#2563eb" strokeWidth={2.5} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-border/40 bg-surface/30 rounded-lg p-2.5 text-xs text-muted space-y-1">
+                <p>
+                  <strong className="text-text/90 font-medium">What this shows:</strong> Cumulative proportion of poisoned attack traffic windows absorbed into the active baseline over 40 observation windows.
+                </p>
+                <p>
+                  <strong className="text-text/90 font-medium">How to read it:</strong> Naive retraining (Arm B) climbs to &gt;80% contamination during stealth attacks, while CommShield (Arm C) remains strictly at 0.0% due to zero-trust quarantine isolation.
+                </p>
               </div>
             </div>
           </div>

@@ -26,7 +26,9 @@ import {
   ErrorState,
   LoadingState,
   StatusBadge,
+  DetectorAgreementMatrix,
 } from '../components';
+import { formatPercentileWithLogRatio } from '../utils/dataPresentation';
 import {
   api,
   CanonicalTrafficWindow,
@@ -360,7 +362,7 @@ export const DetectionPage: React.FC = () => {
         const val = out?.fusion?.fused_percentile;
         return (
           <span className={`text-xs font-mono font-bold ${val !== undefined && val >= 95 ? 'text-error' : 'text-secondary dark:text-slate-300'}`}>
-            {val !== undefined ? `${val.toFixed(1)}%` : '—'}
+            {val !== undefined ? formatPercentileWithLogRatio(val) : 'no data'}
           </span>
         );
       },
@@ -432,6 +434,22 @@ export const DetectionPage: React.FC = () => {
   if (error) {
     return <ErrorState title="Detection Error" message={error} onRetry={() => fetchWindows(true)} />;
   }
+
+  const agreementCounts = useMemo(() => {
+    let both = 0;
+    let ifo = 0;
+    let aeo = 0;
+    let non = 0;
+    historyData.forEach((h) => {
+      const isIf = (h.if_percentile ?? 0) >= 95;
+      const isAe = (h.ae_percentile ?? 0) >= 95;
+      if (isIf && isAe) both++;
+      else if (isIf) ifo++;
+      else if (isAe) aeo++;
+      else non++;
+    });
+    return { both, ifo, aeo, non };
+  }, [historyData]);
 
   const isSevere = fusedPct >= 95.0 || isAnomalous || cusumIsAlarm;
 
@@ -900,6 +918,15 @@ export const DetectionPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          <DetectorAgreementMatrix
+            bothFire={agreementCounts.both}
+            ifOnly={agreementCounts.ifo}
+            aeOnly={agreementCounts.aeo}
+            none={agreementCounts.non}
+            n={historyData.length}
+            source="5g_nidd"
+          />
         </div>
       </div>
 
