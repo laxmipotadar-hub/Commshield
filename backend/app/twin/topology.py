@@ -229,16 +229,24 @@ def build_canonical_components() -> Dict[str, NetworkComponent]:
 
     # 6. Industrial OT & Purdue Architecture Assets
     ot_assets = [
-        ("scada-srv-01", "SCADA-Server-01", "SCADA", "Supervisory Control & Data Acquisition", 24.5, 45.0, 1.2, ["gnb-01", "switch-core-01", "plc-assembly-01", "plc-welding-01"], "Level 2", "Supervisory Control", "192.168.20.10", {"x": -15.0, "y": 3.0, "z": -10.0}),
-        ("hmi-ws-01", "HMI-Operator-Console", "HMI", "Plant Floor Operator Interface", 18.0, 28.0, 1.0, ["scada-srv-01"], "Level 2", "Supervisory Control", "192.168.20.15", {"x": -18.0, "y": 2.0, "z": -8.0}),
+        ("scada-srv-01", "SCADA-Server-01", "SCADA", "Supervisory Control & Data Acquisition", 24.5, 45.0, 1.2, ["gnb-01", "switch-core-01", "plc-assembly-01", "plc-welding-01"], "Level 2", "Supervisory Control", "192.168.20.10", {"x": -45.0, "y": 6.0, "z": 8.0}),
+        ("hmi-ws-01", "HMI-Operator-Console", "HMI", "Plant Floor Operator Interface", 18.0, 28.0, 1.0, ["scada-srv-01"], "Level 2", "Supervisory Control", "192.168.20.15", {"x": -40.0, "y": 5.0, "z": 12.0}),
         ("plc-assembly-01", "PLC-Assembly-01", "PLC", "Assembly Line Industrial Controller", 12.0, 22.0, 0.5, ["scada-srv-01", "robot-arm-01", "conveyor-sys-01"], "Level 1", "Basic Control", "192.168.10.21", {"x": 5.0, "y": 1.5, "z": 12.0}),
-        ("plc-welding-01", "PLC-Welding-01", "PLC", "Robotic Welding Controller", 14.0, 24.0, 0.6, ["scada-srv-01", "robot-arm-02"], "Level 1", "Basic Control", "192.168.10.22", {"x": 15.0, "y": 1.5, "z": 12.0}),
-        ("robot-arm-01", "Robot-Arm-KUKA-01", "IndustrialRobot", "6-Axis Assembly Robot", 35.0, 40.0, 0.4, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.101", {"x": 8.0, "y": 1.0, "z": 15.0}),
-        ("robot-arm-02", "Robot-Arm-Fanuc-02", "IndustrialRobot", "6-Axis Welding Robot", 38.0, 42.0, 0.4, ["plc-welding-01"], "Level 0", "Physical Process", "192.168.1.102", {"x": 18.0, "y": 1.0, "z": 15.0}),
-        ("conveyor-sys-01", "Conveyor-Line-Alpha", "Conveyor", "Intelligent Pallet Transport", 20.0, 25.0, 0.5, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.105", {"x": 12.0, "y": 0.6, "z": 18.0}),
-        ("cnc-milling-01", "CNC-5Axis-Milling", "CNC", "High-Precision Milling Center", 42.0, 50.0, 0.8, ["scada-srv-01"], "Level 0", "Physical Process", "192.168.1.110", {"x": -8.0, "y": 1.2, "z": 16.0}),
-        ("datacenter-srv-01", "Plant-DataCenter-01", "Server", "Industrial MES & Historian Servers", 28.0, 48.0, 0.9, ["switch-core-01", "scada-srv-01"], "Level 3", "Manufacturing Operations", "192.168.30.5", {"x": -35.0, "y": 4.0, "z": -15.0}),
-        ("firewall-ot-01", "Firewall-OT-DMZ", "Firewall", "Industrial Next-Gen Firewall / IDS", 22.0, 36.0, 0.3, ["switch-core-01", "router-edge-01"], "Level 3.5", "Industrial DMZ", "192.168.35.1", {"x": -5.0, "y": 2.5, "z": -20.0}),
+        ("plc-welding-01", "PLC-Welding-01", "PLC", "Robotic Welding Controller", 14.0, 24.0, 0.6, ["scada-srv-01", "robot-arm-02"], "Level 1", "Basic Control", "192.168.10.22", {"x": 20.0, "y": 1.5, "z": 12.0}),
+        ("robot-arm-01", "Robot-Arm-KUKA-01", "IndustrialRobot", "6-Axis Assembly Robot", 35.0, 40.0, 0.4, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.101", {"x": 2.0, "y": 1.0, "z": 14.0}),
+        ("robot-arm-02", "Robot-Arm-Fanuc-02", "IndustrialRobot", "6-Axis Welding Robot", 38.0, 42.0, 0.4, ["plc-welding-01"], "Level 0", "Physical Process", "192.168.1.102", {"x": 18.0, "y": 1.0, "z": 14.0}),
+        ("robot-arm-03", "Robot-Arm-ABB-03", "IndustrialRobot", "6-Axis Packaging Robot", 32.0, 36.0, 0.4, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.103", {"x": 32.0, "y": 1.0, "z": 14.0}),
+        ("conveyor-sys-01", "Conveyor-Line-Alpha", "Conveyor", "Intelligent Pallet Transport", 20.0, 25.0, 0.5, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.105", {"x": 16.0, "y": 0.8, "z": 14.0}),
+        ("cnc-milling-01", "CNC-5Axis-Milling", "CNC", "High-Precision Milling Center", 42.0, 50.0, 0.8, ["scada-srv-01"], "Level 0", "Physical Process", "192.168.1.110", {"x": -10.0, "y": 1.5, "z": 14.0}),
+        ("cnc-press-01", "Hydraulic-Press-01", "Press", "Heavy Stamping Press", 36.0, 44.0, 0.7, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.112", {"x": -10.0, "y": 1.8, "z": 24.0}),
+        ("datacenter-srv-01", "Plant-DataCenter-01", "Server", "Industrial MES & Historian Servers", 28.0, 48.0, 0.9, ["switch-core-01", "scada-srv-01"], "Level 3", "Manufacturing Operations", "192.168.30.5", {"x": -82.0, "y": 4.0, "z": 8.0}),
+        ("firewall-ot-01", "Firewall-OT-DMZ", "Firewall", "Industrial Next-Gen Firewall / IDS", 22.0, 36.0, 0.3, ["switch-core-01", "router-edge-01"], "Level 3.5", "Industrial DMZ", "192.168.35.1", {"x": -25.0, "y": 3.0, "z": -15.0}),
+        ("warehouse-logistics", "Warehouse-Logistics-Hub", "Warehouse", "Finished Goods Storage & Docks", 16.0, 25.0, 0.8, ["switch-core-01"], "Level 0", "Logistics & Storage", "192.168.10.50", {"x": 75.0, "y": 5.0, "z": 18.0}),
+        ("substation-01", "Main-Power-Substation", "Substation", "High-Voltage Power Distribution", 15.0, 20.0, 0.5, ["scada-srv-01"], "Level 1", "Utilities & Power", "192.168.40.1", {"x": 75.0, "y": 2.5, "z": -50.0}),
+        ("cooling-tower-01", "Hyperbolic-Cooling-Tower", "Utilities", "Thermal Water Cooling System", 18.0, 22.0, 0.6, ["scada-srv-01"], "Level 0", "Utilities & Power", "192.168.40.10", {"x": -10.0, "y": 8.0, "z": -55.0}),
+        ("tank-farm-01", "Industrial-Tank-Farm", "Storage", "Bulk Chemical & Fuel Storage", 12.0, 18.0, 0.5, ["scada-srv-01"], "Level 0", "Utilities & Storage", "192.168.40.20", {"x": -55.0, "y": 6.0, "z": -50.0}),
+        ("sensor-temp-01", "Sensor-Temp-Furnace-01", "Sensor", "Furnace Thermal Sensor", 8.0, 12.0, 0.3, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.150", {"x": 10.0, "y": 1.2, "z": 24.0}),
+        ("sensor-pressure-01", "Sensor-Pressure-Line-01", "Sensor", "Hydraulic Line Pressure Sensor", 9.0, 14.0, 0.3, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.151", {"x": 24.0, "y": 1.2, "z": 24.0}),
     ]
 
     for oid, oname, otype, orole, cpu, mem, lat, conn, purdue, zone, ip, coords in ot_assets:

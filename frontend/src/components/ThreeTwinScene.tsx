@@ -1,65 +1,54 @@
 // File: frontend/src/components/ThreeTwinScene.tsx
 /**
- * INDUTWIN - Industrial Cyber Security Digital Twin (ThreeTwinScene.tsx)
+ * INDUTWIN - INDUSTRIAL CYBERSECURITY DIGITAL TWIN
+ * Complete 3D Smart Manufacturing Campus & Industrial Security Operations Centre
  * 
- * Genuine 3D Smart Manufacturing Factory Scene:
- * - Real 3D industrial buildings (Main Manufacturing, SCADA Control Room, Data Center, Substation)
- * - Industrial machinery: Multi-axis articulated robotic arms, animated conveyor belts, CNC machines, PLCs, sensors
- * - Industrial structures: Hyperbolic cooling towers, cylindrical storage tanks with catwalks, twin aviation-band chimneys
- * - Attacker & Defence infrastructure: External attacker node, red attack trajectory spline, IDS/IPS firewall hologram
- * - 3D Holographic Status Badges matching reference designs (Attacker, Firewall, SCADA, PLC, Production Line, Robots, Sensors)
- * - 6 Viewing Modes: 3D Plant View, Network Topology, Asset Map, Traffic Flow, Heatmap, Purdue Architecture
- * - Full 360° OrbitControls, smooth camera presets, raycast object selection & inspector sync
- * - Strict resource disposal and particle clamping for 60 FPS performance on standard hardware
+ * Features:
+ * - Full-scale industrial factory campus (220m x 170m) with realistic asphalt roads, concrete pads, and markings
+ * - Main Manufacturing Hall: Structural steel columns, overhead yellow gantry crane, and open roof trusses
+ * - 3 Connected Production Lines:
+ *   - Line 1: Raw material intake, 5-axis CNC machining center with andon tower, hydraulic stamping press, loading robot
+ *   - Line 2: Dual articulated 6-axis industrial robots (KUKA/Fanuc orange), assembly jig with cyan welding sparks
+ *   - Line 3: Quality vision inspection gantry with green scanning laser, automatic packaging machine, exit conveyor
+ * - Storage & Logistics Hub: Warehouse building, 3 loading docks, 2 semi-trailer cargo trucks, high-bay pallet racks, forklifts
+ * - SCADA Supervisory & NOC Center: Two-story control building, observation mezzanine, server room, telecom mast & satellite dish
+ * - Industrial Plant Data Center: Server farm building, rooftop HVAC chillers with rotating fans, intake louvers
+ * - Power & Utilities Area: High-voltage electrical substation with transformers & bushings, twin hyperbolic cooling towers with steam, twin aviation-band exhaust chimneys with strobes, 4 chemical storage tanks with catwalks, elevated pipe bridges
+ * - True 360-degree OrbitControls with click-vs-drag separation (no accidental selection while rotating)
+ * - Initial elevated isometric overview showing the entire campus without any giant platform or roof obstruction
+ * - Full Campus, Interior Cutaway, Building Exploration, Network Topology, Heatmap, and Purdue Architecture viewing modes
+ * - Strict resource cleanup and disposal (satisfies test_twin_ui.py)
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TwinDevice, TwinLink, TwinNode, TwinSlice } from '../services/twinApi';
 import {
-  Camera,
-  Layers,
-  ZoomIn,
-  ZoomOut,
   RotateCcw,
+  Eye,
   Maximize2,
   Minimize2,
-  Eye,
-  Shield,
-  ShieldAlert,
-  Flame,
-  Activity,
-  Cpu,
+  Layers,
+  Box,
+  Compass,
 } from 'lucide-react';
-
-// Suppress unused imports and satisfy strict TypeScript noUnusedLocals
-void Camera;
-void Eye;
-void Shield;
-void ShieldAlert;
-void Flame;
-void Activity;
-void Cpu;
-void Layers;
-void ZoomIn;
-void ZoomOut;
 
 export type TwinViewMode =
   | '3d_plant'
+  | 'cutaway'
   | 'topology'
   | 'asset_map'
   | 'traffic_flow'
   | 'heatmap'
   | 'purdue';
 
-export interface ThreeTwinSceneProps {
-  nodes?: TwinNode[];
-  links?: TwinLink[];
-  slices?: TwinSlice[];
-  devices?: TwinDevice[];
-  selectedId: string | null;
-  onSelect: (id: string | null, type: 'node' | 'device' | 'link' | null) => void;
+interface ThreeTwinSceneProps {
+  nodes?: any[];
+  links?: any[];
+  slices?: any[];
+  devices?: any[];
+  selectedId?: string | null;
+  onSelect: (id: string | null, type: string | null) => void;
   onHover?: (item: { id: string; name: string; type: string; status: string } | null) => void;
   attackPath?: string[];
   attackPaths?: string[][];
@@ -81,7 +70,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   links = [],
   slices = [],
   devices = [],
-  selectedId,
+  selectedId = null,
   onSelect,
   onHover,
   attackPath = [],
@@ -107,31 +96,30 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   const isLerpingRef = useRef<boolean>(false);
 
   // Target camera positions for smooth interpolation
-  const targetCamPos = useRef<THREE.Vector3>(new THREE.Vector3(45, 38, 55));
-  const targetLookAt = useRef<THREE.Vector3>(new THREE.Vector3(0, 4, 0));
+  const targetCamPos = useRef<THREE.Vector3>(new THREE.Vector3(130, 95, 140));
+  const targetLookAt = useRef<THREE.Vector3>(new THREE.Vector3(0, 5, 0));
 
-  // Current view mode internal state
+  // Mutable refs for props that change frequently to avoid scene re-creation
+  const lifecycleRef = useRef(lifecycleState);
+  lifecycleRef.current = lifecycleState;
+  const attackTypeRef = useRef(attackType);
+  attackTypeRef.current = attackType;
+  const mitigationRef = useRef(mitigationActive);
+  mitigationRef.current = mitigationActive;
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  const traceAttackPathRef = useRef(traceAttackPath);
+  traceAttackPathRef.current = traceAttackPath;
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
+
+  // UI state
   const [currentMode, setCurrentMode] = useState<TwinViewMode>(viewMode);
   const [fullscreen, setFullscreen] = useState<boolean>(false);
   const [showBadges, setShowBadges] = useState<boolean>(true);
-  const [showLayers, setShowLayers] = useState<boolean>(false);
+  const [cutawayActive, setCutawayActive] = useState<boolean>(false);
 
-  // 8-Layer visibility controls
-  const [layers, setLayers] = useState({
-    physical: true,
-    connectivity: true,
-    security: true,
-    legitimateTraffic: true,
-    suspiciousTraffic: true,
-    attackSources: true,
-    enforcementPoints: true,
-  });
-
-  const toggleLayer = (key: keyof typeof layers) => {
-    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  // Satisfy strict unused variables
+  // Suppress unused props for strict TS compliance
   void nodes;
   void links;
   void slices;
@@ -141,13 +129,15 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   void attackerSources;
   void isDistributed;
   void activeCameraPreset;
-  void showLayers;
-  void setShowLayers;
-  void toggleLayer;
-  void layers;
+  void Layers;
+  void Box;
+  void Compass;
 
   useEffect(() => {
     setCurrentMode(viewMode);
+    if (viewMode === 'cutaway') {
+      setCutawayActive(true);
+    }
   }, [viewMode]);
 
   // Apply smooth camera transition to preset
@@ -158,38 +148,56 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
 
     switch (preset) {
       case 'top':
-        targetCamPos.current.set(0, 95, 0.1);
+        targetCamPos.current.set(0, 185, 1);
         targetLookAt.current.set(0, 0, 0);
         break;
       case 'front':
-        targetCamPos.current.set(0, 24, 75);
-        targetLookAt.current.set(0, 6, 0);
+        targetCamPos.current.set(0, 42, 160);
+        targetLookAt.current.set(0, 10, 0);
+        break;
+      case 'side':
+        targetCamPos.current.set(175, 42, 0);
+        targetLookAt.current.set(0, 10, 0);
         break;
       case 'iso':
-        targetCamPos.current.set(65, 48, 65);
-        targetLookAt.current.set(0, 4, 0);
+        targetCamPos.current.set(110, 80, 110);
+        targetLookAt.current.set(0, 5, 0);
         break;
-      case 'robot':
-        targetCamPos.current.set(12, 10, 28);
-        targetLookAt.current.set(10, 4, 15);
+      case 'production':
+        targetCamPos.current.set(28, 22, 42);
+        targetLookAt.current.set(12, 4, 14);
         break;
       case 'scada':
-        targetCamPos.current.set(-20, 14, 15);
-        targetLookAt.current.set(-18, 6, -8);
+        targetCamPos.current.set(-45, 24, 30);
+        targetLookAt.current.set(-45, 6, 8);
         break;
-      case 'attacker':
-        targetCamPos.current.set(-60, 25, -45);
-        targetLookAt.current.set(-48, 2, -28);
+      case 'utilities':
+        targetCamPos.current.set(0, 45, -95);
+        targetLookAt.current.set(0, 10, -50);
+        break;
+      case 'logistics':
+        targetCamPos.current.set(85, 28, 52);
+        targetLookAt.current.set(75, 5, 18);
         break;
       case 'overview':
       default:
-        targetCamPos.current.set(45, 38, 55);
-        targetLookAt.current.set(0, 4, 0);
+        targetCamPos.current.set(130, 95, 140);
+        targetLookAt.current.set(0, 5, 0);
         break;
     }
   }, [onPresetChange]);
 
-  // Initialize Three.js WebGL Engine
+  // Focus camera on selected asset
+  const focusOnAsset = useCallback((coords: { x: number; y: number; z: number }) => {
+    if (!controlsRef.current || !cameraRef.current) return;
+    isLerpingRef.current = true;
+    targetLookAt.current.set(coords.x, coords.y, coords.z);
+    targetCamPos.current.set(coords.x + 22, coords.y + 18, coords.z + 24);
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // MAIN THREE.JS INITIALIZATION (Runs once on mount)
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
@@ -197,14 +205,15 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color(0x070e1b); // Deep navy black
-    scene.fog = new THREE.FogExp2(0x070e1b, 0.008);
+    scene.background = new THREE.Color(0x060d1a); // Industrial deep navy black
+    scene.fog = new THREE.FogExp2(0x060d1a, 0.0035);
 
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 500;
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 500);
+    const width = container.clientWidth || 900;
+    const height = container.clientHeight || 550;
+    const camera = new THREE.PerspectiveCamera(40, width / height, 1, 800);
     cameraRef.current = camera;
-    camera.position.set(45, 38, 55);
+    // Initial camera position: elevated isometric view of the full campus
+    camera.position.set(130, 95, 140);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -215,7 +224,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.25;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -225,668 +234,963 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     renderer.domElement.style.height = '100%';
     container.appendChild(renderer.domElement);
 
-    // 2. OrbitControls
+    // 2. OrbitControls with full 360 degree rotation and proper limits
     const controls = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controls;
     controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.maxPolarAngle = Math.PI / 2 - 0.04;
-    controls.minDistance = 10;
-    controls.maxDistance = 220;
-    controls.target.set(0, 4, 0);
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 0.8;
+    controls.zoomSpeed = 1.0;
+    controls.panSpeed = 0.8;
+    controls.minDistance = 15;
+    controls.maxDistance = 450;
+    controls.maxPolarAngle = Math.PI / 2 - 0.02; // Stop right at ground level
+    controls.target.set(0, 5, 0);
+    controls.update();
 
     controls.addEventListener('start', () => {
+      // User started manual interaction: immediately cancel automatic camera lerping
       isLerpingRef.current = false;
     });
 
     // 3. Lighting System
-    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.85);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0x93c5fd, 1.4);
-    sunLight.position.set(60, 90, 40);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+    sunLight.position.set(90, 140, 70);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 250;
-    const shadowD = 75;
+    sunLight.shadow.camera.near = 20;
+    sunLight.shadow.camera.far = 400;
+    const shadowD = 120;
     sunLight.shadow.camera.left = -shadowD;
     sunLight.shadow.camera.right = shadowD;
     sunLight.shadow.camera.top = shadowD;
     sunLight.shadow.camera.bottom = -shadowD;
     scene.add(sunLight);
 
-    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.6);
-    fillLight.position.set(-60, 50, -40);
-    scene.add(fillLight);
+    const skyFillLight = new THREE.DirectionalLight(0x38bdf8, 0.7);
+    skyFillLight.position.set(-80, 70, -70);
+    scene.add(skyFillLight);
 
-    // Cyan high-bay interior floodlight
-    const plantInteriorLight = new THREE.PointLight(0x06b6d4, 2.5, 45);
-    plantInteriorLight.position.set(6, 12, 14);
+    // Dynamic interior plant high-bay floodlights
+    const plantInteriorLight = new THREE.PointLight(0x38bdf8, 3.0, 70);
+    plantInteriorLight.position.set(16, 10, 16);
     scene.add(plantInteriorLight);
 
-    // 4. Ground Environment (Concrete Yard, Roads, Grid, Safety Markings)
-    const yardPlatformGeo = new THREE.BoxGeometry(160, 1.5, 120);
-    const yardPlatformMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      roughness: 0.85,
-      metalness: 0.15,
-    });
-    const yardPlatform = new THREE.Mesh(yardPlatformGeo, yardPlatformMat);
-    yardPlatform.position.y = -0.75;
-    yardPlatform.receiveShadow = true;
-    scene.add(yardPlatform);
+    // Storage logistics area floodlight
+    const warehouseLight = new THREE.PointLight(0xf59e0b, 2.0, 60);
+    warehouseLight.position.set(75, 10, 18);
+    scene.add(warehouseLight);
 
-    // Asphalt Main Logistics Loop
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
-    // East-West Factory Thoroughfare
-    const roadEWGeo = new THREE.PlaneGeometry(140, 10);
-    const roadEW = new THREE.Mesh(roadEWGeo, roadMat);
-    roadEW.rotation.x = -Math.PI / 2;
-    roadEW.position.set(0, 0.02, 38);
-    roadEW.receiveShadow = true;
-    scene.add(roadEW);
-
-    // North-South Factory Road
-    const roadNSGeo = new THREE.PlaneGeometry(10, 100);
-    const roadNS = new THREE.Mesh(roadNSGeo, roadMat);
-    roadNS.rotation.x = -Math.PI / 2;
-    roadNS.position.set(-42, 0.02, 0);
-    roadNS.receiveShadow = true;
-    scene.add(roadNS);
-
-    // Cyber technical grid
-    const techGrid = new THREE.GridHelper(160, 64, 0x1e3a8a, 0x091e3a);
-    techGrid.position.y = 0.03;
-    scene.add(techGrid);
-
-    // Interactive Raycasting Meshes container
+    // Interactive Raycasting Meshes container & animators array
     const interactiveMeshes: THREE.Mesh[] = [];
     const animators: Array<(time: number) => void> = [];
 
-    // Helper: Register interactive mesh
-    const registerInteractive = (mesh: THREE.Mesh, id: string, name: string, type: string, status: string) => {
-      mesh.userData = { id, name, type, status };
+    const registerInteractive = (
+      mesh: THREE.Mesh,
+      id: string,
+      name: string,
+      type: string,
+      status: string,
+      coords?: { x: number; y: number; z: number }
+    ) => {
+      mesh.userData = { id, name, type, status, coords };
       interactiveMeshes.push(mesh);
     };
 
     // -------------------------------------------------------------------------
-    // 5. MAIN MANUFACTURING BUILDING (Glass Facade, Steel Trusses, Production Line)
+    // 4. INDUSTRIAL CAMPUS TERRAIN & LOGISTICS ROAD NETWORK (Phase 2 & 3)
     // -------------------------------------------------------------------------
-    const mainFactoryGroup = new THREE.Group();
-    mainFactoryGroup.position.set(8, 0, 12);
-    scene.add(mainFactoryGroup);
+    const siteGroup = new THREE.Group();
+    scene.add(siteGroup);
 
-    // Main Factory Floor (Concrete with yellow safety borders)
-    const factoryFloorGeo = new THREE.BoxGeometry(54, 0.2, 36);
+    // Main Campus Ground Apron (220m x 170m)
+    const siteGroundGeo = new THREE.PlaneGeometry(220, 170);
+    const siteGroundMat = new THREE.MeshStandardMaterial({
+      color: 0x091424,
+      roughness: 0.9,
+      metalness: 0.1,
+    });
+    const siteGround = new THREE.Mesh(siteGroundGeo, siteGroundMat);
+    siteGround.rotation.x = -Math.PI / 2;
+    siteGround.position.y = -0.05;
+    siteGround.receiveShadow = true;
+    siteGroup.add(siteGround);
+
+    // Cyber technical grid overlay
+    const techGrid = new THREE.GridHelper(220, 88, 0x1e3a8a, 0x0c213d);
+    techGrid.position.y = 0.01;
+    siteGroup.add(techGrid);
+
+    // Helper: Asphalt Road Section with painted lane markings
+    const createRoad = (
+      width: number,
+      length: number,
+      pos: [number, number, number],
+      rotY: number = 0
+    ) => {
+      const roadGeo = new THREE.PlaneGeometry(width, length);
+      const roadMat = new THREE.MeshStandardMaterial({ color: 0x172233, roughness: 0.85 });
+      const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+      roadMesh.rotation.x = -Math.PI / 2;
+      roadMesh.rotation.z = rotY;
+      roadMesh.position.set(pos[0], 0.02, pos[2]);
+      roadMesh.receiveShadow = true;
+      siteGroup.add(roadMesh);
+
+      // Dashed centerline
+      const stripeCount = Math.floor(length / 6);
+      for (let s = -stripeCount / 2; s < stripeCount / 2; s++) {
+        const stripeGeo = new THREE.PlaneGeometry(0.3, 3);
+        const stripeMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.rotation.z = rotY;
+        const offset = s * 6 + 1.5;
+        const sx = pos[0] + (rotY === 0 ? 0 : offset);
+        const sz = pos[2] + (rotY === 0 ? offset : 0);
+        stripe.position.set(sx, 0.03, sz);
+        siteGroup.add(stripe);
+      }
+    };
+
+    // Main East-West Logistics Highway
+    createRoad(12, 210, [0, 0, 48], Math.PI / 2);
+    // Northern Utility Access Road
+    createRoad(10, 210, [0, 0, -26], Math.PI / 2);
+    // Far North Boundary Road
+    createRoad(10, 210, [0, 0, -78], Math.PI / 2);
+    // West Spine Connecting Road
+    createRoad(10, 130, [-68, 0, 10], 0);
+    // Central Spine Connecting Road
+    createRoad(10, 130, [48, 0, 10], 0);
+    // East Boundary Connecting Road
+    createRoad(10, 130, [102, 0, 10], 0);
+
+    // Helper: Concrete Building Foundation Pad
+    const createBuildingPad = (w: number, d: number, pos: [number, number, number], label?: string) => {
+      const padGeo = new THREE.BoxGeometry(w, 0.4, d);
+      const padMat = new THREE.MeshStandardMaterial({ color: 0x14233c, roughness: 0.7, metalness: 0.2 });
+      const padMesh = new THREE.Mesh(padGeo, padMat);
+      padMesh.position.set(pos[0], 0.2, pos[2]);
+      padMesh.receiveShadow = true;
+      siteGroup.add(padMesh);
+
+      // Yellow safety perimeter curb
+      const curbGeo = new THREE.BoxGeometry(w + 1.0, 0.2, d + 1.0);
+      const curbMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.5 });
+      const curbMesh = new THREE.Mesh(curbGeo, curbMat);
+      curbMesh.position.set(pos[0], 0.1, pos[2]);
+      siteGroup.add(curbMesh);
+      void label;
+      return padMesh;
+    };
+
+    // Concrete building foundation pads
+    createBuildingPad(62, 50, [16, 0, 16], 'Production Hall Pad');
+    createBuildingPad(44, 50, [76, 0, 16], 'Warehouse Logistics Pad');
+    createBuildingPad(38, 38, [-44, 0, 11], 'SCADA Control Pad');
+    createBuildingPad(28, 38, [-84, 0, 11], 'Data Center Pad');
+    createBuildingPad(42, 42, [76, 0, -52], 'Substation Pad');
+    createBuildingPad(46, 42, [-54, 0, -52], 'Chemical Tank Farm Pad');
+
+    // -------------------------------------------------------------------------
+    // 5. MAIN PRODUCTION FACILITY (Building A - 3 Production Lines, Machinery)
+    // -------------------------------------------------------------------------
+    const factoryGroup = new THREE.Group();
+    factoryGroup.position.set(16, 0, 16);
+    scene.add(factoryGroup);
+
+    // Factory Interior Epoxy Floor
+    const factoryFloorGeo = new THREE.BoxGeometry(60, 0.3, 48);
     const factoryFloorMat = new THREE.MeshStandardMaterial({
-      color: 0x172554,
-      roughness: 0.5,
-      metalness: 0.4,
+      color: 0x0f2342,
+      roughness: 0.3,
+      metalness: 0.5,
     });
     const factoryFloor = new THREE.Mesh(factoryFloorGeo, factoryFloorMat);
-    factoryFloor.position.set(0, 0.1, 0);
+    factoryFloor.position.set(0, 0.35, 0);
     factoryFloor.receiveShadow = true;
-    mainFactoryGroup.add(factoryFloor);
+    factoryGroup.add(factoryFloor);
 
-    // Main Factory Roof (Steel decking with skylights)
-    const roofGeo = new THREE.BoxGeometry(55, 1.2, 37);
-    const roofMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      roughness: 0.7,
-      metalness: 0.6,
+    // Structural Steel I-Beam Columns
+    const colGeo = new THREE.BoxGeometry(1.2, 13, 1.2);
+    const colMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.25 });
+    const colX = [-29, -15, 0, 15, 29];
+    const colZ = [-23, 23];
+    colX.forEach((cx) => {
+      colZ.forEach((cz) => {
+        const col = new THREE.Mesh(colGeo, colMat);
+        col.position.set(cx, 6.8, cz);
+        col.castShadow = true;
+        factoryGroup.add(col);
+      });
     });
-    const roofMesh = new THREE.Mesh(roofGeo, roofMat);
-    roofMesh.position.set(0, 14, 0);
-    roofMesh.castShadow = true;
-    mainFactoryGroup.add(roofMesh);
 
-    // Roof Air Handling Units (AHUs)
-    for (let i = -18; i <= 18; i += 12) {
-      const ahuGeo = new THREE.BoxGeometry(6, 2.5, 4);
-      const ahuMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 });
-      const ahu = new THREE.Mesh(ahuGeo, ahuMat);
-      ahu.position.set(i, 15.5, -6);
-      mainFactoryGroup.add(ahu);
+    // Overhead Yellow Traveling Gantry Crane
+    const craneRailMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 });
+    const craneBeamMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.6, roughness: 0.4 });
+
+    const rail1 = new THREE.Mesh(new THREE.BoxGeometry(60, 0.8, 0.8), craneRailMat);
+    rail1.position.set(0, 12.2, -22);
+    const rail2 = new THREE.Mesh(new THREE.BoxGeometry(60, 0.8, 0.8), craneRailMat);
+    rail2.position.set(0, 12.2, 22);
+    factoryGroup.add(rail1, rail2);
+
+    const craneBridge = new THREE.Group();
+    const girderGeo = new THREE.BoxGeometry(1.8, 1.2, 44);
+    const girder = new THREE.Mesh(girderGeo, craneBeamMat);
+    girder.position.set(0, 12.8, 0);
+    craneBridge.add(girder);
+
+    const hoistTrolley = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.0, 2.5), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+    hoistTrolley.position.set(0, 12.0, 2);
+    craneBridge.add(hoistTrolley);
+    factoryGroup.add(craneBridge);
+
+    animators.push((time) => {
+      if (reducedMotion) return;
+      craneBridge.position.x = Math.sin(time * 0.4) * 16;
+      hoistTrolley.position.z = Math.cos(time * 0.6) * 12;
+    });
+
+    // Roof & Trusses Group (Can be toggled or cutaway)
+    const roofTrussesGroup = new THREE.Group();
+    factoryGroup.add(roofTrussesGroup);
+
+    // Open Structural Steel Roof Trusses (Always allows viewing inside)
+    for (let tx = -28; tx <= 28; tx += 14) {
+      const trussGeo = new THREE.BoxGeometry(0.6, 2.2, 46);
+      const truss = new THREE.Mesh(trussGeo, colMat);
+      truss.position.set(tx, 13.5, 0);
+      roofTrussesGroup.add(truss);
     }
 
-    // Structural Steel Columns
-    const colGeo = new THREE.BoxGeometry(1.2, 14, 1.2);
-    const colMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.8, roughness: 0.3 });
-    const colPositions = [
-      [-26, 7, -17], [-13, 7, -17], [0, 7, -17], [13, 7, -17], [26, 7, -17],
-      [-26, 7, 17], [-13, 7, 17], [0, 7, 17], [13, 7, 17], [26, 7, 17],
-    ];
-    colPositions.forEach(([x, y, z]) => {
-      const col = new THREE.Mesh(colGeo, colMat);
-      col.position.set(x, y, z);
-      col.castShadow = true;
-      mainFactoryGroup.add(col);
+    // Translucent Glass Skylights Roof (Visible framework, never blocks inspection)
+    const roofDeckGeo = new THREE.BoxGeometry(61, 0.4, 49);
+    const roofDeckMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0f223d,
+      transparent: true,
+      opacity: 0.35,
+      roughness: 0.2,
+      metalness: 0.8,
+      transmission: 0.7,
     });
+    const roofDeck = new THREE.Mesh(roofDeckGeo, roofDeckMat);
+    roofDeck.position.set(0, 14.5, 0);
+    roofTrussesGroup.add(roofDeck);
 
-    // Glass Curtain Wall (Translucent illuminated glass)
-    const glassMat = new THREE.MeshPhysicalMaterial({
+    // Front Glass Curtain Wall (Translucent)
+    const frontWallGeo = new THREE.BoxGeometry(58, 11, 0.3);
+    const wallGlassMat = new THREE.MeshPhysicalMaterial({
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.22,
       roughness: 0.1,
-      metalness: 0.1,
-      transmission: 0.6,
-      ior: 1.5,
+      metalness: 0.2,
+      transmission: 0.8,
     });
-    // Front Glass Wall
-    const frontGlassGeo = new THREE.BoxGeometry(52, 13, 0.3);
-    const frontGlass = new THREE.Mesh(frontGlassGeo, glassMat);
-    frontGlass.position.set(0, 7, 17);
-    mainFactoryGroup.add(frontGlass);
-    registerInteractive(frontGlass, 'main-factory', 'Main Manufacturing Building', 'building', 'Operational');
+    const frontWall = new THREE.Mesh(frontWallGeo, wallGlassMat);
+    frontWall.position.set(0, 6.2, 23.5);
+    factoryGroup.add(frontWall);
+    registerInteractive(frontWall, 'main-factory-hall', 'Main Manufacturing Facility', 'building', 'Operational', { x: 16, y: 8, z: 16 });
 
-    // Rear Solid Insulated Wall
-    const backWallGeo = new THREE.BoxGeometry(52, 13, 0.8);
-    const backWallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-    const backWall = new THREE.Mesh(backWallGeo, backWallMat);
-    backWall.position.set(0, 7, -17);
-    mainFactoryGroup.add(backWall);
+    // Rear Insulated Factory Wall
+    const rearWallGeo = new THREE.BoxGeometry(58, 11, 0.8);
+    const rearWallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    const rearWall = new THREE.Mesh(rearWallGeo, rearWallMat);
+    rearWall.position.set(0, 6.2, -23.5);
+    factoryGroup.add(rearWall);
 
     // -------------------------------------------------------------------------
-    // 6. PRODUCTION LINE: CONVEYOR BELT & ARTICULATED ROBOTIC ARMS
+    // 6. THREE INTERCONNECTED PRODUCTION LINES (Phase 2.B & 2.D)
     // -------------------------------------------------------------------------
-    // Conveyor Belt Bed
-    const conveyorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.3 });
-    const conveyorBedGeo = new THREE.BoxGeometry(38, 0.8, 3.5);
+    // === PRODUCTION LINE 1: RAW MATERIAL & HEAVY CNC FABRICATION ===
+    // 5-Axis Precision CNC Machining Center
+    const createCNCCenter = (pos: [number, number, number], id: string, name: string) => {
+      const cncGroup = new THREE.Group();
+      cncGroup.position.set(...pos);
+      factoryGroup.add(cncGroup);
+
+      const bodyGeo = new THREE.BoxGeometry(6.0, 5.2, 4.8);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.y = 2.6;
+      body.castShadow = true;
+      cncGroup.add(body);
+      registerInteractive(body, id, name, 'machine', 'Operating (Nominal)', { x: pos[0] + 16, y: 3, z: pos[2] + 16 });
+
+      // Inspection Window (Cyan Tinted Glass)
+      const winGeo = new THREE.PlaneGeometry(3.6, 2.6);
+      const winMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.75 });
+      const win = new THREE.Mesh(winGeo, winMat);
+      win.position.set(0, 2.8, 2.42);
+      cncGroup.add(win);
+
+      // Tri-Color Andon Status Tower Light
+      const towerMast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 8), new THREE.MeshBasicMaterial({ color: 0x64748b }));
+      towerMast.position.set(2.2, 5.8, 1.6);
+      cncGroup.add(towerMast);
+
+      const andonGreen = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.35, 12), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
+      andonGreen.position.set(2.2, 6.6, 1.6);
+      cncGroup.add(andonGreen);
+
+      // Spindle Tool Animation Inside
+      const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.3, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
+      spindle.position.set(0, 2.8, 0);
+      cncGroup.add(spindle);
+      animators.push((time) => {
+        if (reducedMotion) return;
+        spindle.rotation.y = time * 24;
+      });
+    };
+
+    createCNCCenter([-18, 0.4, -10], 'cnc-milling-01', '5-Axis Precision CNC Milling');
+
+    // Heavy Industrial Stamping Press
+    const pressGroup = new THREE.Group();
+    pressGroup.position.set(-18, 0.4, 8);
+    factoryGroup.add(pressGroup);
+
+    const pressFrame = new THREE.Mesh(new THREE.BoxGeometry(5.5, 7.5, 4.5), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85 }));
+    pressFrame.position.y = 3.75;
+    pressGroup.add(pressFrame);
+    registerInteractive(pressFrame, 'cnc-press-01', 'Heavy Hydraulic Stamping Press', 'machine', 'Operating (Nominal)', { x: -2, y: 4, z: 24 });
+
+    const pressRam = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.0, 3.2), new THREE.MeshStandardMaterial({ color: 0xea580c }));
+    pressRam.position.y = 4.2;
+    pressGroup.add(pressRam);
+    animators.push((time) => {
+      if (reducedMotion) return;
+      pressRam.position.y = 3.2 + Math.abs(Math.sin(time * 2.2)) * 1.6;
+    });
+
+    // Helper: 6-Axis Articulated Industrial Robotic Arm Builder (KUKA/Fanuc Style)
+    const createArticulatedRobot = (
+      pos: [number, number, number],
+      id: string,
+      name: string,
+      colorHex: number = 0xea580c
+    ) => {
+      const robotGroup = new THREE.Group();
+      robotGroup.position.set(...pos);
+      factoryGroup.add(robotGroup);
+
+      // Heavy Cast Iron Base
+      const baseGeo = new THREE.CylinderGeometry(1.6, 1.9, 0.9, 16);
+      const robotMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.65, roughness: 0.35 });
+      const baseMesh = new THREE.Mesh(baseGeo, robotMat);
+      baseMesh.position.y = 0.45;
+      baseMesh.castShadow = true;
+      robotGroup.add(baseMesh);
+      registerInteractive(baseMesh, id, name, 'robot', 'Operating (Nominal)', { x: pos[0] + 16, y: 2, z: pos[2] + 16 });
+
+      // Rotating Turntable Waist
+      const waistGeo = new THREE.CylinderGeometry(1.3, 1.4, 1.1, 16);
+      const waistMesh = new THREE.Mesh(waistGeo, robotMat);
+      waistMesh.position.y = 1.45;
+      robotGroup.add(waistMesh);
+
+      // Shoulder Joint & Lower Arm
+      const shoulderPivot = new THREE.Group();
+      shoulderPivot.position.set(0, 2.0, 0);
+      robotGroup.add(shoulderPivot);
+
+      const lowerArmGeo = new THREE.BoxGeometry(0.9, 3.6, 0.9);
+      const darkArmMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
+      const lowerArmMesh = new THREE.Mesh(lowerArmGeo, darkArmMat);
+      lowerArmMesh.position.set(0, 1.8, 0);
+      shoulderPivot.add(lowerArmMesh);
+
+      // Elbow Joint & Upper Forearm
+      const elbowPivot = new THREE.Group();
+      elbowPivot.position.set(0, 3.6, 0);
+      shoulderPivot.add(elbowPivot);
+
+      const upperArmGeo = new THREE.BoxGeometry(0.75, 3.2, 0.75);
+      const upperArmMesh = new THREE.Mesh(upperArmGeo, robotMat);
+      upperArmMesh.position.set(0, 1.6, 0);
+      elbowPivot.add(upperArmMesh);
+
+      // Wrist & End-Effector Tool (Welder / Gripper)
+      const wristGeo = new THREE.CylinderGeometry(0.3, 0.5, 0.9, 8);
+      const toolMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 });
+      const wristMesh = new THREE.Mesh(wristGeo, toolMat);
+      wristMesh.position.set(0, 3.2, 0);
+      elbowPivot.add(wristMesh);
+
+      // Welding spark flash point light
+      const sparkLight = new THREE.PointLight(0x06b6d4, 0, 8);
+      sparkLight.position.set(0, 3.6, 0);
+      elbowPivot.add(sparkLight);
+
+      // Continuous Joint Kinematic Animation
+      animators.push((time) => {
+        if (reducedMotion) return;
+        const isPlcAttacked = lifecycleRef.current === 'THREAT_DETECTED' && attackTypeRef.current.toLowerCase().includes('plc');
+        const speed = isPlcAttacked ? 0.35 : 1.7;
+        waistMesh.rotation.y = Math.sin(time * speed + pos[0]) * 0.85;
+        shoulderPivot.rotation.z = Math.sin(time * speed * 0.85) * 0.38 + 0.15;
+        elbowPivot.rotation.z = -Math.cos(time * speed * 0.95) * 0.5 - 0.25;
+
+        // Spark flashes randomly
+        if (Math.sin(time * 18 + pos[0]) > 0.8) {
+          sparkLight.intensity = 3.5;
+        } else {
+          sparkLight.intensity = 0;
+        }
+      });
+    };
+
+    // Robot 1: Fabrication Loading Robot (Yellow-Orange)
+    createArticulatedRobot([-8, 0.4, -4], 'robot-arm-01', 'Industrial Robot KUKA-01', 0xea580c);
+
+    // === PRODUCTION LINE 2: AUTOMATED ROBOTIC ASSEMBLY & WELDING ===
+    // Robot 2: Precision Welding Robot (Orange)
+    createArticulatedRobot([6, 0.4, -4], 'robot-arm-02', 'Industrial Robot Fanuc-02', 0xf97316);
+
+    // Robot 3: Handling & Fastening Robot (Blue-Orange)
+    createArticulatedRobot([18, 0.4, -4], 'robot-arm-03', 'Industrial Robot ABB-03', 0xd97706);
+
+    // Rotary Assembly Fixture Table
+    const fixtureTable = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.2, 3.5, 1.2, 24),
+      new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85 })
+    );
+    fixtureTable.position.set([12, 0.4, 4][0], 0.6, [12, 0.4, 4][2]);
+    factoryGroup.add(fixtureTable);
+    animators.push((time) => {
+      if (reducedMotion) return;
+      fixtureTable.rotation.y = time * 0.3;
+    });
+
+    // === PRODUCTION LINE 3: VISION QUALITY INSPECTION & PACKAGING ===
+    // Vision Inspection Arch with Animated Green Scanning Laser
+    const gantryArch = new THREE.Group();
+    gantryArch.position.set(24, 0.4, 10);
+    factoryGroup.add(gantryArch);
+
+    const archFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 4.8, 6.0),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 })
+    );
+    archFrame.position.y = 2.4;
+    gantryArch.add(archFrame);
+
+    // Green Scanning Laser Plane
+    const laserGeo = new THREE.PlaneGeometry(0.8, 4.2);
+    const laserMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+    const laserMesh = new THREE.Mesh(laserGeo, laserMat);
+    laserMesh.position.set(0, 2.4, 0);
+    laserMesh.rotation.y = Math.PI / 2;
+    gantryArch.add(laserMesh);
+
+    animators.push((time) => {
+      if (reducedMotion) return;
+      laserMesh.position.z = Math.sin(time * 3.5) * 1.8;
+      laserMat.opacity = 0.4 + Math.sin(time * 8) * 0.25;
+    });
+
+    // Automated Cartoning & Packaging Machine
+    const packMachine = new THREE.Mesh(
+      new THREE.BoxGeometry(6.5, 4.2, 5.0),
+      new THREE.MeshStandardMaterial({ color: 0x0369a1, metalness: 0.75, roughness: 0.25 })
+    );
+    packMachine.position.set(24, 2.5, -12);
+    packMachine.castShadow = true;
+    factoryGroup.add(packMachine);
+    registerInteractive(packMachine, 'pack-machine-01', 'Automated Packaging Station', 'machine', 'Operating (Nominal)', { x: 40, y: 3, z: 4 });
+
+    // === CONTINUOUS MOVING CONVEYOR BELT NETWORK (Phase 2.D) ===
+    // Main Spine Conveyor running through the factory and connecting to the warehouse
+    const conveyorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.3 });
+    const conveyorBedGeo = new THREE.BoxGeometry(52, 0.7, 3.2);
     const conveyorBed = new THREE.Mesh(conveyorBedGeo, conveyorMat);
-    conveyorBed.position.set(0, 1.4, 0);
+    conveyorBed.position.set(0, 1.4, 4);
     conveyorBed.castShadow = true;
-    mainFactoryGroup.add(conveyorBed);
-    registerInteractive(conveyorBed, 'conveyor-sys-01', 'Smart Factory Conveyor Line', 'device', 'Operating (Nominal)');
+    factoryGroup.add(conveyorBed);
+    registerInteractive(conveyorBed, 'conveyor-sys-01', 'Intelligent Conveyor Network', 'conveyor', 'Operating (Nominal)', { x: 16, y: 1.5, z: 20 });
 
     // Conveyor Legs
-    for (let lx = -16; lx <= 16; lx += 8) {
-      const legGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.4, 8);
-      const legMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
-      const leg1 = new THREE.Mesh(legGeo, legMat);
-      leg1.position.set(lx, 0.7, -1.4);
-      const leg2 = new THREE.Mesh(legGeo, legMat);
-      leg2.position.set(lx, 0.7, 1.4);
-      mainFactoryGroup.add(leg1, leg2);
+    for (let lx = -24; lx <= 24; lx += 6) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+      leg.position.set(lx, 0.7, 2.6);
+      const leg2 = leg.clone();
+      leg2.position.set(lx, 0.7, 5.4);
+      factoryGroup.add(leg, leg2);
     }
 
-    // Moving Pallets / Workpieces along Conveyor
+    // Moving Pallets & Workpieces along Conveyor
     const pallets: THREE.Mesh[] = [];
-    for (let px = -15; px <= 15; px += 7.5) {
-      const palletGeo = new THREE.BoxGeometry(2.4, 0.5, 2.0);
+    for (let px = -22; px <= 22; px += 5.5) {
+      const palletGeo = new THREE.BoxGeometry(2.0, 0.45, 1.8);
       const palletMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
       const pallet = new THREE.Mesh(palletGeo, palletMat);
-      pallet.position.set(px, 2.05, 0);
-      mainFactoryGroup.add(pallet);
+      pallet.position.set(px, 1.95, 4);
+      factoryGroup.add(pallet);
+
+      // Workpiece on top of pallet
+      const partGeo = new THREE.CylinderGeometry(0.5, 0.6, 0.6, 12);
+      const partMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.85 });
+      const part = new THREE.Mesh(partGeo, partMat);
+      part.position.set(0, 0.5, 0);
+      pallet.add(part);
+
       pallets.push(pallet);
     }
 
-    // Animate Conveyor Pallets
     animators.push((time) => {
-      const speed = reducedMotion ? 0 : 2.5;
+      const speed = reducedMotion ? 0 : 2.8;
       pallets.forEach((p, idx) => {
-        let newX = -18 + ((idx * 8 + time * speed) % 36);
+        let newX = -24 + ((idx * 5.5 + time * speed) % 50);
         p.position.x = newX;
       });
     });
 
-    // 6-Axis Industrial Robotic Arm Builder (KUKA/Fanuc Style)
-    const createRoboticArm = (basePos: [number, number, number], id: string, name: string) => {
-      const robotGroup = new THREE.Group();
-      robotGroup.position.set(...basePos);
-      mainFactoryGroup.add(robotGroup);
+    // -------------------------------------------------------------------------
+    // 7. STORAGE & LOGISTICS HUB (Building B - Warehouse & Loading Docks)
+    // -------------------------------------------------------------------------
+    const warehouseGroup = new THREE.Group();
+    warehouseGroup.position.set(76, 0, 16);
+    scene.add(warehouseGroup);
 
-      // Cast Base
-      const baseGeo = new THREE.CylinderGeometry(1.4, 1.6, 0.8, 16);
-      const robotOrangeMat = new THREE.MeshStandardMaterial({
-        color: 0xea580c, // Industrial robot orange
-        metalness: 0.6,
-        roughness: 0.35,
-      });
-      const baseMesh = new THREE.Mesh(baseGeo, robotOrangeMat);
-      baseMesh.position.y = 0.4;
-      baseMesh.castShadow = true;
-      robotGroup.add(baseMesh);
-      registerInteractive(baseMesh, id, name, 'device', 'Operating (Nominal)');
+    // Warehouse Structure
+    const whBodyGeo = new THREE.BoxGeometry(42, 10, 48);
+    const whMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75, metalness: 0.3 });
+    const whBody = new THREE.Mesh(whBodyGeo, whMat);
+    whBody.position.y = 5.2;
+    whBody.castShadow = true;
+    warehouseGroup.add(whBody);
+    registerInteractive(whBody, 'warehouse-logistics', 'Warehouse Logistics & Distribution Hub', 'logistics', 'Operating', { x: 76, y: 6, z: 16 });
 
-      // Rotating Turntable Shoulder
-      const shoulderGeo = new THREE.CylinderGeometry(1.1, 1.2, 1.0, 16);
-      const shoulderMesh = new THREE.Mesh(shoulderGeo, robotOrangeMat);
-      shoulderMesh.position.y = 1.3;
-      robotGroup.add(shoulderMesh);
+    // 3 Raised Loading Docks with roll-up doors
+    for (let d = -14; d <= 14; d += 14) {
+      const dockGeo = new THREE.PlaneGeometry(6.5, 6.0);
+      const dockMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
+      const dockDoor = new THREE.Mesh(dockGeo, dockMat);
+      dockDoor.position.set(21.02, 3.8, d);
+      dockDoor.rotation.y = Math.PI / 2;
+      warehouseGroup.add(dockDoor);
+    }
 
-      // Lower Arm
-      const lowerArmPivot = new THREE.Group();
-      lowerArmPivot.position.set(0, 1.8, 0);
-      robotGroup.add(lowerArmPivot);
+    // 2 Parked Semi-Trailer Cargo Trucks at Docks
+    const createTruck = (zOffset: number) => {
+      const truckGroup = new THREE.Group();
+      truckGroup.position.set(28, 0, zOffset);
+      warehouseGroup.add(truckGroup);
 
-      const lowerArmGeo = new THREE.BoxGeometry(0.8, 3.2, 0.8);
-      const armDarkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
-      const lowerArmMesh = new THREE.Mesh(lowerArmGeo, armDarkMat);
-      lowerArmMesh.position.set(0, 1.6, 0);
-      lowerArmPivot.add(lowerArmMesh);
+      // 40ft White Shipping Trailer
+      const trailer = new THREE.Mesh(
+        new THREE.BoxGeometry(16, 4.5, 3.6),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 })
+      );
+      trailer.position.set(8, 2.8, 0);
+      truckGroup.add(trailer);
 
-      // Upper Forearm
-      const upperArmPivot = new THREE.Group();
-      upperArmPivot.position.set(0, 3.2, 0);
-      lowerArmPivot.add(upperArmPivot);
+      // Blue Semi-Truck Cab with Chrome Grille
+      const cab = new THREE.Mesh(
+        new THREE.BoxGeometry(5.2, 4.2, 3.4),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.2 })
+      );
+      cab.position.set(18.6, 2.6, 0);
+      truckGroup.add(cab);
 
-      const upperArmGeo = new THREE.BoxGeometry(0.65, 2.8, 0.65);
-      const upperArmMesh = new THREE.Mesh(upperArmGeo, robotOrangeMat);
-      upperArmMesh.position.set(0, 1.4, 0);
-      upperArmPivot.add(upperArmMesh);
-
-      // Toolhead / Welder / Gripper
-      const toolGeo = new THREE.CylinderGeometry(0.2, 0.4, 0.8, 8);
-      const toolMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.5 });
-      const toolMesh = new THREE.Mesh(toolGeo, toolMat);
-      toolMesh.position.set(0, 2.8, 0);
-      upperArmPivot.add(toolMesh);
-
-      // Robot Joint Animation Loop
-      animators.push((time) => {
-        if (reducedMotion) return;
-        const isPlcAttacked = lifecycleState === 'THREAT_DETECTED' && attackType.toLowerCase().includes('plc');
-        const rate = isPlcAttacked ? 0.3 : 1.8;
-        shoulderMesh.rotation.y = Math.sin(time * rate + basePos[0]) * 0.75;
-        lowerArmPivot.rotation.z = Math.sin(time * rate * 0.8) * 0.35 + 0.2;
-        upperArmPivot.rotation.z = -Math.cos(time * rate * 0.9) * 0.45 - 0.3;
-      });
+      // Rubber Wheels
+      for (let wx = 2; wx <= 18; wx += 5) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.45, 12), new THREE.MeshStandardMaterial({ color: 0x09090b }));
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(wx, 0.65, 1.8);
+        const wheel2 = wheel.clone();
+        wheel2.position.set(wx, 0.65, -1.8);
+        truckGroup.add(wheel, wheel2);
+      }
     };
 
-    createRoboticArm([-8, 0.1, 6], 'robot-arm-01', 'Industrial Robot KUKA-01');
-    createRoboticArm([8, 0.1, 6], 'robot-arm-02', 'Industrial Robot Fanuc-02');
+    createTruck(-14);
+    createTruck(14);
 
-    // 2 Precision CNC Machining Centers
-    const createCNCMachine = (pos: [number, number, number], id: string, name: string) => {
-      const cncGroup = new THREE.Group();
-      cncGroup.position.set(...pos);
-      mainFactoryGroup.add(cncGroup);
-
-      const bodyGeo = new THREE.BoxGeometry(5.0, 4.5, 4.2);
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.7, roughness: 0.3 });
-      const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-      bodyMesh.position.y = 2.25;
-      bodyMesh.castShadow = true;
-      cncGroup.add(bodyMesh);
-      registerInteractive(bodyMesh, id, name, 'device', 'Operating');
-
-      // Inspection Window
-      const winGeo = new THREE.PlaneGeometry(2.8, 2.2);
-      const winMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.75 });
-      const winMesh = new THREE.Mesh(winGeo, winMat);
-      winMesh.position.set(0, 2.4, 2.12);
-      cncGroup.add(winMesh);
-
-      // 3-Color Andon Status Tower Light
-      const towerBaseGeo = new THREE.CylinderGeometry(0.1, 0.1, 1.2, 8);
-      const towerBase = new THREE.Mesh(towerBaseGeo, new THREE.MeshBasicMaterial({ color: 0x64748b }));
-      towerBase.position.set(1.8, 5.1, 1.5);
-      cncGroup.add(towerBase);
-
-      const lampGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.25, 12);
-      const greenLamp = new THREE.Mesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0x10b981 }));
-      greenLamp.position.set(1.8, 5.8, 1.5);
-      cncGroup.add(greenLamp);
-    };
-
-    createCNCMachine([-18, 0.1, 6], 'cnc-milling-01', '5-Axis Precision CNC Milling');
-    createCNCMachine([18, 0.1, 6], 'cnc-milling-02', 'CNC Lathe Workstation-02');
+    // Staged Forklift inside/near docks
+    const forklift = new THREE.Group();
+    forklift.position.set(16, 0, 0);
+    const flBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 1.4), new THREE.MeshStandardMaterial({ color: 0xeab308 }));
+    flBody.position.y = 1.0;
+    forklift.add(flBody);
+    const flMast = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+    flMast.position.set(1.4, 1.6, 0);
+    forklift.add(flMast);
+    warehouseGroup.add(forklift);
 
     // -------------------------------------------------------------------------
-    // 7. SCADA SUPERVISORY CONTROL ROOM (Mezzanine, Antenna Mast, Screens)
+    // 8. SCADA SUPERVISORY CONTROL & NOC (Building C - Two Story)
     // -------------------------------------------------------------------------
     const scadaGroup = new THREE.Group();
-    scadaGroup.position.set(-18, 0, -18);
+    scadaGroup.position.set(-44, 0, 11);
     scene.add(scadaGroup);
 
-    const scadaBuildingGeo = new THREE.BoxGeometry(22, 10, 18);
-    const scadaMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.5 });
+    // Main SCADA Building
+    const scadaBuildingGeo = new THREE.BoxGeometry(36, 9.5, 36);
+    const scadaMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.4 });
     const scadaBuilding = new THREE.Mesh(scadaBuildingGeo, scadaMat);
-    scadaBuilding.position.y = 5;
+    scadaBuilding.position.y = 4.75;
     scadaBuilding.castShadow = true;
     scadaGroup.add(scadaBuilding);
-    registerInteractive(scadaBuilding, 'scada-srv-01', 'SCADA Supervisory Control Center', 'node', 'Active Supervisory');
+    registerInteractive(scadaBuilding, 'scada-srv-01', 'SCADA Supervisory Control Center', 'scada', 'Active Supervisory', { x: -44, y: 6, z: 11 });
 
-    // SCADA Observation Windows
-    const scadaGlassGeo = new THREE.PlaneGeometry(18, 4);
+    // Front Observation Mezzanine Windows (Cyan Glass)
+    const scadaGlassGeo = new THREE.PlaneGeometry(32, 4.2);
     const scadaGlassMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.8 });
     const scadaGlass = new THREE.Mesh(scadaGlassGeo, scadaGlassMat);
-    scadaGlass.position.set(0, 6.5, 9.02);
+    scadaGlass.position.set(0, 6.5, 18.02);
     scadaGroup.add(scadaGlass);
 
-    // Communications Mast on SCADA Roof
-    const mastGeo = new THREE.CylinderGeometry(0.15, 0.4, 12, 8);
-    const mastMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 });
-    const mast = new THREE.Mesh(mastGeo, mastMat);
-    mast.position.set(6, 16, 0);
+    // Communications Telecom Mast with 5G Cell Array & Satellite Dish
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.45, 14, 8),
+      new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 })
+    );
+    mast.position.set(8, 16.5, 8);
     scadaGroup.add(mast);
 
     // Satellite Dish on Mast
-    const dishGeo = new THREE.SphereGeometry(1.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-    const dishMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide });
-    const dish = new THREE.Mesh(dishGeo, dishMat);
-    dish.position.set(6, 17.5, 0);
+    const dish = new THREE.Mesh(
+      new THREE.SphereGeometry(1.8, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide })
+    );
+    dish.position.set(8, 18.2, 8);
     dish.rotation.x = Math.PI / 4;
     scadaGroup.add(dish);
 
     // -------------------------------------------------------------------------
-    // 8. INDUSTRIAL STORAGE TANKS (Cylindrical Tanks with Catwalks & Pipes)
+    // 9. INDUSTRIAL DATA CENTER (Building D - Purdue Level 3/4 MES/Historian)
     // -------------------------------------------------------------------------
-    const tankClusterGroup = new THREE.Group();
-    tankClusterGroup.position.set(48, 0, -16);
-    scene.add(tankClusterGroup);
+    const dcGroup = new THREE.Group();
+    dcGroup.position.set(-84, 0, 11);
+    scene.add(dcGroup);
 
-    const tankPositions: [number, number][] = [
-      [-7, -7], [7, -7], [-7, 7], [7, 7],
-    ];
-    tankPositions.forEach(([tx, tz], tidx) => {
-      const tankGeo = new THREE.CylinderGeometry(4.2, 4.2, 14, 24);
-      const tankMat = new THREE.MeshStandardMaterial({
-        color: 0x94a3b8,
-        metalness: 0.85,
-        roughness: 0.25,
+    const dcBody = new THREE.Mesh(
+      new THREE.BoxGeometry(26, 8.5, 36),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 })
+    );
+    dcBody.position.y = 4.25;
+    dcBody.castShadow = true;
+    dcGroup.add(dcBody);
+    registerInteractive(dcBody, 'datacenter-srv-01', 'Plant Data Center (MES/Historian)', 'server', 'Active (All Slices)', { x: -84, y: 5, z: 11 });
+
+    // Cyan Server Intake Louvers
+    const louver = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 4.5),
+      new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.85 })
+    );
+    louver.position.set(0, 4.5, 18.02);
+    dcGroup.add(louver);
+
+    // Rooftop Chillers with Rotating Fans
+    for (let f = -6; f <= 6; f += 6) {
+      const chiller = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.0, 4.2), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+      chiller.position.set(f, 9.5, 0);
+      dcGroup.add(chiller);
+
+      const fanBlade = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      fanBlade.position.set(f, 10.6, 0);
+      dcGroup.add(fanBlade);
+      animators.push((time) => {
+        if (reducedMotion) return;
+        fanBlade.rotation.y = time * 12;
       });
-      const tank = new THREE.Mesh(tankGeo, tankMat);
-      tank.position.set(tx, 7, tz);
-      tank.castShadow = true;
-      tankClusterGroup.add(tank);
-      registerInteractive(tank, `tank-0${tidx + 1}`, `Industrial Chemical Storage Tank 0${tidx + 1}`, 'device', 'Nominal');
-
-      // Dome Top
-      const domeGeo = new THREE.SphereGeometry(4.2, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-      const dome = new THREE.Mesh(domeGeo, tankMat);
-      dome.position.set(tx, 14, tz);
-      tankClusterGroup.add(dome);
-
-      // Top Railing Ring
-      const railGeo = new THREE.TorusGeometry(4.1, 0.08, 6, 24);
-      const railMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const rail = new THREE.Mesh(railGeo, railMat);
-      rail.rotation.x = Math.PI / 2;
-      rail.position.set(tx, 14.5, tz);
-      tankClusterGroup.add(rail);
-    });
-
-    // Connecting Pipe Manifold
-    const pipeGeo = new THREE.CylinderGeometry(0.35, 0.35, 26, 12);
-    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9, roughness: 0.2 });
-    const manifoldPipe = new THREE.Mesh(pipeGeo, pipeMat);
-    manifoldPipe.rotation.z = Math.PI / 2;
-    manifoldPipe.position.set(0, 11, 0);
-    tankClusterGroup.add(manifoldPipe);
+    }
 
     // -------------------------------------------------------------------------
-    // 9. HYPERBOLIC COOLING TOWERS WITH SIMULATED STEAM
+    // 10. POWER & UTILITIES INFRASTRUCTURE (Northern Sector) (Phase 2.G)
     // -------------------------------------------------------------------------
-    const coolingTowerGroup = new THREE.Group();
-    coolingTowerGroup.position.set(-20, 0, -42);
-    scene.add(coolingTowerGroup);
+    // === HIGH-VOLTAGE ELECTRICAL SUBSTATION ===
+    const substationGroup = new THREE.Group();
+    substationGroup.position.set(76, 0, -52);
+    scene.add(substationGroup);
+
+    // Step-Down Transformers
+    for (let t = -8; t <= 8; t += 16) {
+      const trans = new THREE.Mesh(
+        new THREE.BoxGeometry(7.0, 5.5, 6.0),
+        new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.3 })
+      );
+      trans.position.set(t, 2.75, 0);
+      substationGroup.add(trans);
+      registerInteractive(trans, `substation-trans-${t < 0 ? '01' : '02'}`, 'Main High-Voltage Power Transformer', 'utilities', 'Operational 66kV/11kV', { x: 76 + t, y: 3, z: -52 });
+
+      // Ceramic Insulators
+      for (let ins = -2; ins <= 2; ins += 2) {
+        const insulator = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.25, 0.45, 2.2, 8),
+          new THREE.MeshStandardMaterial({ color: 0xa855f7 })
+        );
+        insulator.position.set(t + ins, 6.6, 0);
+        substationGroup.add(insulator);
+      }
+    }
+
+    // Substation Perimeter Security Fence
+    const fenceMat = new THREE.MeshBasicMaterial({ color: 0x64748b, wireframe: true });
+    const fence = new THREE.Mesh(new THREE.BoxGeometry(38, 4.0, 38), fenceMat);
+    fence.position.y = 2.0;
+    substationGroup.add(fence);
+
+    // === TWIN HYPERBOLIC THERMAL COOLING TOWERS ===
+    const coolingGroup = new THREE.Group();
+    coolingGroup.position.set(-10, 0, -55);
+    scene.add(coolingGroup);
 
     const createCoolingTower = (xOffset: number, id: string) => {
-      // Hyperbolic procedural geometry
       const points: THREE.Vector2[] = [];
-      for (let i = 0; i <= 20; i++) {
-        const y = (i / 20) * 22;
-        // Hyperbolic contour waist formula
-        const normY = (y - 14) / 10;
-        const radius = 6.5 + normY * normY * 1.8;
+      for (let i = 0; i <= 24; i++) {
+        const y = (i / 24) * 26;
+        const normY = (y - 17) / 12;
+        const radius = 7.5 + normY * normY * 2.2;
         points.push(new THREE.Vector2(radius, y));
       }
-      const towerGeo = new THREE.LatheGeometry(points, 28);
-      const towerMat = new THREE.MeshStandardMaterial({
-        color: 0x334155,
-        roughness: 0.9,
-        side: THREE.DoubleSide,
-      });
-      const tower = new THREE.Mesh(towerGeo, towerMat);
+      const tower = new THREE.Mesh(
+        new THREE.LatheGeometry(points, 32),
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9, side: THREE.DoubleSide })
+      );
       tower.position.set(xOffset, 0, 0);
       tower.castShadow = true;
-      coolingTowerGroup.add(tower);
-      registerInteractive(tower, id, 'Thermal Cooling Tower', 'device', 'Nominal Heat Dissipation');
+      coolingGroup.add(tower);
+      registerInteractive(tower, id, 'Thermal Hyperbolic Cooling Tower', 'utilities', 'Nominal Heat Dissipation', { x: -10 + xOffset, y: 13, z: -55 });
 
-      // Rising steam particle cloud (clamped to satisfy test_twin_ui)
+      // Rising steam particle cloud (clamped to satisfy test_twin_ui.py)
       const particleCount = 28;
       const steamGeo = new THREE.BufferGeometry();
       const steamPos = new Float32Array(particleCount * 3);
       for (let p = 0; p < particleCount; p++) {
-        steamPos[p * 3] = xOffset + (Math.random() - 0.5) * 5;
-        steamPos[p * 3 + 1] = 22 + Math.random() * 8;
-        steamPos[p * 3 + 2] = (Math.random() - 0.5) * 5;
+        steamPos[p * 3] = xOffset + (Math.random() - 0.5) * 6;
+        steamPos[p * 3 + 1] = 26 + Math.random() * 8;
+        steamPos[p * 3 + 2] = (Math.random() - 0.5) * 6;
       }
       steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPos, 3));
-      const steamMat = new THREE.PointsMaterial({
-        color: 0xe2e8f0,
-        size: 1.8,
-        transparent: true,
-        opacity: 0.35,
-      });
-      const steamParticles = new THREE.Points(steamGeo, steamMat);
-      coolingTowerGroup.add(steamParticles);
+      const steamParticles = new THREE.Points(
+        steamGeo,
+        new THREE.PointsMaterial({ color: 0xf1f5f9, size: 2.2, transparent: true, opacity: 0.4 })
+      );
+      coolingGroup.add(steamParticles);
 
       animators.push((_time) => {
         void _time;
         if (reducedMotion) return;
         const positions = steamGeo.attributes.position.array as Float32Array;
         for (let p = 0; p < particleCount; p++) {
-          positions[p * 3 + 1] += 0.08;
-          if (positions[p * 3 + 1] > 30) {
-            positions[p * 3 + 1] = 22;
+          positions[p * 3 + 1] += 0.09;
+          if (positions[p * 3 + 1] > 36) {
+            positions[p * 3 + 1] = 26;
           }
         }
         steamGeo.attributes.position.needsUpdate = true;
       });
     };
 
-    createCoolingTower(-9, 'cooling-tower-01');
-    createCoolingTower(9, 'cooling-tower-02');
+    createCoolingTower(-12, 'cooling-tower-01');
+    createCoolingTower(12, 'cooling-tower-02');
 
-    // -------------------------------------------------------------------------
-    // 10. TWIN EXHAUST CHIMNEYS WITH RED/WHITE AVIATION STRIPES
-    // -------------------------------------------------------------------------
+    // === TWIN INDUSTRIAL EXHAUST CHIMNEYS WITH RED/WHITE AVIATION BANDS ===
     const chimneyGroup = new THREE.Group();
-    chimneyGroup.position.set(22, 0, -42);
+    chimneyGroup.position.set(32, 0, -55);
     scene.add(chimneyGroup);
 
-    [-6, 6].forEach((cx, cIdx) => {
-      const height = 34;
+    [-7, 7].forEach((cx, cIdx) => {
+      const height = 38;
       const segments = 6;
       const segHeight = height / segments;
 
       for (let s = 0; s < segments; s++) {
-        const segGeo = new THREE.CylinderGeometry(
-          1.8 - (s * 0.1),
-          2.0 - (s * 0.1),
-          segHeight,
-          16
+        const seg = new THREE.Mesh(
+          new THREE.CylinderGeometry(2.0 - s * 0.1, 2.2 - s * 0.1, segHeight, 16),
+          new THREE.MeshStandardMaterial({ color: s % 2 === 1 ? 0xef4444 : 0xf8fafc, roughness: 0.6 })
         );
-        // Alternate red and white bands
-        const isRed = s % 2 === 1;
-        const segMat = new THREE.MeshStandardMaterial({
-          color: isRed ? 0xef4444 : 0xf8fafc,
-          roughness: 0.6,
-        });
-        const segMesh = new THREE.Mesh(segGeo, segMat);
-        segMesh.position.set(cx, s * segHeight + segHeight / 2, 0);
-        segMesh.castShadow = true;
-        chimneyGroup.add(segMesh);
+        seg.position.set(cx, s * segHeight + segHeight / 2, 0);
+        seg.castShadow = true;
+        chimneyGroup.add(seg);
       }
 
-      // Red flashing aviation strobe light at summit
-      const beaconGeo = new THREE.SphereGeometry(0.35, 12, 12);
-      const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-      const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-      beacon.position.set(cx, height + 0.35, 0);
+      // Red flashing aviation summit beacon
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      beacon.position.set(cx, height + 0.4, 0);
       chimneyGroup.add(beacon);
 
       animators.push((time) => {
         if (reducedMotion) return;
-        beaconMat.color.setHex((Math.sin(time * 6 + cIdx) > 0.3) ? 0xef4444 : 0x450a0a);
+        (beacon.material as THREE.MeshBasicMaterial).color.setHex(Math.sin(time * 6 + cIdx) > 0.2 ? 0xef4444 : 0x3f0a0a);
       });
     });
 
-    // -------------------------------------------------------------------------
-    // 11. PLANT DATA CENTER & SERVER ROOM (Purdue Level 3 MES / Historian)
-    // -------------------------------------------------------------------------
-    const dataCenterGroup = new THREE.Group();
-    dataCenterGroup.position.set(-45, 0, 10);
-    scene.add(dataCenterGroup);
+    // === CHEMICAL & FUEL STORAGE TANK FARM ===
+    const tankGroup = new THREE.Group();
+    tankGroup.position.set(-54, 0, -52);
+    scene.add(tankGroup);
 
-    const dcGeo = new THREE.BoxGeometry(18, 9, 22);
-    const dcMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.7 });
-    const dcMesh = new THREE.Mesh(dcGeo, dcMat);
-    dcMesh.position.y = 4.5;
-    dcMesh.castShadow = true;
-    dataCenterGroup.add(dcMesh);
-    registerInteractive(dcMesh, 'datacenter-srv-01', 'Data Center (Plant Servers)', 'node', 'Active Servers');
+    const tankPositions: [number, number][] = [
+      [-9, -9], [9, -9], [-9, 9], [9, 9],
+    ];
+    tankPositions.forEach(([tx, tz], tidx) => {
+      const tank = new THREE.Mesh(
+        new THREE.CylinderGeometry(5.2, 5.2, 16, 24),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.25 })
+      );
+      tank.position.set(tx, 8, tz);
+      tank.castShadow = true;
+      tankGroup.add(tank);
+      registerInteractive(tank, `tank-farm-0${tidx + 1}`, `Chemical Storage Tank 0${tidx + 1}`, 'storage', 'Nominal Pressure', { x: -54 + tx, y: 8, z: -52 + tz });
 
-    // Cyan Server Louvers / Vents
-    const ventGeo = new THREE.PlaneGeometry(14, 5);
-    const ventMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.85 });
-    const vent = new THREE.Mesh(ventGeo, ventMat);
-    vent.position.set(0, 4.5, 11.02);
-    dataCenterGroup.add(vent);
+      // Domed Tank Top
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(5.2, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85 })
+      );
+      dome.position.set(tx, 16, tz);
+      tankGroup.add(dome);
 
-    // -------------------------------------------------------------------------
-    // 12. ELECTRICAL SUBSTATION (Transformers, Insulator Bushings & Fences)
-    // -------------------------------------------------------------------------
-    const substationGroup = new THREE.Group();
-    substationGroup.position.set(48, 0, 16);
-    scene.add(substationGroup);
-
-    for (let t = -4; t <= 4; t += 8) {
-      const transGeo = new THREE.BoxGeometry(4.5, 4.0, 3.5);
-      const transMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 });
-      const trans = new THREE.Mesh(transGeo, transMat);
-      trans.position.set(t, 2, 0);
-      substationGroup.add(trans);
-
-      // Ceramic Insulators
-      for (let ins = -1.2; ins <= 1.2; ins += 1.2) {
-        const insGeo = new THREE.CylinderGeometry(0.18, 0.28, 1.6, 8);
-        const insMat = new THREE.MeshStandardMaterial({ color: 0xa855f7 });
-        const insulator = new THREE.Mesh(insGeo, insMat);
-        insulator.position.set(t + ins, 4.8, 0);
-        substationGroup.add(insulator);
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 13. ATTACKER ENTITY, INTERNET (ISP), FIREWALL & ATTACK SPLINE TRAJECTORY
-    // -------------------------------------------------------------------------
-    const attackGroup = new THREE.Group();
-    scene.add(attackGroup);
-
-    // Attacker Node Positioned Outside Perimeter
-    const attackerPos = new THREE.Vector3(-58, 0, -32);
-
-    // Black Octagonal Hacker Platform with Red Neon Ring
-    const hackerBaseGeo = new THREE.CylinderGeometry(3.5, 4.0, 0.8, 8);
-    const hackerBaseMat = new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.9, roughness: 0.1 });
-    const hackerBase = new THREE.Mesh(hackerBaseGeo, hackerBaseMat);
-    hackerBase.position.copy(attackerPos);
-    hackerBase.position.y = 0.4;
-    attackGroup.add(hackerBase);
-    registerInteractive(hackerBase, 'attacker-node', 'Attacker (External)', 'security', 'Active Attack Source');
-
-    const neonRingGeo = new THREE.RingGeometry(3.6, 4.1, 16);
-    const neonRingMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide });
-    const neonRing = new THREE.Mesh(neonRingGeo, neonRingMat);
-    neonRing.rotation.x = -Math.PI / 2;
-    neonRing.position.set(attackerPos.x, 0.85, attackerPos.z);
-    attackGroup.add(neonRing);
-
-    // Floating Glowing Hooded / Skull Octahedron
-    const skullGeo = new THREE.OctahedronGeometry(1.4);
-    const skullMat = new THREE.MeshStandardMaterial({
-      color: 0xef4444,
-      emissive: 0xef4444,
-      emissiveIntensity: 0.9,
-      wireframe: true,
+      // Top Safety Railing
+      const rail = new THREE.Mesh(new THREE.TorusGeometry(5.1, 0.09, 6, 24), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      rail.rotation.x = Math.PI / 2;
+      rail.position.set(tx, 16.5, tz);
+      tankGroup.add(rail);
     });
-    const skullMesh = new THREE.Mesh(skullGeo, skullMat);
-    skullMesh.position.set(attackerPos.x, 4.5, attackerPos.z);
-    attackGroup.add(skullMesh);
 
-    // Internet Cloud (ISP) Node
-    const cloudPos = new THREE.Vector3(-38, 12, -22);
-    const cloudGeo = new THREE.DodecahedronGeometry(2.0);
-    const cloudMat = new THREE.MeshStandardMaterial({
+    // Elevated Industrial Pipe Bridges (Trestles) connecting Utility area to Main Factory
+    const pipeBridgeGroup = new THREE.Group();
+    scene.add(pipeBridgeGroup);
+
+    // Steel lattice support towers
+    [-2, 34].forEach((px) => {
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(2.0, 11, 2.0), new THREE.MeshBasicMaterial({ color: 0x0284c7, wireframe: true }));
+      tower.position.set(px, 5.5, -8);
+      pipeBridgeGroup.add(tower);
+    });
+
+    // Large Industrial Utility Pipes crossing the roadway
+    const pipe1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.45, 48, 12),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 })
+    );
+    pipe1.rotation.x = Math.PI / 2;
+    pipe1.position.set(16, 10.5, -8);
+    pipeBridgeGroup.add(pipe1);
+
+    const pipe2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 48, 12),
+      new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.9 })
+    );
+    pipe2.rotation.x = Math.PI / 2;
+    pipe2.position.set(18, 10.5, -8);
+    pipeBridgeGroup.add(pipe2);
+
+    // -------------------------------------------------------------------------
+    // 11. CYBERSECURITY LAYER & ATTACK VISUALIZATION (Phase 8, 9 & 10)
+    // -------------------------------------------------------------------------
+    const cyberGroup = new THREE.Group();
+    scene.add(cyberGroup);
+
+    // External Attacker Station Outside Perimeter
+    const attackerPos = new THREE.Vector3(-96, 0, -42);
+    const hackerBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.0, 4.5, 0.9, 8),
+      new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.95, roughness: 0.1 })
+    );
+    hackerBase.position.copy(attackerPos);
+    hackerBase.position.y = 0.45;
+    cyberGroup.add(hackerBase);
+    registerInteractive(hackerBase, 'attacker-node', 'External Threat Actor (APT)', 'security', 'Active Threat Source', attackerPos);
+
+    // Red Neon Pulse Ring
+    const neonRing = new THREE.Mesh(
+      new THREE.RingGeometry(4.2, 4.8, 16),
+      new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide })
+    );
+    neonRing.rotation.x = -Math.PI / 2;
+    neonRing.position.set(attackerPos.x, 0.95, attackerPos.z);
+    cyberGroup.add(neonRing);
+
+    // Glowing Red Skull / Hood Hologram
+    const skullMesh = new THREE.Mesh(
+      new THREE.OctahedronGeometry(1.6),
+      new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 1.0, wireframe: true })
+    );
+    skullMesh.position.set(attackerPos.x, 5.0, attackerPos.z);
+    cyberGroup.add(skullMesh);
+
+    // Internet Cloud (ISP Gateway) Node
+    const cloudPos = new THREE.Vector3(-60, 14, -20);
+    const cloudMesh = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(2.2),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0284c7, emissiveIntensity: 0.6, metalness: 0.9 })
+    );
+    cloudMesh.position.copy(cloudPos);
+    cyberGroup.add(cloudMesh);
+    registerInteractive(cloudMesh, 'internet-isp', 'Internet Gateway (ISP)', 'gateway', 'Online', cloudPos);
+
+    // Industrial Next-Gen Firewall / IDS
+    const firewallPos = new THREE.Vector3(-25, 6, -14);
+    const fwGeo = new THREE.BoxGeometry(4.5, 5.5, 0.5);
+    const fwMat = new THREE.MeshPhysicalMaterial({
       color: 0x0284c7,
       emissive: 0x0284c7,
-      emissiveIntensity: 0.5,
-      roughness: 0.2,
-      metalness: 0.8,
-    });
-    const cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
-    cloudMesh.position.copy(cloudPos);
-    attackGroup.add(cloudMesh);
-    registerInteractive(cloudMesh, 'internet-isp', 'Internet (ISP Gateway)', 'gateway', 'Online');
-
-    // Industrial Next-Gen Firewall / IDS Hologram
-    const firewallPos = new THREE.Vector3(-18, 5, -10);
-    const fwGeo = new THREE.BoxGeometry(4.0, 5.0, 0.4);
-    const isMitigating = mitigationActive || lifecycleState === 'RECOVERED';
-    const fwColor = isMitigating ? 0x10b981 : 0x0284c7;
-    const fwMat = new THREE.MeshPhysicalMaterial({
-      color: fwColor,
-      emissive: fwColor,
       emissiveIntensity: 0.6,
-      transparent: true,
-      opacity: 0.8,
-      roughness: 0.1,
-    });
-    const firewallMesh = new THREE.Mesh(fwGeo, fwMat);
-    firewallMesh.position.copy(firewallPos);
-    attackGroup.add(firewallMesh);
-    registerInteractive(firewallMesh, 'firewall-ids', 'Firewall (IDS/IPS)', 'security', isMitigating ? 'Blocking Traffic' : 'Monitoring');
-
-    // Animated 3D Attack Trajectory Spline (Attacker -> Internet -> Firewall -> Factory Gateway)
-    const attackSpline = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(attackerPos.x, 4.5, attackerPos.z),
-      new THREE.Vector3(-48, 16, -26),
-      cloudPos,
-      new THREE.Vector3(-26, 10, -14),
-      firewallPos,
-      new THREE.Vector3(0, 6, 0),
-    ]);
-
-    const splineGeo = new THREE.TubeGeometry(attackSpline, 64, 0.18, 8, false);
-    const splineMat = new THREE.MeshBasicMaterial({
-      color: 0xef4444,
       transparent: true,
       opacity: 0.85,
     });
-    const splineMesh = new THREE.Mesh(splineGeo, splineMat);
-    attackGroup.add(splineMesh);
+    const firewallMesh = new THREE.Mesh(fwGeo, fwMat);
+    firewallMesh.position.copy(firewallPos);
+    cyberGroup.add(firewallMesh);
+    registerInteractive(firewallMesh, 'firewall-ot-01', 'Industrial Firewall (IDS/IPS)', 'security', 'Enforcing Rules', firewallPos);
 
-    // Glowing Malicious Traffic Packet Pulses travelling along the spline
+    // 3D Attack Trajectory Catmull-Rom Spline
+    const attackSpline = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(attackerPos.x, 5.0, attackerPos.z),
+      new THREE.Vector3(-78, 18, -30),
+      cloudPos,
+      new THREE.Vector3(-42, 12, -16),
+      firewallPos,
+      new THREE.Vector3(16, 6, 16),
+    ]);
+
+    const splineMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(attackSpline, 64, 0.22, 8, false),
+      new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.85 })
+    );
+    cyberGroup.add(splineMesh);
+
+    // Streaming Malicious Packet Spheres
     const packetCount = 8;
     const packetMeshes: THREE.Mesh[] = [];
     for (let p = 0; p < packetCount; p++) {
-      const pGeo = new THREE.SphereGeometry(0.45, 12, 12);
-      const pMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
-      const pMesh = new THREE.Mesh(pGeo, pMat);
-      attackGroup.add(pMesh);
-      packetMeshes.push(pMesh);
+      const pm = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xff0044 })
+      );
+      cyberGroup.add(pm);
+      packetMeshes.push(pm);
     }
 
     animators.push((time) => {
-      const isThreatActive = lifecycleState === 'ATTACK_INITIATED' || lifecycleState === 'THREAT_DETECTED';
-      splineMesh.visible = isThreatActive || traceAttackPath;
+      const isThreatActive = lifecycleRef.current === 'ATTACK_INITIATED' || lifecycleRef.current === 'THREAT_DETECTED';
+      splineMesh.visible = isThreatActive || traceAttackPathRef.current;
       packetMeshes.forEach((pm, idx) => {
         pm.visible = isThreatActive;
         if (!isThreatActive || reducedMotion) return;
         const offset = (idx / packetCount + time * 0.45) % 1.0;
-        const pos = attackSpline.getPointAt(offset);
-        pm.position.copy(pos);
+        pm.position.copy(attackSpline.getPointAt(offset));
       });
+
+      // Update firewall color if mitigated
+      const isMitigated = mitigationRef.current || lifecycleRef.current === 'RECOVERED';
+      const c = isMitigated ? 0x10b981 : 0x0284c7;
+      fwMat.color.setHex(c);
+      fwMat.emissive.setHex(c);
     });
 
     // -------------------------------------------------------------------------
-    // 14. 3D HOLOGRAPHIC BILLBOARD BADGES (Matching Reference Images 1 & 2)
+    // 12. 3D HOLOGRAPHIC BILLBOARD BADGES (Reference Image Compliance)
     // -------------------------------------------------------------------------
     const create3DBadge = (
       text: string,
@@ -899,7 +1203,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       canvas.height = 128;
       const ctx = canvas.getContext('2d')!;
 
-      // Rounded background pill
+      // Background pill
       ctx.fillStyle = 'rgba(10, 22, 40, 0.92)';
       ctx.strokeStyle = color;
       ctx.lineWidth = 4;
@@ -914,7 +1218,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       ctx.arc(48, 64, 26, 0, Math.PI * 2);
       ctx.fill();
 
-      // Icon indicator glyph
+      // Glyph
       ctx.fillStyle = '#0a1628';
       ctx.font = 'bold 24px monospace';
       ctx.textAlign = 'center';
@@ -935,7 +1239,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           : 'D';
       ctx.fillText(glyph, 48, 65);
 
-      // Title & Subtext
+      // Text
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 26px sans-serif';
@@ -948,116 +1252,104 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       const texture = new THREE.CanvasTexture(canvas);
       const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
       const sprite = new THREE.Sprite(spriteMat);
-      sprite.scale.set(12, 4, 1);
+      sprite.scale.set(14, 4.6, 1);
       return sprite;
     };
 
     const badgesGroup = new THREE.Group();
     scene.add(badgesGroup);
 
-    // Badge 1: Attacker (External)
     const badgeAttacker = create3DBadge('DDoS Attack', '(External Attacker)', '#ef4444', 'hacker');
-    badgeAttacker.position.set(attackerPos.x, 8.5, attackerPos.z);
+    badgeAttacker.position.set(attackerPos.x, 9.5, attackerPos.z);
     badgesGroup.add(badgeAttacker);
 
-    // Badge 2: Firewall (IDS/IPS)
     const badgeFirewall = create3DBadge('Firewall', '(IDS/IPS Active)', '#0284c7', 'shield');
-    badgeFirewall.position.set(firewallPos.x, 9.5, firewallPos.z);
+    badgeFirewall.position.set(firewallPos.x, 10.5, firewallPos.z);
     badgesGroup.add(badgeFirewall);
 
-    // Badge 3: SCADA (Under Attack / Control Systems)
-    const isScadaThreat = attackType.toLowerCase().includes('scada');
-    const badgeScada = create3DBadge(
-      'SCADA',
-      isScadaThreat ? '(Under Attack)' : '(Control Systems)',
-      isScadaThreat ? '#ef4444' : '#0284c7',
-      isScadaThreat ? 'alert' : 'shield'
-    );
-    badgeScada.position.set(-18, 14, -18);
+    const badgeScada = create3DBadge('SCADA', '(Control Systems)', '#0284c7', 'shield');
+    badgeScada.position.set(-44, 15, 11);
     badgesGroup.add(badgeScada);
 
-    // Badge 4: PLC (Isolated / Operating)
-    const isPlcThreat = attackType.toLowerCase().includes('plc');
-    const badgePlc = create3DBadge(
-      'PLC',
-      isPlcThreat ? '(Isolated)' : '(Operating)',
-      isPlcThreat ? '#f59e0b' : '#10b981',
-      isPlcThreat ? 'alert' : 'check'
-    );
-    badgePlc.position.set(5, 5, 12);
+    const badgePlc = create3DBadge('PLC', '(Isolated/Operating)', '#10b981', 'check');
+    badgePlc.position.set(16, 8, 8);
     badgesGroup.add(badgePlc);
 
-    // Badge 5: Production Line (Operating / Disrupted)
     const badgeProduction = create3DBadge('Production Line', '(Operating)', '#10b981', 'check');
-    badgeProduction.position.set(8, 7, 18);
+    badgeProduction.position.set(16, 9, 24);
     badgesGroup.add(badgeProduction);
 
-    // Badge 6: Industrial Robots
-    const badgeRobots = create3DBadge('Industrial Robots', '(Production Line)', '#0284c7', 'robot');
-    badgeRobots.position.set(12, 6, 26);
+    const badgeRobots = create3DBadge('Industrial Robots', '(Automated Cells)', '#0284c7', 'robot');
+    badgeRobots.position.set(24, 7, -4);
     badgesGroup.add(badgeRobots);
 
-    // Badge 7: IoT Sensors
-    const badgeSensors = create3DBadge('IoT Sensors', '(Environmental)', '#06b6d4', 'sensor');
-    badgeSensors.position.set(-20, 10, 24);
-    badgesGroup.add(badgeSensors);
-
-    // Badge 8: Data Center (Plant Servers)
     const badgeDataCenter = create3DBadge('Data Center', '(Plant Servers)', '#0284c7', 'server');
-    badgeDataCenter.position.set(-45, 12, 10);
+    badgeDataCenter.position.set(-84, 13, 11);
     badgesGroup.add(badgeDataCenter);
 
     // -------------------------------------------------------------------------
-    // 15. PURDUE ARCHITECTURE TIERED VIEW HELPER
+    // 13. PURDUE ARCHITECTURE TIERED VIEW PLATES (Phase 10)
     // -------------------------------------------------------------------------
     const purduePlatesGroup = new THREE.Group();
     scene.add(purduePlatesGroup);
     purduePlatesGroup.visible = false;
 
     const purdueTiers = [
-      { level: 'Level 4: Enterprise IT', y: 32, color: 0x3b82f6 },
-      { level: 'Level 3.5: Industrial DMZ', y: 24, color: 0xa855f7 },
-      { level: 'Level 3: Manufacturing Operations', y: 16, color: 0x06b6d4 },
-      { level: 'Level 2: Supervisory Control (SCADA)', y: 8, color: 0xf59e0b },
+      { level: 'Level 4: Enterprise IT', y: 36, color: 0x3b82f6 },
+      { level: 'Level 3.5: Industrial DMZ', y: 27, color: 0xa855f7 },
+      { level: 'Level 3: Manufacturing Operations', y: 18, color: 0x06b6d4 },
+      { level: 'Level 2: Supervisory Control (SCADA)', y: 9, color: 0xf59e0b },
       { level: 'Level 1 & 0: Basic Control & Physical Process', y: 0.2, color: 0x10b981 },
     ];
 
     purdueTiers.forEach((tier) => {
-      const plateGeo = new THREE.BoxGeometry(110, 0.4, 75);
-      const plateMat = new THREE.MeshStandardMaterial({
-        color: tier.color,
-        transparent: true,
-        opacity: 0.18,
-        wireframe: true,
-      });
-      const plateMesh = new THREE.Mesh(plateGeo, plateMat);
-      plateMesh.position.set(0, tier.y, 0);
-      purduePlatesGroup.add(plateMesh);
+      const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(180, 0.4, 130),
+        new THREE.MeshStandardMaterial({ color: tier.color, transparent: true, opacity: 0.16, wireframe: true })
+      );
+      plate.position.set(0, tier.y, 0);
+      purduePlatesGroup.add(plate);
     });
 
     // -------------------------------------------------------------------------
-    // 16. RAYCASTING INTERACTIVE SELECTION
+    // 14. 3D SELECTION HIGHLIGHT RING
+    // -------------------------------------------------------------------------
+    const selectionRing = new THREE.Mesh(
+      new THREE.RingGeometry(2.5, 3.2, 32),
+      new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide })
+    );
+    selectionRing.rotation.x = -Math.PI / 2;
+    selectionRing.position.y = 0.5;
+    selectionRing.visible = false;
+    scene.add(selectionRing);
+
+    animators.push((time) => {
+      if (!selectionRing.visible || reducedMotion) return;
+      const s = 1.0 + Math.sin(time * 5) * 0.12;
+      selectionRing.scale.set(s, s, s);
+    });
+
+    // -------------------------------------------------------------------------
+    // 15. SEPARATED DRAG-VS-CLICK INTERACTION & RAYCASTING (Phase 4 & 6)
     // -------------------------------------------------------------------------
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+    let isDragging = false;
 
-    const onPointerClick = (e: MouseEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(interactiveMeshes, true);
-      if (intersects.length > 0) {
-        const hit = intersects[0].object;
-        if (hit.userData && hit.userData.id) {
-          onSelect(hit.userData.id, hit.userData.type || 'node');
-        }
-      }
+    const onPointerDown = (e: MouseEvent) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+      isDragging = false;
     };
 
     const onPointerMove = (e: MouseEvent) => {
-      if (!onHover) return;
+      const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      if (dist > 6) {
+        isDragging = true;
+      }
+
+      // Hover handling
+      if (!onHover || isDragging) return;
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1070,8 +1362,8 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           onHover({
             id: hit.userData.id,
             name: hit.userData.name || hit.userData.id,
-            type: hit.userData.type || 'node',
-            status: hit.userData.status || 'Active',
+            type: hit.userData.type || 'machine',
+            status: hit.userData.status || 'Nominal',
           });
           return;
         }
@@ -1079,37 +1371,69 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       onHover(null);
     };
 
-    renderer.domElement.addEventListener('click', onPointerClick);
+    const onPointerUp = (e: MouseEvent) => {
+      // If mouse moved > 6px, this was a camera rotate/pan drag: DO NOT select!
+      if (isDragging) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveMeshes, true);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        if (hit.userData && hit.userData.id) {
+          const id = hit.userData.id;
+          const type = hit.userData.type || 'node';
+          onSelect(id, type);
+
+          // Update selection ring position
+          const worldPos = new THREE.Vector3();
+          hit.getWorldPosition(worldPos);
+          selectionRing.position.set(worldPos.x, worldPos.y + 0.1, worldPos.z);
+          selectionRing.visible = true;
+
+          // If asset has coords, focus camera smoothly
+          if (hit.userData.coords) {
+            focusOnAsset(hit.userData.coords);
+          }
+        }
+      }
+    };
+
+    renderer.domElement.addEventListener('mousedown', onPointerDown);
     renderer.domElement.addEventListener('mousemove', onPointerMove);
+    renderer.domElement.addEventListener('mouseup', onPointerUp);
 
     // -------------------------------------------------------------------------
-    // 17. MAIN ANIMATION & RENDERING LOOP
+    // 16. MAIN ANIMATION & RENDERING LOOP
     // -------------------------------------------------------------------------
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animFrameId.current = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Run registered animators
+      // Run registered continuous animators
       animators.forEach((anim) => anim(elapsedTime));
 
-      // Handle smooth camera lerping
+      // Handle smooth camera lerping towards active preset/asset
       if (isLerpingRef.current) {
         camera.position.lerp(targetCamPos.current, 0.05);
         controls.target.lerp(targetLookAt.current, 0.05);
-        if (camera.position.distanceTo(targetCamPos.current) < 0.2) {
+        if (camera.position.distanceTo(targetCamPos.current) < 0.25) {
           isLerpingRef.current = false;
         }
       }
 
-      // Handle View Mode Adjustments
-      if (currentMode === 'purdue') {
-        purduePlatesGroup.visible = true;
-      } else {
-        purduePlatesGroup.visible = false;
-      }
+      // Handle cutaway / interior mode roof visibility
+      roofTrussesGroup.visible = !cutawayActive && currentMode !== 'cutaway';
 
+      // Purdue architecture plate visibility
+      purduePlatesGroup.visible = currentMode === 'purdue';
+
+      // Badges visibility
       badgesGroup.visible = showBadges;
 
       controls.update();
@@ -1131,20 +1455,20 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     window.addEventListener('resize', handleResize);
 
     // -------------------------------------------------------------------------
-    // 18. STRICT CLEANUP AND RESOURCE DISPOSAL (Satisfies test_twin_ui.py)
+    // 17. STRICT CLEANUP AND RESOURCE DISPOSAL (Satisfies test_twin_ui.py)
     // -------------------------------------------------------------------------
     return () => {
       window.removeEventListener('resize', handleResize);
       if (rendererRef.current && rendererRef.current.domElement) {
-        rendererRef.current.domElement.removeEventListener('click', onPointerClick);
+        rendererRef.current.domElement.removeEventListener('mousedown', onPointerDown);
         rendererRef.current.domElement.removeEventListener('mousemove', onPointerMove);
+        rendererRef.current.domElement.removeEventListener('mouseup', onPointerUp);
       }
 
       if (animFrameId.current) {
         cancelAnimationFrame(animFrameId.current);
       }
 
-      // Explicitly dispose all geometries and materials
       scene.traverse((obj: any) => {
         if (obj.geometry) {
           obj.geometry.dispose();
@@ -1166,19 +1490,20 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         rendererRef.current.dispose();
       }
     };
-  }, [reducedMotion, lifecycleState, attackType, mitigationActive, traceAttackPath, onSelect, onHover]);
+  }, []); // Run once on mount: persists WebGL context across property changes
 
   return (
     <div
       ref={mountRef}
       className={`w-full h-full relative select-none overflow-hidden ${
-        fullscreen ? 'fixed inset-0 z-50 bg-[#070e1b]' : ''
+        fullscreen ? 'fixed inset-0 z-50 bg-[#060d1a]' : ''
       }`}
     >
       {/* Central 3D Mode Selector Tabs (Top Left) */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-[#0a1628]/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 shadow-2xl">
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-[#0a1628]/95 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 shadow-2xl">
         {[
           { id: '3d_plant', label: '3D Plant View' },
+          { id: 'cutaway', label: 'Interior / Cutaway' },
           { id: 'topology', label: 'Network Topology' },
           { id: 'asset_map', label: 'Asset Map' },
           { id: 'traffic_flow', label: 'Traffic Flow' },
@@ -1189,6 +1514,11 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
             key={tab.id}
             onClick={() => {
               setCurrentMode(tab.id as TwinViewMode);
+              if (tab.id === 'cutaway') {
+                setCutawayActive(true);
+              } else if (tab.id === '3d_plant') {
+                setCutawayActive(false);
+              }
               if (onViewModeChange) onViewModeChange(tab.id as TwinViewMode);
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
@@ -1205,48 +1535,82 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       {/* Top Right HUD Indicators & Camera Presets */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {/* Real-time Indicator */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0a1628]/90 border border-slate-700 backdrop-blur-md text-xs font-mono text-emerald-400 shadow-xl">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0a1628]/95 border border-slate-700 backdrop-blur-md text-xs font-mono text-emerald-400 shadow-xl">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
           <span className="font-bold">Real-time</span>
         </div>
 
         {/* Weather Tag */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a1628]/90 border border-slate-700 backdrop-blur-md text-xs font-mono text-amber-300 shadow-xl">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a1628]/95 border border-slate-700 backdrop-blur-md text-xs font-mono text-amber-300 shadow-xl">
           <span>☀️</span>
           <span>24°C Bengaluru</span>
         </div>
 
-        {/* Camera Preset Dropdown / Quick Buttons */}
-        <div className="flex items-center gap-1 bg-[#0a1628]/90 border border-slate-700 p-1 rounded-xl shadow-xl backdrop-blur-md">
+        {/* Camera Preset Quick Buttons */}
+        <div className="flex items-center gap-1 bg-[#0a1628]/95 border border-slate-700 p-1 rounded-xl shadow-xl backdrop-blur-md">
+          <button
+            onClick={() => applyPreset('overview')}
+            title="Overview (Full Site Isometric)"
+            className="px-2 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-mono font-bold"
+          >
+            Overview
+          </button>
           <button
             onClick={() => applyPreset('top')}
-            title="Top View (Purdue Bird's-Eye)"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
+            title="Top Bird's-Eye View"
+            className="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
           >
             Top
           </button>
           <button
-            onClick={() => applyPreset('front')}
-            title="Front Elevation View"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
+            onClick={() => applyPreset('production')}
+            title="Focus on Production Lines"
+            className="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
           >
-            Front
+            Lines
           </button>
           <button
-            onClick={() => applyPreset('iso')}
-            title="Isometric 3D View"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
+            onClick={() => applyPreset('scada')}
+            title="Focus on SCADA Control"
+            className="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
           >
-            Iso
+            SCADA
+          </button>
+          <button
+            onClick={() => applyPreset('utilities')}
+            title="Focus on Utilities & Towers"
+            className="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
+          >
+            Utility
+          </button>
+          <button
+            onClick={() => applyPreset('logistics')}
+            title="Focus on Warehouse & Docks"
+            className="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
+          >
+            Logistics
           </button>
           <button
             onClick={() => applyPreset('overview')}
-            title="Reset to Overview"
+            title="Reset Camera"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Cutaway Roof Toggle */}
+        <button
+          onClick={() => setCutawayActive(!cutawayActive)}
+          title={cutawayActive ? 'Show Roofs' : 'Cutaway Interior View'}
+          className={`px-2.5 py-1.5 rounded-xl border backdrop-blur-md shadow-xl text-xs font-mono font-bold transition-colors ${
+            cutawayActive
+              ? 'bg-amber-600 border-amber-500 text-white'
+              : 'bg-[#0a1628]/95 border-slate-700 text-slate-300 hover:text-white'
+          }`}
+        >
+          {cutawayActive ? 'Interior Mode' : 'Cutaway'}
+        </button>
 
         {/* Badge Overlay Toggle */}
         <button
@@ -1255,7 +1619,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           className={`p-2 rounded-xl border backdrop-blur-md shadow-xl transition-colors ${
             showBadges
               ? 'bg-blue-600 border-blue-500 text-white'
-              : 'bg-[#0a1628]/90 border-slate-700 text-slate-400 hover:text-white'
+              : 'bg-[#0a1628]/95 border-slate-700 text-slate-400 hover:text-white'
           }`}
         >
           <Eye className="w-4 h-4" />
@@ -1265,7 +1629,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         <button
           onClick={() => setFullscreen(!fullscreen)}
           title={fullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-          className="p-2 rounded-xl bg-[#0a1628]/90 border border-slate-700 backdrop-blur-md text-slate-400 hover:text-white shadow-xl transition-colors"
+          className="p-2 rounded-xl bg-[#0a1628]/95 border border-slate-700 backdrop-blur-md text-slate-400 hover:text-white shadow-xl transition-colors"
         >
           {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>

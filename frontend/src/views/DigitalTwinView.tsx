@@ -662,7 +662,7 @@ export const DigitalTwinView: React.FC = () => {
             selectedId={selectedId}
             onSelect={(id, type) => {
               setSelectedId(id);
-              setSelectedType(type);
+              setSelectedType((type as 'node' | 'device' | 'link') || null);
               if (id) setActiveRightTab('inspector');
             }}
             onHover={setHoveredItem}
@@ -864,40 +864,72 @@ export const DigitalTwinView: React.FC = () => {
             {activeRightTab === 'inspector' && (
               <div className="flex flex-col gap-2.5">
                 <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col gap-2">
-                  <span className="text-cyan-400 font-bold text-sm">
-                    {selectedNode?.label || selectedNode?.id || selectedDevice?.id || selectedId || 'No Asset Selected'}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-cyan-400 font-bold text-sm truncate">
+                      {selectedNode?.label || selectedNode?.id || selectedDevice?.id || selectedId || 'No Asset Selected'}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                      {selectedNode?.operationalStatus || (selectedNode as any)?.operational_status || 'ACTIVE'}
+                    </span>
+                  </div>
                   <span className="text-[10px] text-slate-400">
                     Category: {selectedNode?.type || selectedDevice?.device_class || 'Industrial Machine'}
                   </span>
                   <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
                     <div>
                       <span className="text-slate-400 block">Purdue Level:</span>
-                      <span className="font-bold text-white">Level 1 (Basic Control)</span>
+                      <span className="font-bold text-white">
+                        {(selectedNode as any)?.metadata?.purdue_level || 'Level 0 (Physical Process)'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-slate-400 block">IP Address:</span>
-                      <span className="font-bold text-cyan-300">192.168.10.21</span>
+                      <span className="font-bold text-cyan-300">
+                        {(selectedNode as any)?.metadata?.ip_address || '192.168.1.101'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">Network Zone:</span>
+                      <span className="font-bold text-white">
+                        {selectedNode?.zone || (selectedNode as any)?.metadata?.zone || 'Industrial OT Cell'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">Security Status:</span>
+                      <span className="font-bold text-emerald-400">
+                        {(selectedNode as any)?.security_status || 'SECURE'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">CPU Load</span>
-                    <span className="text-sm font-bold text-white">24.5%</span>
+                    <span className="text-[10px] text-slate-400 block">CPU Utilization</span>
+                    <span className="text-sm font-bold text-white">
+                      {selectedNode?.cpu_percent ? `${selectedNode.cpu_percent}%` : (selectedNode as any)?.cpu_utilization_pct ? `${(selectedNode as any).cpu_utilization_pct}%` : '24.5%'}
+                    </span>
                   </div>
                   <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Memory</span>
-                    <span className="text-sm font-bold text-white">42.0%</span>
+                    <span className="text-[10px] text-slate-400 block">Memory Load</span>
+                    <span className="text-sm font-bold text-white">
+                      {selectedNode?.memory_percent ? `${selectedNode.memory_percent}%` : (selectedNode as any)?.memory_utilization_pct ? `${(selectedNode as any).memory_utilization_pct}%` : '38.0%'}
+                    </span>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setActiveCameraPreset('robot')}
-                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs"
+                  onClick={() => {
+                    const id = selectedNode?.id || selectedId;
+                    if (id?.includes('scada')) setActiveCameraPreset('scada');
+                    else if (id?.includes('robot') || id?.includes('cnc') || id?.includes('press') || id?.includes('conveyor')) setActiveCameraPreset('production');
+                    else if (id?.includes('substation') || id?.includes('tower') || id?.includes('tank')) setActiveCameraPreset('utilities');
+                    else if (id?.includes('warehouse') || id?.includes('dock')) setActiveCameraPreset('logistics');
+                    else setActiveCameraPreset('overview');
+                  }}
+                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
-                  Focus Camera on Asset
+                  <Eye className="w-3.5 h-3.5" /> Focus Camera on Asset
                 </button>
               </div>
             )}
