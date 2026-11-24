@@ -12,8 +12,10 @@ export function AlertFeed() {
   const severityColor: Record<string, string> = {
     critical: 'bg-rose-950/80 border-rose-700 text-rose-300',
     high: 'bg-amber-950/80 border-amber-700 text-amber-300',
+    warning: 'bg-amber-950/80 border-amber-700 text-amber-300',
     medium: 'bg-yellow-950/80 border-yellow-700 text-yellow-300',
     low: 'bg-cyan-950/80 border-cyan-700 text-cyan-300',
+    info: 'bg-blue-950/80 border-blue-700 text-blue-300',
   }
 
   return (
@@ -61,7 +63,7 @@ export function AlertFeed() {
               ) : (
                 currentAlerts.map((alert) => (
                   <div
-                    key={alert.id}
+                    key={alert.alertId || alert.id}
                     className={`p-2.5 rounded-xl border flex flex-col gap-1 transition-all shadow-sm ${
                       severityColor[alert.severity] || severityColor.low
                     }`}
@@ -75,9 +77,14 @@ export function AlertFeed() {
                       </span>
                     </div>
                     <p className="text-[11px] font-medium text-slate-200">{alert.message}</p>
-                    {alert.source && (
-                      <span className="text-[9px] text-slate-400">Source: {alert.source}</span>
-                    )}
+                    <div className="flex items-center gap-2 text-[9px] text-slate-400">
+                      {(alert.deviceId || alert.source) && (
+                        <span>Target: {alert.deviceId || alert.source}</span>
+                      )}
+                      {alert.sliceId && (
+                        <span>Slice: {alert.sliceId}</span>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

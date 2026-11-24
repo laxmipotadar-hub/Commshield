@@ -132,27 +132,60 @@ def reset_database_endpoint(db: Session = Depends(get_db)):
 
 @app.websocket("/ws/telemetry")
 async def telemetry_websocket_stream(websocket: WebSocket):
-    """Real-time full-duplex WebSocket stream for CommShield live telemetry and alerts."""
+    """Real-time full-duplex WebSocket stream for CommShield live telemetry and alerts.
+    
+    Supports:
+      - Client -> Server: {"type": "subscribe", "payload": {"slices": [...], "devices": [...], "metrics": [...]}}
+      - Server -> Client: {"type": "telemetry", "payload": {...}}
+      - Server -> Client: {"type": "alert", "payload": {...}}
+    """
     await websocket.accept()
+    subscriptions = {
+        "slices": set(),
+        "devices": set(),
+        "metrics": set(),
+    }
     try:
-        # Initial connection acknowledgment alert
+        # Initial connection acknowledgment alert matching exact contract
         await websocket.send_text(json.dumps({
             "type": "alert",
             "payload": {
+                "alertId": "alt-init",
                 "id": "alt-init",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "severity": "low",
+                "severity": "info",
+                "deviceId": "ue-cam-01",
+                "sliceId": "sst-1-sd-010203",
                 "message": "Connected to CommShield Real-Time Telemetry Stream",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "position": [-62.0, 3.5, 12.0],
                 "source": "commshield-core",
             }
         }))
 
-        async def ping_listener():
+        async def client_listener():
             while True:
                 msg = await websocket.receive_text()
                 try:
                     cmd = json.loads(msg)
-                    if cmd.get("action") == "PING":
+                    msg_type = cmd.get("type") or cmd.get("action")
+                    if msg_type == "subscribe":
+                        p = cmd.get("payload", {})
+                        if p.get("slices"):
+                            subscriptions["slices"] = set(p["slices"])
+                        if p.get("devices"):
+                            subscriptions["devices"] = set(p["devices"])
+                        if p.get("metrics"):
+                            subscriptions["metrics"] = set(p["metrics"])
+                        await websocket.send_text(json.dumps({
+                            "type": "subscribed",
+                            "payload": {
+                                "slices": list(subscriptions["slices"]),
+                                "devices": list(subscriptions["devices"]),
+                                "metrics": list(subscriptions["metrics"]),
+                                "status": "active",
+                            }
+                        }))
+                    elif msg_type in ("PING", "ping"):
                         await websocket.send_text(json.dumps({
                             "type": "pong",
                             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -162,35 +195,95 @@ async def telemetry_websocket_stream(websocket: WebSocket):
 
         async def telemetry_broadcaster():
             devices = [
-                ("ue-cam-01", "sst-1-sd-010203", 1250, 75.0, 4.2, 0.8),
-                ("ue-agv-01", "sst-2-sd-010203", 480, 24.0, 1.2, 0.2),
-                ("ue-sns-01", "sst-3-sd-010203", 25, 8.5, 12.1, 1.8),
+                # eMBB Cameras
+                {"deviceId": "ue-cam-01", "sliceId": "sst-1-sd-010203", "pos": [-62.0, 3.5, 12.0], "packetRate": 1250, "throughput": 75.0, "latency": 4.2, "jitter": 0.8},
+                {"deviceId": "ue-cam-02", "sliceId": "sst-1-sd-010203", "pos": [-50.0, 3.5, 10.0], "packetRate": 1180, "throughput": 72.0, "latency": 4.5, "jitter": 0.9},
+                {"deviceId": "ue-cam-03", "sliceId": "sst-1-sd-010203", "pos": [-38.0, 3.5, 12.0], "packetRate": 1220, "throughput": 74.5, "latency": 4.1, "jitter": 0.7},
+                {"deviceId": "ue-cam-04", "sliceId": "sst-1-sd-010203", "pos": [-62.0, 3.5, 24.0], "packetRate": 1290, "throughput": 78.0, "latency": 4.8, "jitter": 1.1},
+                # URLLC AGVs
+                {"deviceId": "ue-agv-01", "sliceId": "sst-2-sd-010203", "pos": [-18.0, 0.4, 26.0], "packetRate": 480, "throughput": 24.0, "latency": 1.2, "jitter": 0.2},
+                {"deviceId": "ue-agv-02", "sliceId": "sst-2-sd-010203", "pos": [-6.0, 0.4, 34.0], "packetRate": 510, "throughput": 25.5, "latency": 1.4, "jitter": 0.3},
+                {"deviceId": "ue-agv-03", "sliceId": "sst-2-sd-010203", "pos": [8.0, 0.4, 25.0], "packetRate": 495, "throughput": 24.2, "latency": 1.1, "jitter": 0.2},
+                # mMTC Sensors
+                {"deviceId": "ue-sns-01", "sliceId": "sst-3-sd-010203", "pos": [38.0, 0.3, 10.0], "packetRate": 25, "throughput": 8.5, "latency": 12.1, "jitter": 1.8},
+                {"deviceId": "ue-sns-02", "sliceId": "sst-3-sd-010203", "pos": [44.0, 0.3, 12.0], "packetRate": 28, "throughput": 8.9, "latency": 11.8, "jitter": 1.6},
+                {"deviceId": "ue-sns-03", "sliceId": "sst-3-sd-010203", "pos": [50.0, 0.3, 10.0], "packetRate": 24, "throughput": 8.2, "latency": 13.0, "jitter": 2.1},
             ]
             idx = 0
             while True:
-                await asyncio.sleep(1.5)
-                dev_id, slice_id, pr, tp, lat, jit = devices[idx % len(devices)]
+                await asyncio.sleep(1.2)
+                dev = devices[idx % len(devices)]
                 idx += 1
+
+                # If client specified device subscriptions, filter if current device not subscribed
+                if subscriptions["devices"] and dev["deviceId"] not in subscriptions["devices"]:
+                    continue
+
+                anomaly_score = 0.02
+                verdict = "benign"
+                if idx % 16 == 15:
+                    anomaly_score = 0.85
+                    verdict = "attack"
+                elif idx % 8 == 7:
+                    anomaly_score = 0.45
+                    verdict = "uncertain"
+
+                now_ts = datetime.now(timezone.utc).isoformat()
+                now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+                # Send telemetry matching exact API contract
                 await websocket.send_text(json.dumps({
                     "type": "telemetry",
                     "payload": {
-                        "windowId": f"win-{int(datetime.now(timezone.utc).timestamp())}",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "sliceId": slice_id,
-                        "deviceId": dev_id,
+                        "windowId": f"win-{now_ms}",
+                        "timestamp": now_ts,
+                        "sliceId": dev["sliceId"],
+                        "deviceId": dev["deviceId"],
                         "metrics": {
-                            "packetRate": pr,
-                            "throughput": tp,
-                            "latency": lat,
-                            "jitter": jit,
+                            "packetRate": dev["packetRate"],
+                            "throughput": dev["throughput"],
+                            "latency": dev["latency"],
+                            "jitter": dev["jitter"],
                             "lossRate": 0.0001,
                         },
-                        "anomalyScore": 0.02,
-                        "verdict": "benign",
+                        "anomalyScore": anomaly_score,
+                        "verdict": verdict,
                     }
                 }))
 
-        listener = asyncio.create_task(ping_listener())
+                # Periodically or on attack send alert matching exact API contract
+                if verdict == "attack":
+                    await websocket.send_text(json.dumps({
+                        "type": "alert",
+                        "payload": {
+                            "alertId": f"alt-{now_ms}",
+                            "id": f"alt-{now_ms}",
+                            "severity": "critical",
+                            "deviceId": dev["deviceId"],
+                            "sliceId": dev["sliceId"],
+                            "message": f"Slice {dev['sliceId']} critical traffic spike on {dev['deviceId']}",
+                            "timestamp": now_ts,
+                            "position": dev["pos"],
+                            "source": dev["deviceId"],
+                        }
+                    }))
+                elif idx % 20 == 0:
+                    await websocket.send_text(json.dumps({
+                        "type": "alert",
+                        "payload": {
+                            "alertId": f"alt-{now_ms}",
+                            "id": f"alt-{now_ms}",
+                            "severity": "warning",
+                            "deviceId": dev["deviceId"],
+                            "sliceId": dev["sliceId"],
+                            "message": f"Slice {dev['sliceId']} nominal jitter elevation on {dev['deviceId']}",
+                            "timestamp": now_ts,
+                            "position": dev["pos"],
+                            "source": dev["deviceId"],
+                        }
+                    }))
+
+        listener = asyncio.create_task(client_listener())
         broadcaster = asyncio.create_task(telemetry_broadcaster())
 
         done, pending = await asyncio.wait([listener, broadcaster], return_when=asyncio.FIRST_COMPLETED)

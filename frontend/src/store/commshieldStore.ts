@@ -21,10 +21,14 @@ export interface TelemetryWindow {
 }
 
 export interface Alert {
+  alertId?: string
   id: string
   timestamp: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
+  severity: 'critical' | 'warning' | 'info' | 'low' | 'medium' | 'high'
   message: string
+  deviceId?: string
+  sliceId?: string
+  position?: [number, number, number]
   source?: string
   target?: string
 }
@@ -226,6 +230,21 @@ export const useCommShieldStore = create<CommShieldState>()(
         ws.onopen = () => {
           set({ isConnected: true, wsConnection: ws })
           console.log('Connected to CommShield telemetry')
+
+          // Client -> Server: Send subscribe message
+          try {
+            const subscribeMsg = {
+              type: 'subscribe',
+              payload: {
+                slices: get().slices.map((s) => s.sliceId),
+                devices: get().devices.map((d) => d.id),
+                metrics: ['packetRate', 'throughput', 'latency', 'jitter', 'lossRate'],
+              },
+            }
+            ws.send(JSON.stringify(subscribeMsg))
+          } catch (err) {
+            console.warn('Failed to send subscribe message:', err)
+          }
         }
 
         ws.onmessage = (event) => {
@@ -236,16 +255,29 @@ export const useCommShieldStore = create<CommShieldState>()(
               case 'telemetry':
                 get().processTelemetry(data.payload)
                 break
-              case 'alert':
+              case 'alert': {
+                const p = data.payload
+                const normalizedAlert: Alert = {
+                  ...p,
+                  id: p.alertId || p.id || `alt-${Date.now()}`,
+                  alertId: p.alertId || p.id || `alt-${Date.now()}`,
+                  severity: p.severity || 'info',
+                  message: p.message || '',
+                  timestamp: p.timestamp || new Date().toISOString(),
+                  deviceId: p.deviceId || p.source,
+                  sliceId: p.sliceId,
+                  position: p.position,
+                }
                 set(
                   produce((state: CommShieldState) => {
-                    state.currentAlerts.unshift(data.payload)
+                    state.currentAlerts.unshift(normalizedAlert)
                     if (state.currentAlerts.length > 50) {
                       state.currentAlerts.pop()
                     }
                   })
                 )
                 break
+              }
               case 'device_update':
                 set(
                   produce((state: CommShieldState) => {
@@ -308,12 +340,12 @@ export const useCommShieldStore = create<CommShieldState>()(
             state.telemetryHistory.shift()
           }
 
-          // Update device status based on anomaly score
+          // Update device status based on anomaly score and verdict
           const device = state.devices.find((d) => d.id === window.deviceId)
           if (device) {
-            if (window.anomalyScore > 0.9) {
+            if (window.anomalyScore > 0.7 || window.verdict === 'attack') {
               device.status = 'critical'
-            } else if (window.anomalyScore > 0.7) {
+            } else if (window.anomalyScore > 0.4 || window.verdict === 'uncertain') {
               device.status = 'warning'
             } else {
               device.status = 'normal'

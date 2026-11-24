@@ -662,9 +662,16 @@ async def digital_twin_websocket(websocket: WebSocket):
             msg = await websocket.receive_text()
             try:
                 cmd = json.loads(msg)
-                action = cmd.get("action")
-                if action == "PING":
+                action = cmd.get("action") or cmd.get("type")
+                if action in ("PING", "ping"):
                     await websocket.send_text(json.dumps({"event_type": "PONG", "timestamp": datetime.now(timezone.utc).isoformat()}))
+                elif action == "subscribe":
+                    await websocket.send_text(json.dumps({
+                        "event_type": "SUBSCRIBED",
+                        "type": "subscribed",
+                        "payload": cmd.get("payload", {}),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }))
                 elif action == "GET_SNAPSHOT":
                     snap = twin_state_engine.get_snapshot()
                     await websocket.send_text(json.dumps({

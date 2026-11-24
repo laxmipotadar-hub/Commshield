@@ -63,27 +63,35 @@ export function Alert3DMarkers() {
 
   // Map alerts to 3D world coordinates
   const markers = currentAlerts.slice(0, 5).map((alert) => {
+    const alertKey = alert.alertId || alert.id
+
+    // 0. Explicit 3D coordinates provided in alert payload
+    if (alert.position && Array.isArray(alert.position) && alert.position.length === 3) {
+      return { id: alertKey, pos: alert.position, severity: alert.severity, msg: alert.message }
+    }
+
     // 1. Check if alert references a specific device ID
-    if (alert.source || alert.target) {
-      const dev = devices.find((d) => d.id === alert.source || d.id === alert.target)
+    const targetDevId = alert.deviceId || alert.source || alert.target
+    if (targetDevId) {
+      const dev = devices.find((d) => d.id === targetDevId)
       if (dev) {
-        return { id: alert.id, pos: dev.position, severity: alert.severity, msg: alert.message }
+        return { id: alertKey, pos: dev.position, severity: alert.severity, msg: alert.message }
       }
     }
 
     // 2. Default node/zone locations for known entities
     if (alert.source?.includes('upf') || alert.target?.includes('upf')) {
-      return { id: alert.id, pos: [-14, 5, -8] as [number, number, number], severity: alert.severity, msg: alert.message }
+      return { id: alertKey, pos: [-14, 5, -8] as [number, number, number], severity: alert.severity, msg: alert.message }
     }
     if (alert.source?.includes('amf') || alert.target?.includes('amf')) {
-      return { id: alert.id, pos: [14, 5, -8] as [number, number, number], severity: alert.severity, msg: alert.message }
+      return { id: alertKey, pos: [14, 5, -8] as [number, number, number], severity: alert.severity, msg: alert.message }
     }
     if (alert.source?.includes('gnb') || alert.target?.includes('gnb')) {
-      return { id: alert.id, pos: [0, 16, 0] as [number, number, number], severity: alert.severity, msg: alert.message }
+      return { id: alertKey, pos: [0, 16, 0] as [number, number, number], severity: alert.severity, msg: alert.message }
     }
 
     // 3. Fallback to center-north alert beacon
-    return { id: alert.id, pos: [0, 4, 15] as [number, number, number], severity: alert.severity, msg: alert.message }
+    return { id: alertKey, pos: [0, 4, 15] as [number, number, number], severity: alert.severity, msg: alert.message }
   })
 
   return (
