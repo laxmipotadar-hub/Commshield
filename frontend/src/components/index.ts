@@ -13,6 +13,7 @@ export * from './DataPanelModal';
 export * from './BuiltVsPlannedModal';
 export * from './ScenarioCharts';
 export * from './ErrorBoundary';
+export * from './three/SceneEnvironment';
 
 
 // CommShield AI Core
