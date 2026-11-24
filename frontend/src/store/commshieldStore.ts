@@ -73,8 +73,10 @@ export interface CommShieldState {
   selectedDevice: string | null
   selectedDeviceId: string | null // backwards compatibility alias
   timeRange: [number, number]
+  currentTime: number
   isPlaying: boolean
   playbackSpeed: number
+  cameraPreset: 'overview' | 'embb' | 'urllc' | 'mmtc' | 'core' | 'device'
 
   // Network status
   networkStatus: {
@@ -91,12 +93,16 @@ export interface CommShieldState {
   setSelectedDevice: (deviceId: string | null) => void
   setSelectedDeviceId: (id: string | null) => void // backwards compatibility
   setTimeRange: (range: [number, number]) => void
+  setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
   setPlaybackSpeed: (speed: number) => void
+  setCameraPreset: (preset: 'overview' | 'embb' | 'urllc' | 'mmtc' | 'core' | 'device') => void
   processTelemetry: (window: TelemetryWindow) => void
   setDevices: (devices: Device[]) => void
   updateDeviceTelemetry: (id: string, telemetry: Partial<DeviceTelemetry>) => void
   setDeviceStatus: (id: string, status: Device['status']) => void
+  quarantineDevice: (deviceId: string) => void
+  unquarantineDevice: (deviceId: string) => void
 }
 
 // Backwards compatibility alias
@@ -190,8 +196,10 @@ export const useCommShieldStore = create<CommShieldState>()(
     selectedDevice: null,
     selectedDeviceId: null,
     timeRange: [Date.now() - 3600000, Date.now()],
+    currentTime: Date.now(),
     isPlaying: true,
     playbackSpeed: 1,
+    cameraPreset: 'overview',
 
     // Network status
     networkStatus: {
@@ -284,8 +292,10 @@ export const useCommShieldStore = create<CommShieldState>()(
     setSelectedDevice: (deviceId) => set({ selectedDevice: deviceId, selectedDeviceId: deviceId }),
     setSelectedDeviceId: (id) => set({ selectedDevice: id, selectedDeviceId: id }),
     setTimeRange: (range) => set({ timeRange: range }),
+    setCurrentTime: (time) => set({ currentTime: time }),
     setIsPlaying: (playing) => set({ isPlaying: playing }),
     setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+    setCameraPreset: (preset) => set({ cameraPreset: preset }),
 
     processTelemetry: (window: TelemetryWindow) => {
       set(
@@ -335,6 +345,24 @@ export const useCommShieldStore = create<CommShieldState>()(
           const device = state.devices.find((d) => d.id === id)
           if (device) {
             device.status = status
+          }
+        })
+      ),
+    quarantineDevice: (deviceId) =>
+      set(
+        produce((state: CommShieldState) => {
+          const device = state.devices.find((d) => d.id === deviceId)
+          if (device) {
+            device.status = 'quarantined'
+          }
+        })
+      ),
+    unquarantineDevice: (deviceId) =>
+      set(
+        produce((state: CommShieldState) => {
+          const device = state.devices.find((d) => d.id === deviceId)
+          if (device) {
+            device.status = 'normal'
           }
         })
       ),

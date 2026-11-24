@@ -11,13 +11,17 @@ import {
   useHelper
 } from '@react-three/drei'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import * as THREE from 'three'
 import { useCommShieldStore } from '../store/commshieldStore'
 import { SceneEnvironment } from './three/SceneEnvironment'
 import { NetworkInfrastructure } from './three/NetworkInfrastructure'
 import { DeviceZones } from './three/DeviceZones'
+import { CameraController } from './three/CameraController'
+import { Alert3DMarkers } from './three/Alert3DMarkers'
 import { ControlPanel } from './hud/ControlPanel'
 import { TelemetryDashboard } from './hud/TelemetryDashboard'
 import { AlertFeed } from './hud/AlertFeed'
+import { DeviceInspector } from './hud/DeviceInspector'
 
 // Satisfy strict noUnusedLocals while preserving requested imports
 void PerspectiveCamera
@@ -44,14 +48,19 @@ export function CommShield3DTwin() {
   }, [connect, disconnect])
   
   return (
-    <div className="w-full h-screen bg-slate-950 relative overflow-hidden">
-      {/* 3D Canvas */}
+    <div className="w-full h-screen bg-slate-950 relative overflow-hidden select-none">
+      {/* 3D Canvas with WebXR & Mobile Touch Controls */}
       <Canvas
         shadows
         dpr={[1, 2]}
         gl={{ 
           antialias: true, 
           toneMapping: 3, // ACES Filmic
+        }}
+        onCreated={({ gl }) => {
+          if (gl.xr) {
+            gl.xr.enabled = true // WebXR VR/AR Mode Ready
+          }
         }}
         camera={{ position: [50, 40, 50], fov: 50 }}
       >
@@ -68,11 +77,17 @@ export function CommShield3DTwin() {
           {/* Environment */}
           <SceneEnvironment theme="dark" fogDensity={0.02} />
           
-          {/* Network Core */}
+          {/* Network Core Infrastructure */}
           <NetworkInfrastructure />
           
-          {/* Device Zones */}
+          {/* Device Zones with LOD & Frustum Culling */}
           <DeviceZones />
+
+          {/* 3D Alert Notifications Positioned in World Space */}
+          <Alert3DMarkers />
+
+          {/* Camera Controller with Slice & Device Focus Lerp */}
+          <CameraController />
           
           {/* Grid helper */}
           <Grid 
@@ -85,7 +100,7 @@ export function CommShield3DTwin() {
             sectionColor="#334155"
           />
           
-          {/* Camera controls */}
+          {/* Camera controls with Mobile Touch Support */}
           <OrbitControls 
             makeDefault
             target={[0, 5, 0]}
@@ -94,6 +109,13 @@ export function CommShield3DTwin() {
             maxDistance={200}
             enableDamping
             dampingFactor={0.05}
+            touches={{
+              ONE: THREE.TOUCH.ROTATE,
+              TWO: THREE.TOUCH.DOLLY_PAN,
+            }}
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
           />
           
           {/* Post-processing effects */}
@@ -120,6 +142,7 @@ export function CommShield3DTwin() {
           <ControlPanel />
           <TelemetryDashboard />
           <AlertFeed />
+          <DeviceInspector />
         </div>
       </div>
       

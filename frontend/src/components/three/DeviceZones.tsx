@@ -1,8 +1,8 @@
 // File: src/components/three/DeviceZones.tsx
 
-import { useRef, useMemo, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Html, Billboard } from '@react-three/drei'
+import { Html, Billboard, Detailed } from '@react-three/drei'
 import * as THREE from 'three'
 import { useCommShieldStore } from '../../store/commshieldStore'
 
@@ -55,31 +55,54 @@ export function Device({ device, onClick }: { device: Device; onClick: () => voi
     }
   })
   
-  const geometry = useMemo(() => {
-    switch(device.type) {
-      case 'camera': return <sphereGeometry args={[0.5, 16, 16]} />
-      case 'agv': return <boxGeometry args={[1.5, 0.8, 1]} />
-      case 'sensor': return <cylinderGeometry args={[0.2, 0.2, 0.5, 8]} />
-    }
-  }, [device.type])
-
   return (
     <group position={device.position}>
-      <mesh 
-        ref={meshRef}
-        onClick={onClick}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        {geometry}
-        <meshStandardMaterial 
-          color={hovered ? '#ffffff' : '#334155'}
-          emissive={statusColors[device.status]}
-          emissiveIntensity={device.status === 'normal' ? 0.2 : 0.8}
-          metalness={0.5}
-          roughness={0.5}
-        />
-      </mesh>
+      {/* Performance Optimization: Level of Detail (LOD) via Drei Detailed */}
+      <Detailed distances={[0, 35, 75]}>
+        {/* LOD Level 0: Full Detail Mesh */}
+        <mesh 
+          ref={meshRef}
+          onClick={onClick}
+          onPointerOver={() => setHovered(true)}
+          onPointerOut={() => setHovered(false)}
+          frustumCulled={true}
+        >
+          {device.type === 'camera' && <sphereGeometry args={[0.5, 20, 20]} />}
+          {device.type === 'agv' && <boxGeometry args={[1.5, 0.8, 1]} />}
+          {device.type === 'sensor' && <cylinderGeometry args={[0.2, 0.2, 0.5, 12]} />}
+          <meshStandardMaterial 
+            color={hovered ? '#ffffff' : '#334155'}
+            emissive={statusColors[device.status]}
+            emissiveIntensity={device.status === 'normal' ? 0.2 : 0.8}
+            metalness={0.5}
+            roughness={0.5}
+          />
+        </mesh>
+
+        {/* LOD Level 1: Medium Detail Mesh */}
+        <mesh 
+          onClick={onClick}
+          frustumCulled={true}
+        >
+          {device.type === 'camera' && <sphereGeometry args={[0.5, 10, 10]} />}
+          {device.type === 'agv' && <boxGeometry args={[1.5, 0.8, 1]} />}
+          {device.type === 'sensor' && <cylinderGeometry args={[0.2, 0.2, 0.5, 6]} />}
+          <meshStandardMaterial 
+            color="#334155"
+            emissive={statusColors[device.status]}
+            emissiveIntensity={0.4}
+          />
+        </mesh>
+
+        {/* LOD Level 2: Low-poly Distant Mesh */}
+        <mesh 
+          onClick={onClick}
+          frustumCulled={true}
+        >
+          <boxGeometry args={[0.5, 0.5, 0.5]} />
+          <meshBasicMaterial color={statusColors[device.status]} />
+        </mesh>
+      </Detailed>
       
       {/* Status indicator ring */}
       <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, -0.5, 0]}>
@@ -130,7 +153,7 @@ export function Device({ device, onClick }: { device: Device; onClick: () => voi
 }
 
 export function DeviceZone({ position, size, sliceId, sliceType, label, color, devices }: DeviceZoneProps) {
-  const { selectedSlice, setSelectedSlice } = useCommShieldStore()
+  const { selectedSlice, setSelectedSlice, setSelectedDevice } = useCommShieldStore()
   const isSelected = selectedSlice === sliceId
   
   return (
@@ -191,7 +214,7 @@ export function DeviceZone({ position, size, sliceId, sliceType, label, color, d
         <Device 
           key={device.id} 
           device={device}
-          onClick={() => console.log('Inspect device:', device.id)}
+          onClick={() => setSelectedDevice(device.id)}
         />
       ))}
       
