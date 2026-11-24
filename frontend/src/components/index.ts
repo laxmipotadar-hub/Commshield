@@ -15,6 +15,7 @@ export * from './ScenarioCharts';
 export * from './ErrorBoundary';
 export * from './three/SceneEnvironment';
 export * from './three/DeviceZones';
+export * from './hud/ControlPanel';
 
 
 // CommShield AI Core
