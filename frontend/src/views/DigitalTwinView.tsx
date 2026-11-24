@@ -43,6 +43,7 @@ import {
   Check,
   Download,
   Terminal,
+  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -62,6 +63,7 @@ import {
 } from '../services/twinApi';
 import { ThreeTwinScene, TwinViewMode } from '../components/ThreeTwinScene';
 import { useDemo } from '../context/DemoContext';
+import { useFullDemo } from '../context/FullDemoContext';
 
 // Suppress unused imports and satisfy strict TypeScript
 void RotateCcw;
@@ -230,6 +232,7 @@ const ATTACK_SCENARIOS: AttackScenarioDef[] = [
 ];
 
 export const DigitalTwinView: React.FC = () => {
+  const { startFullDemo, isFullDemoActive } = useFullDemo();
   // 1. Core State
   const [data, setData] = useState<DigitalTwinState | null>(null);
   const [_loading, setLoading] = useState<boolean>(true);
@@ -538,6 +541,16 @@ export const DigitalTwinView: React.FC = () => {
 
         {/* Right: Live System Status, Real-Time Clock, Notifications, User LP */}
         <div className="flex items-center gap-4">
+          {/* Guided Full System Demo Button */}
+          <button
+            onClick={() => startFullDemo(0)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/60 text-cyan-300 hover:text-white hover:bg-cyan-900/80 text-xs font-mono font-bold transition-all shadow-sm cursor-pointer"
+            title="Launch 26-Step Guided Demonstration"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+            <span>{isFullDemoActive ? 'Demo Active' : 'Full Demo (26 Steps)'}</span>
+          </button>
+
           {/* Live System Pulsing Status */}
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-600/60 text-emerald-400 text-xs font-mono font-bold shadow-sm">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />

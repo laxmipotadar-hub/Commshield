@@ -35,6 +35,7 @@ import {
   Activity,
   Box,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import {
   StatusBadge,
@@ -43,6 +44,9 @@ import {
   DataProvenanceStrip,
   DataPanelModal,
   ErrorBoundary,
+  FullDemoProgressBar,
+  FullDemoExplanationPopup,
+  FullDemoFinalReportModal,
 } from './components';
 import { getAnalystToken, setAnalystToken } from './services/api';
 import { OverviewPage } from './pages/OverviewPage';
@@ -55,6 +59,7 @@ import { ExperimentsView } from './views/ExperimentsView';
 import { DigitalTwinView } from './views/DigitalTwinView';
 import { ReplayProvider, SCENARIOS, ScenarioId, useReplay } from './context/ReplayContext';
 import { DemoProvider } from './context/DemoContext';
+import { FullDemoProvider, useFullDemo } from './context/FullDemoContext';
 
 // Suppress unused imports for strict TypeScript compliance
 void AlertOctagon;
@@ -108,6 +113,7 @@ const AppLayout: React.FC = () => {
   } = useReplay();
 
   const isRunning = status === 'RUNNING';
+  const { isFullDemoActive, startFullDemo, stopFullDemo } = useFullDemo();
   const [showSettings, setShowSettings] = useState(false);
   const [showDataPanel, setShowDataPanel] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
@@ -184,6 +190,21 @@ const AppLayout: React.FC = () => {
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-700/60 uppercase tracking-wider">
               LIVE SOC
             </span>
+          </div>
+
+          {/* Full System Demo Quick Action Pill */}
+          <div className="px-3 pt-2.5 pb-1">
+            <button
+              onClick={() => (isFullDemoActive ? stopFullDemo() : startFullDemo(0))}
+              className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-mono text-xs font-bold transition-all shadow-md ${
+                isFullDemoActive
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white ring-2 ring-cyan-400 animate-pulse-subtle'
+                  : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_4px_12px_rgba(6,182,212,0.35)]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-200 animate-pulse" />
+              <span>{isFullDemoActive ? 'Exit Full Demo' : 'Full Demo (26 Steps)'}</span>
+            </button>
           </div>
 
           {/* Section Heading */}
@@ -290,7 +311,10 @@ const AppLayout: React.FC = () => {
       </aside>
 
       {/* 2. Main Area with Analytical Canvas Header */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full relative">
+        {/* Full System Demo Persistent Multi-Section Progress Bar */}
+        <FullDemoProgressBar />
+
         {/* Top Bar Header (Dedicated analytical header for dashboard pages; hidden on digital twin for full-screen immersive 3D canvas) */}
         {location.pathname !== '/digital-twin' && (
           <header className="h-16 bg-surface-container-lowest border-b border-border px-6 flex items-center justify-between flex-shrink-0 z-40 shadow-xs gap-4">
@@ -349,6 +373,21 @@ const AppLayout: React.FC = () => {
 
             {/* Presentation Controls */}
             <DemoControlBar />
+
+            {/* Full System Demo (26 Steps) Trigger */}
+            <button
+              onClick={() => (isFullDemoActive ? stopFullDemo() : startFullDemo(0))}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all shadow-sm ${
+                isFullDemoActive
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white ring-2 ring-cyan-400'
+                  : 'bg-surface-container-low border border-cyan-500/50 text-cyan-400 hover:bg-cyan-950/40'
+              }`}
+              title="Launch 26-Step End-to-End System Demonstration"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              <span>Full Demo</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/30 text-cyan-200">26 Steps</span>
+            </button>
 
             {/* Data Source Selector */}
             <div className="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded-lg border border-border">
@@ -563,6 +602,10 @@ const AppLayout: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Full Demo Floating Explanation Popup & Final Report Modal */}
+      <FullDemoExplanationPopup />
+      <FullDemoFinalReportModal />
     </div>
   );
 };
@@ -571,7 +614,9 @@ export const App: React.FC = () => {
   return (
     <ReplayProvider>
       <DemoProvider>
-        <AppLayout />
+        <FullDemoProvider>
+          <AppLayout />
+        </FullDemoProvider>
       </DemoProvider>
     </ReplayProvider>
   );

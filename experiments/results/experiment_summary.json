@@ -1,6 +1,6 @@
 {
   "config_version": "v1.0.0",
-  "generated_at": "2026-11-21T20:07:23.690782+00:00",
+  "generated_at": "2026-11-24T17:41:17.531191+00:00",
   "scenarios": [
     "stable_benign",
     "legitimate_growth",
@@ -96,12 +96,12 @@
         "arm_c_commshield": {
           "recall_mean": null,
           "recall_std": null,
-          "fpr_mean": 0.97,
-          "fpr_std": 0.0187,
+          "fpr_mean": 0.83,
+          "fpr_std": 0.0458,
           "contamination_mean": 0.0,
           "contamination_std": 0.0,
-          "adaptations_mean": 0.0,
-          "quarantined_mean": 4.0,
+          "adaptations_mean": 1.6,
+          "quarantined_mean": 0.4,
           "recovery_time_mean": 0.0
         }
       }
@@ -191,7 +191,7 @@
           "contamination_mean": 0.0,
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
-          "quarantined_mean": 4.0,
+          "quarantined_mean": 3.0,
           "recovery_time_mean": 0.0
         }
       }
@@ -236,7 +236,7 @@
           "contamination_mean": 0.0,
           "contamination_std": 0.0,
           "adaptations_mean": 0.0,
-          "quarantined_mean": 2.2,
+          "quarantined_mean": 1.4,
           "recovery_time_mean": 0.4
         }
       }

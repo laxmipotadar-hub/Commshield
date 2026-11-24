@@ -1206,6 +1206,10 @@ class TwinApiService {
     }
   }
 
+  public async launchSimulation(attackType: string = 'ddos', target: string = 'upf'): Promise<void> {
+    return this.startAttack(attackType, target);
+  }
+
   public async pauseAttack(): Promise<void> {
     this.simulationState.lifecycle = 'PAUSED';
     try {

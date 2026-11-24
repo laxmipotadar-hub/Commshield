@@ -22,6 +22,9 @@ export * from './hud/ControlPanel';
 export * from './hud/TelemetryDashboard';
 export * from './hud/AlertFeed';
 export * from './hud/DeviceInspector';
+export * from './FullDemoProgressBar';
+export * from './FullDemoExplanationPopup';
+export * from './FullDemoFinalReportModal';
 export * from './CommShield3DTwin';
 
 
