@@ -157,8 +157,13 @@ class MitigationEngine:
         target = record.target_component
         action_type = record.action_type
 
-        if action_type == MitigationActionType.SUSPICIOUS_SOURCE_ISOLATION:
-            # Quarantine the device
+        if action_type in (
+            MitigationActionType.SUSPICIOUS_SOURCE_ISOLATION,
+            MitigationActionType.ISOLATE_COMPROMISED_ASSET,
+            MitigationActionType.ISOLATE_ASSET,
+            MitigationActionType.COMPONENT_ISOLATION,
+        ):
+            # Quarantine the device or asset
             self._state_engine.update_component(
                 target,
                 operational_status=OperationalStatus.ISOLATED,
@@ -176,7 +181,13 @@ class MitigationEngine:
                         security_status="ISOLATED",
                     )
 
-        elif action_type in (MitigationActionType.RATE_LIMITING, MitigationActionType.TRAFFIC_RESTRICTION):
+        elif action_type in (
+            MitigationActionType.RATE_LIMITING,
+            MitigationActionType.TRAFFIC_RESTRICTION,
+            MitigationActionType.APPLY_FIREWALL_FILTER,
+            MitigationActionType.FIREWALL_RULE,
+            MitigationActionType.POLICY_UPDATE,
+        ):
             # Throttle and normalize target metrics
             comp = self._state_engine.get_component(target)
             if comp:

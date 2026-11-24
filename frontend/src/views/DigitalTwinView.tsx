@@ -1,10 +1,10 @@
 // File: frontend/src/views/DigitalTwinView.tsx
 /**
- * INDUTWIN - Industrial Cyber Security Digital Twin (DigitalTwinView.tsx)
+ * COMMSHIELD - Industrial Cyber Security Digital Twin (DigitalTwinView.tsx)
  * 
  * Complete 3D Smart Manufacturing Security Operations Centre
  * Sourced directly from industrial reference architecture and 3GPP Release 16/17:
- * - Industrial Branding: InduTwin, Smart Manufacturing Plant - Bangalore, Live System
+ * - Industrial Branding: CommShield, Smart Manufacturing Plant - Bangalore, Live System
  * - Top KPI Cards: Security Posture (98.7%), Active Threats (3), Network Traffic / Production (97.5%), Uptime (23h 45m)
  * - 6 Viewing Modes: 3D Plant View, Network Topology, Asset Map, Traffic Flow, Heatmap, Purdue Architecture
  * - Right Panel: Attack Simulation (14 categories across Network, Endpoint, OT, Advanced), Attack Lifecycle, Threat Meters, Defence Actions
@@ -262,6 +262,7 @@ export const DigitalTwinView: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'node' | 'device' | 'link' | null>(null);
   const [hoveredItem, setHoveredItem] = useState<{ id: string; name: string; type: string; status: string } | null>(null);
+  const [focusTargetId, setFocusTargetId] = useState<string | null>(null);
 
   // Automated Defence State
   const [trafficBreakdown, setTrafficBreakdown] = useState<TrafficBreakdown | null>(null);
@@ -517,13 +518,14 @@ export const DigitalTwinView: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col bg-[#070e1b] text-slate-100 font-sans select-none overflow-hidden">
-      {/* ------------------------------------------------------------- */}
-      {/* 1. TOP HEADER (InduTwin Branding, Plant Name, Clock & Status) */}
-      {/* ------------------------------------------------------------- */}
+      {/* ----------------------------------------------------------------- */}
+      {/* 1. TOP HEADER (CommShield Branding, Plant Name, Clock & Status) */}
+      {/* ----------------------------------------------------------------- */}
       <header className="h-16 px-6 bg-[#0a1628] border-b border-[#1b2b46] flex items-center justify-between flex-shrink-0 z-30 shadow-xl">
         {/* Left: Location & AI Core Tag */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm font-mono text-slate-200 font-semibold tracking-wide">
+            <span className="font-black text-white text-base tracking-tight">CommShield</span>
             <span className="text-cyan-400 font-bold text-lg">|</span>
             <span className="text-sm font-bold text-slate-100 tracking-wide">
               Smart Manufacturing Plant – Bangalore
@@ -671,6 +673,8 @@ export const DigitalTwinView: React.FC = () => {
             attackerSources={['attacker-node']}
             isDistributed={launcherSource === 'distributed'}
             attackType={launcherAttackType}
+            selectedAttackScenario={selectedScenario}
+            focusAssetId={focusTargetId}
             mitigationActive={verificationResult?.verdict === 'CONTAINMENT_VERIFIED' || data?.lifecycle_state === 'RECOVERED'}
             reducedMotion={reducedMotion}
             activeCameraPreset={activeCameraPreset}
@@ -921,11 +925,10 @@ export const DigitalTwinView: React.FC = () => {
                 <button
                   onClick={() => {
                     const id = selectedNode?.id || selectedId;
-                    if (id?.includes('scada')) setActiveCameraPreset('scada');
-                    else if (id?.includes('robot') || id?.includes('cnc') || id?.includes('press') || id?.includes('conveyor')) setActiveCameraPreset('production');
-                    else if (id?.includes('substation') || id?.includes('tower') || id?.includes('tank')) setActiveCameraPreset('utilities');
-                    else if (id?.includes('warehouse') || id?.includes('dock')) setActiveCameraPreset('logistics');
-                    else setActiveCameraPreset('overview');
+                    if (id) {
+                      setFocusTargetId(id);
+                      setTimeout(() => setFocusTargetId(null), 350);
+                    }
                   }}
                   className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
                 >

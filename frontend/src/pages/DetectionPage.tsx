@@ -439,14 +439,6 @@ export const DetectionPage: React.FC = () => {
     },
   ];
 
-  if (loading) {
-    return <LoadingState message="Loading anomaly detection telemetry and model states..." size="lg" />;
-  }
-
-  if (error) {
-    return <ErrorState title="Detection Error" message={error} onRetry={() => fetchWindows(true)} />;
-  }
-
   const agreementCounts = useMemo(() => {
     let both = 0;
     let ifo = 0;
@@ -462,6 +454,14 @@ export const DetectionPage: React.FC = () => {
     });
     return { both, ifo, aeo, non };
   }, [historyData]);
+
+  if (loading) {
+    return <LoadingState message="Loading anomaly detection telemetry and model states..." size="lg" />;
+  }
+
+  if (error) {
+    return <ErrorState title="Detection Error" message={error} onRetry={() => fetchWindows(true)} />;
+  }
 
   const isSevere = fusedPct >= 95.0 || isAnomalous || cusumIsAlarm;
 

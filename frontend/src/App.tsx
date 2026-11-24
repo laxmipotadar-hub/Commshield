@@ -177,7 +177,7 @@ const AppLayout: React.FC = () => {
                 </svg>
               </div>
               <div className="flex flex-col leading-tight">
-                <span className="text-sm font-black text-white tracking-tight">InduTwin</span>
+                <span className="text-sm font-black text-white tracking-tight">CommShield</span>
                 <span className="font-mono text-[9px] text-[#94a3b8] uppercase tracking-wider">Industrial Cyber Twin</span>
               </div>
             </div>

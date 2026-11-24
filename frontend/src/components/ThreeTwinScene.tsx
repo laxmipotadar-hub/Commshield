@@ -1,6 +1,6 @@
 // File: frontend/src/components/ThreeTwinScene.tsx
 /**
- * INDUTWIN - INDUSTRIAL CYBERSECURITY DIGITAL TWIN
+ * COMMSHIELD - INDUSTRIAL CYBERSECURITY DIGITAL TWIN
  * Complete 3D Smart Manufacturing Campus & Industrial Security Operations Centre
  * 
  * Features:
@@ -55,6 +55,8 @@ interface ThreeTwinSceneProps {
   attackerSources?: string[];
   isDistributed?: boolean;
   attackType?: string;
+  selectedAttackScenario?: string;
+  focusAssetId?: string | null;
   mitigationActive?: boolean;
   reducedMotion?: boolean;
   activeCameraPreset?: string;
@@ -78,6 +80,8 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   attackerSources = [],
   isDistributed = false,
   attackType = 'DDoS Attack',
+  selectedAttackScenario,
+  focusAssetId,
   mitigationActive = false,
   reducedMotion = false,
   activeCameraPreset = 'overview',
@@ -104,6 +108,8 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   lifecycleRef.current = lifecycleState;
   const attackTypeRef = useRef(attackType);
   attackTypeRef.current = attackType;
+  const selectedScenarioRef = useRef(selectedAttackScenario || attackType);
+  selectedScenarioRef.current = selectedAttackScenario || attackType;
   const mitigationRef = useRef(mitigationActive);
   mitigationRef.current = mitigationActive;
   const selectedIdRef = useRef(selectedId);
@@ -113,11 +119,19 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
 
+  // Asset coordinates lookup map for dynamic camera focusing
+  const assetCoordsMapRef = useRef<Map<string, { x: number; y: number; z: number }>>(new Map());
+
   // UI state
   const [currentMode, setCurrentMode] = useState<TwinViewMode>(viewMode);
   const [fullscreen, setFullscreen] = useState<boolean>(false);
   const [showBadges, setShowBadges] = useState<boolean>(true);
   const [cutawayActive, setCutawayActive] = useState<boolean>(false);
+  const [labelFilter, setLabelFilter] = useState<'all' | 'buildings' | 'machinery' | 'utilities' | 'cyber' | 'sensors'>('all');
+  const labelFilterRef = useRef(labelFilter);
+  labelFilterRef.current = labelFilter;
+  const showBadgesRef = useRef(showBadges);
+  showBadgesRef.current = showBadges;
 
   // Suppress unused props for strict TS compliance
   void nodes;
@@ -194,6 +208,15 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     targetLookAt.current.set(coords.x, coords.y, coords.z);
     targetCamPos.current.set(coords.x + 22, coords.y + 18, coords.z + 24);
   }, []);
+
+  useEffect(() => {
+    if (focusAssetId) {
+      const coords = assetCoordsMapRef.current.get(focusAssetId);
+      if (coords) {
+        focusOnAsset(coords);
+      }
+    }
+  }, [focusAssetId, focusOnAsset]);
 
   // ---------------------------------------------------------------------------
   // MAIN THREE.JS INITIALIZATION (Runs once on mount)
@@ -299,6 +322,9 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     ) => {
       mesh.userData = { id, name, type, status, coords };
       interactiveMeshes.push(mesh);
+      if (coords) {
+        assetCoordsMapRef.current.set(id, coords);
+      }
     };
 
     // -------------------------------------------------------------------------
@@ -904,70 +930,94 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     }
 
     // -------------------------------------------------------------------------
-    // 10. POWER & UTILITIES INFRASTRUCTURE (Northern Sector) (Phase 2.G)
+    // 10. POWER, THERMAL & UTILITIES INFRASTRUCTURE (Northern Sector)
     // -------------------------------------------------------------------------
+    const utilitiesGroup = new THREE.Group();
+    scene.add(utilitiesGroup);
+
     // === HIGH-VOLTAGE ELECTRICAL SUBSTATION ===
     const substationGroup = new THREE.Group();
     substationGroup.position.set(76, 0, -52);
-    scene.add(substationGroup);
+    utilitiesGroup.add(substationGroup);
 
-    // Step-Down Transformers
-    for (let t = -8; t <= 8; t += 16) {
+    // Step-Down Transformers TR-01 & TR-02
+    [-8, 8].forEach((t, tidx) => {
+      const transId = `transformer-tr-0${tidx + 1}`;
+      const transName = `Power Transformer TR-0${tidx + 1}`;
       const trans = new THREE.Mesh(
         new THREE.BoxGeometry(7.0, 5.5, 6.0),
         new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.3 })
       );
       trans.position.set(t, 2.75, 0);
+      trans.castShadow = true;
       substationGroup.add(trans);
-      registerInteractive(trans, `substation-trans-${t < 0 ? '01' : '02'}`, 'Main High-Voltage Power Transformer', 'utilities', 'Operational 66kV/11kV', { x: 76 + t, y: 3, z: -52 });
+      registerInteractive(trans, transId, transName, 'utilities', 'Operational 66kV/11kV', { x: 76 + t, y: 3, z: -52 });
 
-      // Ceramic Insulators
+      // High-voltage ceramic bushings / insulators
       for (let ins = -2; ins <= 2; ins += 2) {
         const insulator = new THREE.Mesh(
           new THREE.CylinderGeometry(0.25, 0.45, 2.2, 8),
-          new THREE.MeshStandardMaterial({ color: 0xa855f7 })
+          new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.3 })
         );
         insulator.position.set(t + ins, 6.6, 0);
         substationGroup.add(insulator);
       }
-    }
+    });
+
+    // Backup Diesel Generator GEN-01
+    const genMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(6.5, 4.5, 5.0),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.4 })
+    );
+    genMesh.position.set(-8, 2.25, 12);
+    substationGroup.add(genMesh);
+    registerInteractive(genMesh, 'generator-gen-01', 'Backup Diesel Generator GEN-01', 'utilities', 'Standby Ready (100% Fuel)', { x: 68, y: 2.5, z: -40 });
+
+    // Power Distribution Unit PDU-01
+    const pduMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(5.0, 4.2, 3.5),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 })
+    );
+    pduMesh.position.set(8, 2.1, 12);
+    substationGroup.add(pduMesh);
+    registerInteractive(pduMesh, 'pdu-01', 'Power Distribution Unit PDU-01', 'utilities', '415V 3-Phase Nominal', { x: 84, y: 2.5, z: -40 });
 
     // Substation Perimeter Security Fence
     const fenceMat = new THREE.MeshBasicMaterial({ color: 0x64748b, wireframe: true });
     const fence = new THREE.Mesh(new THREE.BoxGeometry(38, 4.0, 38), fenceMat);
-    fence.position.y = 2.0;
+    fence.position.set(0, 2.0, 4);
     substationGroup.add(fence);
 
-    // === TWIN HYPERBOLIC THERMAL COOLING TOWERS ===
+    // === THREE HYPERBOLIC THERMAL COOLING TOWERS (CT-01, CT-02, CT-03) ===
     const coolingGroup = new THREE.Group();
-    coolingGroup.position.set(-10, 0, -55);
-    scene.add(coolingGroup);
+    coolingGroup.position.set(0, 0, -55);
+    utilitiesGroup.add(coolingGroup);
 
-    const createCoolingTower = (xOffset: number, id: string) => {
+    const createCoolingTower = (xOffset: number, id: string, name: string) => {
       const points: THREE.Vector2[] = [];
       for (let i = 0; i <= 24; i++) {
         const y = (i / 24) * 26;
         const normY = (y - 17) / 12;
-        const radius = 7.5 + normY * normY * 2.2;
+        const radius = 7.0 + normY * normY * 2.0;
         points.push(new THREE.Vector2(radius, y));
       }
       const tower = new THREE.Mesh(
         new THREE.LatheGeometry(points, 32),
-        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9, side: THREE.DoubleSide })
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85, side: THREE.DoubleSide })
       );
       tower.position.set(xOffset, 0, 0);
       tower.castShadow = true;
       coolingGroup.add(tower);
-      registerInteractive(tower, id, 'Thermal Hyperbolic Cooling Tower', 'utilities', 'Nominal Heat Dissipation', { x: -10 + xOffset, y: 13, z: -55 });
+      registerInteractive(tower, id, name, 'utilities', 'Nominal Heat Dissipation (28.4 MWth)', { x: xOffset, y: 13, z: -55 });
 
-      // Rising steam particle cloud (clamped to satisfy test_twin_ui.py)
+      // Rising steam particle cloud (clamped to 28 count to satisfy test_twin_ui)
       const particleCount = 28;
       const steamGeo = new THREE.BufferGeometry();
       const steamPos = new Float32Array(particleCount * 3);
       for (let p = 0; p < particleCount; p++) {
-        steamPos[p * 3] = xOffset + (Math.random() - 0.5) * 6;
+        steamPos[p * 3] = xOffset + (Math.random() - 0.5) * 5.5;
         steamPos[p * 3 + 1] = 26 + Math.random() * 8;
-        steamPos[p * 3 + 2] = (Math.random() - 0.5) * 6;
+        steamPos[p * 3 + 2] = (Math.random() - 0.5) * 5.5;
       }
       steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPos, 3));
       const steamParticles = new THREE.Points(
@@ -990,22 +1040,25 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       });
     };
 
-    createCoolingTower(-12, 'cooling-tower-01');
-    createCoolingTower(12, 'cooling-tower-02');
+    createCoolingTower(-20, 'cooling-tower-01', 'Cooling Tower CT-01');
+    createCoolingTower(0, 'cooling-tower-02', 'Cooling Tower CT-02');
+    createCoolingTower(20, 'cooling-tower-03', 'Cooling Tower CT-03');
 
-    // === TWIN INDUSTRIAL EXHAUST CHIMNEYS WITH RED/WHITE AVIATION BANDS ===
+    // === TWIN INDUSTRIAL EXHAUST CHIMNEYS WITH RED/WHITE AVIATION BANDS (STK-01, STK-02) ===
     const chimneyGroup = new THREE.Group();
-    chimneyGroup.position.set(32, 0, -55);
-    scene.add(chimneyGroup);
+    chimneyGroup.position.set(44, 0, -55);
+    utilitiesGroup.add(chimneyGroup);
 
-    [-7, 7].forEach((cx, cIdx) => {
+    [-6, 6].forEach((cx, cIdx) => {
+      const stackId = `exhaust-stack-0${cIdx + 1}`;
+      const stackName = `Exhaust Stack STK-0${cIdx + 1}`;
       const height = 38;
       const segments = 6;
       const segHeight = height / segments;
 
       for (let s = 0; s < segments; s++) {
         const seg = new THREE.Mesh(
-          new THREE.CylinderGeometry(2.0 - s * 0.1, 2.2 - s * 0.1, segHeight, 16),
+          new THREE.CylinderGeometry(1.9 - s * 0.08, 2.1 - s * 0.08, segHeight, 16),
           new THREE.MeshStandardMaterial({ color: s % 2 === 1 ? 0xef4444 : 0xf8fafc, roughness: 0.6 })
         );
         seg.position.set(cx, s * segHeight + segHeight / 2, 0);
@@ -1013,10 +1066,12 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         chimneyGroup.add(seg);
       }
 
-      // Red flashing aviation summit beacon
+      // Strobe beacon
       const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
       beacon.position.set(cx, height + 0.4, 0);
       chimneyGroup.add(beacon);
+
+      registerInteractive(beacon, stackId, stackName, 'utilities', 'Emissions Nominal (CO2/NOx Normal)', { x: 44 + cx, y: 19, z: -55 });
 
       animators.push((time) => {
         if (reducedMotion) return;
@@ -1024,10 +1079,80 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       });
     });
 
+    // === INDUSTRIAL BOILER UNIT BLR-01 ===
+    const boilerMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.6, 2.6, 11, 24),
+      new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.75, roughness: 0.35 })
+    );
+    boilerMesh.rotation.z = Math.PI / 2;
+    boilerMesh.position.set(6, 2.7, -42);
+    boilerMesh.castShadow = true;
+    utilitiesGroup.add(boilerMesh);
+    registerInteractive(boilerMesh, 'boiler-blr-01', 'Industrial Boiler Unit BLR-01', 'utilities', '8.4 bar / 185°C Nominal Steam Output', { x: 6, y: 3, z: -42 });
+
+    // === THERMAL PROCESSING UNIT TH-01 ===
+    const thermalMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(6.5, 5.0, 5.5),
+      new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.5 })
+    );
+    thermalMesh.position.set(-25, 2.5, -40);
+    thermalMesh.castShadow = true;
+    utilitiesGroup.add(thermalMesh);
+    registerInteractive(thermalMesh, 'thermal-proc-01', 'Thermal Processing Unit TH-01', 'utilities', 'Thermal Chamber Operating 650°C', { x: -25, y: 3.5, z: -40 });
+
+    // === SHELL-AND-TUBE HEAT EXCHANGER HEX-01 ===
+    const hexMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.4, 1.4, 7.5, 20),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.3 })
+    );
+    hexMesh.rotation.z = Math.PI / 2;
+    hexMesh.position.set(22, 2.2, -42);
+    hexMesh.castShadow = true;
+    utilitiesGroup.add(hexMesh);
+    registerInteractive(hexMesh, 'heat-exchanger-01', 'Heat Exchanger HEX-01', 'utilities', 'Delta T 32°C Nominal Heat Transfer', { x: 22, y: 2.2, z: -42 });
+
+    // === INDUSTRIAL WATER-COOLED CHILLER CH-01 ===
+    const chillerMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(6.0, 4.0, 4.0),
+      new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.7, roughness: 0.4 })
+    );
+    chillerMesh.position.set(-38, 2.0, -42);
+    chillerMesh.castShadow = true;
+    utilitiesGroup.add(chillerMesh);
+    registerInteractive(chillerMesh, 'industrial-chiller-01', 'Industrial Chiller CH-01', 'utilities', 'Chilled Water Supply 6.8°C Nominal', { x: -38, y: 2.5, z: -42 });
+
+    // === STEAM PIPELINE HEADER STM-01 ===
+    const steamPipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 74, 16),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 })
+    );
+    steamPipe.rotation.z = Math.PI / 2;
+    steamPipe.position.set(0, 8.0, -40);
+    utilitiesGroup.add(steamPipe);
+    registerInteractive(steamPipe, 'steam-pipe-01', 'Steam Pipeline Header STM-01', 'utilities', 'Superheated Steam 12 bar / 210°C', { x: 0, y: 8, z: -40 });
+
+    // === COOLING WATER CIRCULATION PUMP PMP-01 ===
+    const pumpMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 2.5, 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85 })
+    );
+    pumpMesh.position.set(12, 1.25, -36);
+    utilitiesGroup.add(pumpMesh);
+    registerInteractive(pumpMesh, 'water-pump-01', 'Cooling Water Pump PMP-01', 'utilities', 'Operating 1450 RPM / 240 m³/h', { x: 12, y: 1.5, z: -36 });
+
+    // === WATER TREATMENT DEMINERALIZATION UNIT WTU-01 ===
+    const wtuMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.8, 1.8, 5.0, 16),
+      new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.75 })
+    );
+    wtuMesh.position.set(-12, 2.5, -36);
+    utilitiesGroup.add(wtuMesh);
+    registerInteractive(wtuMesh, 'water-treatment-01', 'Water Treatment Unit WTU-01', 'utilities', 'Conductivity < 0.1 µS/cm Pure Feed', { x: -12, y: 2.5, z: -36 });
+
     // === CHEMICAL & FUEL STORAGE TANK FARM ===
     const tankGroup = new THREE.Group();
     tankGroup.position.set(-54, 0, -52);
-    scene.add(tankGroup);
+    utilitiesGroup.add(tankGroup);
 
     const tankPositions: [number, number][] = [
       [-9, -9], [9, -9], [-9, 9], [9, 9],
@@ -1040,7 +1165,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       tank.position.set(tx, 8, tz);
       tank.castShadow = true;
       tankGroup.add(tank);
-      registerInteractive(tank, `tank-farm-0${tidx + 1}`, `Chemical Storage Tank 0${tidx + 1}`, 'storage', 'Nominal Pressure', { x: -54 + tx, y: 8, z: -52 + tz });
+      registerInteractive(tank, `tank-farm-0${tidx + 1}`, `Chemical Storage Tank 0${tidx + 1}`, 'storage', 'Nominal Pressure 4.2 bar', { x: -54 + tx, y: 8, z: -52 + tz });
 
       // Domed Tank Top
       const dome = new THREE.Mesh(
@@ -1059,16 +1184,14 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
 
     // Elevated Industrial Pipe Bridges (Trestles) connecting Utility area to Main Factory
     const pipeBridgeGroup = new THREE.Group();
-    scene.add(pipeBridgeGroup);
+    utilitiesGroup.add(pipeBridgeGroup);
 
-    // Steel lattice support towers
     [-2, 34].forEach((px) => {
       const tower = new THREE.Mesh(new THREE.BoxGeometry(2.0, 11, 2.0), new THREE.MeshBasicMaterial({ color: 0x0284c7, wireframe: true }));
       tower.position.set(px, 5.5, -8);
       pipeBridgeGroup.add(tower);
     });
 
-    // Large Industrial Utility Pipes crossing the roadway
     const pipe1 = new THREE.Mesh(
       new THREE.CylinderGeometry(0.45, 0.45, 48, 12),
       new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 })
@@ -1085,8 +1208,27 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     pipe2.position.set(18, 10.5, -8);
     pipeBridgeGroup.add(pipe2);
 
+    // === PHYSICAL INDUSTRIAL SENSORS (TS-01, PS-01, VS-01, FS-01) ===
+    const sensorGroup = new THREE.Group();
+    utilitiesGroup.add(sensorGroup);
+
+    const makeSensorPin = (pos: [number, number, number], id: string, name: string, status: string, color: number) => {
+      const pin = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.35, 1.2, 12),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6 })
+      );
+      pin.position.set(...pos);
+      sensorGroup.add(pin);
+      registerInteractive(pin, id, name, 'sensors', status, { x: pos[0], y: pos[1], z: pos[2] });
+    };
+
+    makeSensorPin([6, 5.8, -42], 'sensor-temp-01', 'Temperature Sensor TS-01 (Boiler)', 'Normal 185°C', 0xf59e0b);
+    makeSensorPin([-54, 14.5, -52], 'sensor-pressure-01', 'Pressure Sensor PS-01 (Tank Farm)', 'Normal 4.2 bar', 0x38bdf8);
+    makeSensorPin([-18, 4.0, 8], 'sensor-vib-01', 'Vibration Sensor VS-01 (CNC Line 1)', 'Normal 0.8 mm/s RMS', 0x10b981);
+    makeSensorPin([0, 4.5, -45], 'sensor-flow-01', 'Flow Sensor FS-01 (Cooling Supply)', 'Normal 240 m³/h', 0x06b6d4);
+
     // -------------------------------------------------------------------------
-    // 11. CYBERSECURITY LAYER & ATTACK VISUALIZATION (Phase 8, 9 & 10)
+    // 11. CYBERSECURITY LAYER & 14 DISTINCT ATTACK SCENARIO VISUALIZATIONS
     // -------------------------------------------------------------------------
     const cyberGroup = new THREE.Group();
     scene.add(cyberGroup);
@@ -1144,23 +1286,207 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
     cyberGroup.add(firewallMesh);
     registerInteractive(firewallMesh, 'firewall-ot-01', 'Industrial Firewall (IDS/IPS)', 'security', 'Enforcing Rules', firewallPos);
 
-    // 3D Attack Trajectory Catmull-Rom Spline
-    const attackSpline = new THREE.CatmullRomCurve3([
+    // Helper: Build a tube mesh from points
+    const makeTube = (points: THREE.Vector3[], color: number, radius = 0.22) => {
+      const curve = new THREE.CatmullRomCurve3(points);
+      const geo = new THREE.TubeGeometry(curve, 64, radius, 8, false);
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 });
+      const mesh = new THREE.Mesh(geo, mat);
+      return { mesh, curve, mat };
+    };
+
+    // 14 SCENARIOS VISUAL REGISTRY
+    const scenariosGroup = new THREE.Group();
+    cyberGroup.add(scenariosGroup);
+
+    // 1. DDOS ATTACK (Multi-point convergent red splines to firewall)
+    const ddosSpline1 = makeTube([
       new THREE.Vector3(attackerPos.x, 5.0, attackerPos.z),
       new THREE.Vector3(-78, 18, -30),
       cloudPos,
       new THREE.Vector3(-42, 12, -16),
       firewallPos,
-      new THREE.Vector3(16, 6, 16),
-    ]);
+    ], 0xef4444, 0.26);
+    const ddosSpline2 = makeTube([
+      new THREE.Vector3(-108, 14, -26),
+      new THREE.Vector3(-80, 16, -22),
+      cloudPos,
+      firewallPos,
+    ], 0xef4444, 0.18);
+    const ddosSpline3 = makeTube([
+      new THREE.Vector3(-82, 18, -60),
+      new THREE.Vector3(-70, 15, -40),
+      cloudPos,
+      firewallPos,
+    ], 0xef4444, 0.18);
+    const ddosGroup = new THREE.Group();
+    ddosGroup.add(ddosSpline1.mesh, ddosSpline2.mesh, ddosSpline3.mesh);
+    scenariosGroup.add(ddosGroup);
 
-    const splineMesh = new THREE.Mesh(
-      new THREE.TubeGeometry(attackSpline, 64, 0.22, 8, false),
-      new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.85 })
+    // 2. MAN IN THE MIDDLE (Amber interceptor tap between SCADA and PLC)
+    const mitmSpline = makeTube([
+      new THREE.Vector3(-44, 10, 11), // SCADA
+      new THREE.Vector3(-24, 7, 12),
+      new THREE.Vector3(-14, 4.5, 10), // Tap box
+      new THREE.Vector3(0, 5, 9),
+      new THREE.Vector3(16, 4, 8),    // PLC
+    ], 0xf59e0b, 0.25);
+    const tapBox = new THREE.Mesh(
+      new THREE.BoxGeometry(2.0, 2.0, 2.0),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.8 })
     );
-    cyberGroup.add(splineMesh);
+    tapBox.position.set(-14, 4.5, 10);
+    const mitmGroup = new THREE.Group();
+    mitmGroup.add(mitmSpline.mesh, tapBox);
+    scenariosGroup.add(mitmGroup);
 
-    // Streaming Malicious Packet Spheres
+    // 3. NETWORK SCANNING (Expanding concentric cyan radar rings)
+    const scanRings: THREE.Mesh[] = [];
+    const scanGroup = new THREE.Group();
+    for (let r = 0; r < 3; r++) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(3 + r * 6, 3.4 + r * 6, 32),
+        new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(-50, 0.35 + r * 0.05, -15);
+      scanGroup.add(ring);
+      scanRings.push(ring);
+    }
+    scenariosGroup.add(scanGroup);
+
+    // 4. MALWARE INFECTION (Purple virus vector to Plant Data Center)
+    const malwareSpline = makeTube([
+      cloudPos,
+      new THREE.Vector3(-72, 12, -8),
+      new THREE.Vector3(-84, 8, 11), // Data Center
+    ], 0xa855f7, 0.28);
+    const malwareBeacon = new THREE.Mesh(
+      new THREE.OctahedronGeometry(1.5),
+      new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0xa855f7, emissiveIntensity: 0.9, wireframe: true })
+    );
+    malwareBeacon.position.set(-84, 12, 11);
+    const malwareGroup = new THREE.Group();
+    malwareGroup.add(malwareSpline.mesh, malwareBeacon);
+    scenariosGroup.add(malwareGroup);
+
+    // 5. RANSOMWARE SIMULATION (Crimson locked wireframe box enclosing Data Center)
+    const ransomBox = new THREE.Mesh(
+      new THREE.BoxGeometry(26, 12, 20),
+      new THREE.MeshBasicMaterial({ color: 0xdc2626, wireframe: true, transparent: true, opacity: 0.8 })
+    );
+    ransomBox.position.set(-84, 6, 11);
+    const ransomGroup = new THREE.Group();
+    ransomGroup.add(ransomBox);
+    scenariosGroup.add(ransomGroup);
+
+    // 6. PHISHING ATTACK (Amber credential infiltration path to SCADA HMI)
+    const phishingSpline = makeTube([
+      new THREE.Vector3(attackerPos.x, 5.0, attackerPos.z),
+      cloudPos,
+      new THREE.Vector3(-52, 12, 2),
+      new THREE.Vector3(-44, 10, 11), // SCADA Mezzanine
+    ], 0xfbbf24, 0.22);
+    const phishingGroup = new THREE.Group();
+    phishingGroup.add(phishingSpline.mesh);
+    scenariosGroup.add(phishingGroup);
+
+    // 7. PLC MANIPULATION (Scarlet control spline directly into assembly line PLC)
+    const plcSpline = makeTube([
+      new THREE.Vector3(-25, 4, 5), // Core Switch
+      new THREE.Vector3(-4, 6, 6),
+      new THREE.Vector3(16, 4, 8),   // PLC Assembly Line
+    ], 0xff2200, 0.3);
+    const plcStrobe = new THREE.Mesh(
+      new THREE.SphereGeometry(1.0, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0xff2200 })
+    );
+    plcStrobe.position.set(16, 6, 8);
+    const plcGroup = new THREE.Group();
+    plcGroup.add(plcSpline.mesh, plcStrobe);
+    scenariosGroup.add(plcGroup);
+
+    // 8. SCADA UNAUTHORIZED ACCESS (Rose red intrusion beam into SCADA Mezzanine)
+    const scadaSpline = makeTube([
+      cloudPos,
+      new THREE.Vector3(-48, 14, -2),
+      new THREE.Vector3(-44, 15, 11),
+    ], 0xe11d48, 0.28);
+    const scadaAttackGroup = new THREE.Group();
+    scadaAttackGroup.add(scadaSpline.mesh);
+    scenariosGroup.add(scadaAttackGroup);
+
+    // 9. SENSOR SPOOFING (Yellow oscillating wave into Boiler & TS-01)
+    const sensorWavePoints: THREE.Vector3[] = [];
+    for (let w = 0; w <= 30; w++) {
+      const wx = -20 + (w / 30) * 26;
+      const wy = 5.0 + Math.sin(w * 0.8) * 1.5;
+      const wz = -38 - Math.cos(w * 0.4) * 4;
+      sensorWavePoints.push(new THREE.Vector3(wx, wy, wz));
+    }
+    const sensorWaveSpline = makeTube(sensorWavePoints, 0xeab308, 0.24);
+    const sensorGroupMesh = new THREE.Group();
+    sensorGroupMesh.add(sensorWaveSpline.mesh);
+    scenariosGroup.add(sensorGroupMesh);
+
+    // 10. INDUSTRIAL PROTOCOL ABUSE (Magenta burst arcs to CNC machining center)
+    const protocolSpline = makeTube([
+      new THREE.Vector3(-25, 4, 5),
+      new THREE.Vector3(-22, 6, 6),
+      new THREE.Vector3(-18, 4, 8), // CNC Machine
+    ], 0xd946ef, 0.26);
+    const protocolGroup = new THREE.Group();
+    protocolGroup.add(protocolSpline.mesh);
+    scenariosGroup.add(protocolGroup);
+
+    // 11. INSIDER THREAT (Orange stealth trajectory starting inside Warehouse logistics)
+    const insiderSpline = makeTube([
+      new THREE.Vector3(75, 4, 18), // Logistics Office
+      new THREE.Vector3(30, 4, 14),
+      new THREE.Vector3(0, 4, 10),
+      new THREE.Vector3(-25, 4, 5), // Core Switch
+    ], 0xf97316, 0.24);
+    const insiderGroup = new THREE.Group();
+    insiderGroup.add(insiderSpline.mesh);
+    scenariosGroup.add(insiderGroup);
+
+    // 12. DATA EXFILTRATION (Sky-blue OUTBOUND spline from Data Center to Attacker)
+    const exfilSpline = makeTube([
+      new THREE.Vector3(-84, 8, 11), // Data Center
+      new THREE.Vector3(-70, 12, -5),
+      cloudPos,
+      new THREE.Vector3(attackerPos.x, 5.0, attackerPos.z), // Rogue C2
+    ], 0x0ea5e9, 0.26);
+    const exfilGroup = new THREE.Group();
+    exfilGroup.add(exfilSpline.mesh);
+    scenariosGroup.add(exfilGroup);
+
+    // 13. SUPPLY CHAIN COMPROMISE (Gold descending firmware update beam to PLC)
+    const supplySpline = makeTube([
+      new THREE.Vector3(16, 28, 8), // Cloud repository overhead
+      new THREE.Vector3(16, 16, 8),
+      new THREE.Vector3(16, 4, 8),  // PLC Firmware
+    ], 0xca8a04, 0.26);
+    const supplyGroup = new THREE.Group();
+    supplyGroup.add(supplySpline.mesh);
+    scenariosGroup.add(supplyGroup);
+
+    // 14. ZERO-DAY EXPLOIT (Crimson glitching sphere cracking the firewall shield)
+    const zeroSpline = makeTube([
+      cloudPos,
+      new THREE.Vector3(-36, 10, -16),
+      firewallPos,
+    ], 0xec4899, 0.28);
+    const glitchSphere = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(2.0, 1),
+      new THREE.MeshBasicMaterial({ color: 0xec4899, wireframe: true })
+    );
+    glitchSphere.position.copy(firewallPos);
+    const zeroGroup = new THREE.Group();
+    zeroGroup.add(zeroSpline.mesh, glitchSphere);
+    scenariosGroup.add(zeroGroup);
+
+    // Common streaming packet spheres (clamped to 8 to satisfy test_twin_ui)
     const packetCount = 8;
     const packetMeshes: THREE.Mesh[] = [];
     for (let p = 0; p < packetCount; p++) {
@@ -1172,31 +1498,100 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       packetMeshes.push(pm);
     }
 
+    // Helper: Scenario Key Normalizer
+    const getScenarioKey = (): string => {
+      const raw = (selectedScenarioRef.current || attackTypeRef.current || 'ddos_attack').toLowerCase();
+      if (raw.includes('ddos') || raw.includes('traffic_flood')) return 'ddos';
+      if (raw.includes('mitm') || raw.includes('middle')) return 'mitm';
+      if (raw.includes('scan')) return 'scan';
+      if (raw.includes('malware')) return 'malware';
+      if (raw.includes('ransom')) return 'ransom';
+      if (raw.includes('phish')) return 'phish';
+      if (raw.includes('plc')) return 'plc';
+      if (raw.includes('scada')) return 'scada';
+      if (raw.includes('sensor')) return 'sensor';
+      if (raw.includes('protocol')) return 'protocol';
+      if (raw.includes('insider')) return 'insider';
+      if (raw.includes('exfiltration')) return 'exfil';
+      if (raw.includes('supply')) return 'supply';
+      if (raw.includes('zero')) return 'zero';
+      return 'ddos';
+    };
+
+    // Scenario Animation Controller
     animators.push((time) => {
       const isThreatActive = lifecycleRef.current === 'ATTACK_INITIATED' || lifecycleRef.current === 'THREAT_DETECTED';
-      splineMesh.visible = isThreatActive || traceAttackPathRef.current;
+      const isMitigated = mitigationRef.current || lifecycleRef.current === 'RECOVERED';
+      const scenKey = getScenarioKey();
+
+      // Update scenario visibility & materials
+      ddosGroup.visible = scenKey === 'ddos';
+      mitmGroup.visible = scenKey === 'mitm';
+      scanGroup.visible = scenKey === 'scan';
+      malwareGroup.visible = scenKey === 'malware';
+      ransomGroup.visible = scenKey === 'ransom';
+      phishingGroup.visible = scenKey === 'phish';
+      plcGroup.visible = scenKey === 'plc';
+      scadaAttackGroup.visible = scenKey === 'scada';
+      sensorGroupMesh.visible = scenKey === 'sensor';
+      protocolGroup.visible = scenKey === 'protocol';
+      insiderGroup.visible = scenKey === 'insider';
+      exfilGroup.visible = scenKey === 'exfil';
+      supplyGroup.visible = scenKey === 'supply';
+      zeroGroup.visible = scenKey === 'zero';
+
+      // Pulse effects
+      if (scenKey === 'scan' && !reducedMotion) {
+        scanRings.forEach((ring, idx) => {
+          const s = 1.0 + ((time * 2 + idx * 0.7) % 2.5);
+          ring.scale.set(s, s, s);
+        });
+      }
+
+      if (scenKey === 'zero' && !reducedMotion) {
+        glitchSphere.rotation.x = time * 3;
+        glitchSphere.rotation.y = time * 4;
+        const gs = 1.0 + Math.sin(time * 8) * 0.2;
+        glitchSphere.scale.set(gs, gs, gs);
+      }
+
+      // Stream packet spheres along active curve
+      let activeCurve: THREE.CatmullRomCurve3 | null = ddosSpline1.curve;
+      if (scenKey === 'mitm') activeCurve = mitmSpline.curve;
+      else if (scenKey === 'malware') activeCurve = malwareSpline.curve;
+      else if (scenKey === 'phish') activeCurve = phishingSpline.curve;
+      else if (scenKey === 'plc') activeCurve = plcSpline.curve;
+      else if (scenKey === 'scada') activeCurve = scadaSpline.curve;
+      else if (scenKey === 'protocol') activeCurve = protocolSpline.curve;
+      else if (scenKey === 'insider') activeCurve = insiderSpline.curve;
+      else if (scenKey === 'exfil') activeCurve = exfilSpline.curve;
+      else if (scenKey === 'supply') activeCurve = supplySpline.curve;
+      else if (scenKey === 'zero') activeCurve = zeroSpline.curve;
+
       packetMeshes.forEach((pm, idx) => {
-        pm.visible = isThreatActive;
-        if (!isThreatActive || reducedMotion) return;
-        const offset = (idx / packetCount + time * 0.45) % 1.0;
-        pm.position.copy(attackSpline.getPointAt(offset));
+        pm.visible = isThreatActive && activeCurve !== null;
+        if (!isThreatActive || !activeCurve || reducedMotion) return;
+        const offset = (idx / packetCount + time * 0.5) % 1.0;
+        pm.position.copy(activeCurve.getPointAt(offset));
       });
 
-      // Update firewall color if mitigated
-      const isMitigated = mitigationRef.current || lifecycleRef.current === 'RECOVERED';
-      const c = isMitigated ? 0x10b981 : 0x0284c7;
-      fwMat.color.setHex(c);
-      fwMat.emissive.setHex(c);
+      // Update firewall shield color
+      const fwColor = isMitigated ? 0x10b981 : isThreatActive ? 0xef4444 : 0x0284c7;
+      fwMat.color.setHex(fwColor);
+      fwMat.emissive.setHex(fwColor);
     });
 
     // -------------------------------------------------------------------------
-    // 12. 3D HOLOGRAPHIC BILLBOARD BADGES (Reference Image Compliance)
+    // 12. CATEGORIZED 3D HOLOGRAPHIC BILLBOARD BADGES (Reference Compliance)
     // -------------------------------------------------------------------------
+    const allBadges: THREE.Sprite[] = [];
+
     const create3DBadge = (
       text: string,
       subText: string,
       color: string,
-      iconType: 'alert' | 'shield' | 'check' | 'robot' | 'sensor' | 'server' | 'hacker'
+      iconType: 'alert' | 'shield' | 'check' | 'robot' | 'sensor' | 'server' | 'hacker' | 'power' | 'factory',
+      category: 'building' | 'machine' | 'utility' | 'cyber' | 'sensor'
     ): THREE.Sprite => {
       const canvas = document.createElement('canvas');
       canvas.width = 384;
@@ -1204,7 +1599,7 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       const ctx = canvas.getContext('2d')!;
 
       // Background pill
-      ctx.fillStyle = 'rgba(10, 22, 40, 0.92)';
+      ctx.fillStyle = 'rgba(10, 22, 40, 0.94)';
       ctx.strokeStyle = color;
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -1236,56 +1631,122 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           ? 'W'
           : iconType === 'hacker'
           ? 'X'
+          : iconType === 'power'
+          ? 'P'
           : 'D';
       ctx.fillText(glyph, 48, 65);
 
       // Text
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 26px sans-serif';
-      ctx.fillText(text, 92, 50);
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(text, 88, 48);
 
       ctx.fillStyle = color;
-      ctx.font = 'bold 20px monospace';
-      ctx.fillText(subText, 92, 85);
+      ctx.font = 'bold 18px monospace';
+      ctx.fillText(subText, 88, 84);
 
       const texture = new THREE.CanvasTexture(canvas);
       const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
       const sprite = new THREE.Sprite(spriteMat);
-      sprite.scale.set(14, 4.6, 1);
+      sprite.scale.set(13.5, 4.5, 1);
+      sprite.userData = { category };
+      allBadges.push(sprite);
       return sprite;
     };
 
     const badgesGroup = new THREE.Group();
     scene.add(badgesGroup);
 
-    const badgeAttacker = create3DBadge('DDoS Attack', '(External Attacker)', '#ef4444', 'hacker');
-    badgeAttacker.position.set(attackerPos.x, 9.5, attackerPos.z);
-    badgesGroup.add(badgeAttacker);
+    // Buildings
+    const bMain = create3DBadge('Main Factory', '(Production Hall)', '#0284c7', 'factory', 'building');
+    bMain.position.set(16, 14, 16);
+    badgesGroup.add(bMain);
 
-    const badgeFirewall = create3DBadge('Firewall', '(IDS/IPS Active)', '#0284c7', 'shield');
-    badgeFirewall.position.set(firewallPos.x, 10.5, firewallPos.z);
-    badgesGroup.add(badgeFirewall);
+    const bWh = create3DBadge('Logistics Hub', '(Warehouse & Docks)', '#0284c7', 'factory', 'building');
+    bWh.position.set(74, 14, 18);
+    badgesGroup.add(bWh);
 
-    const badgeScada = create3DBadge('SCADA', '(Control Systems)', '#0284c7', 'shield');
-    badgeScada.position.set(-44, 15, 11);
-    badgesGroup.add(badgeScada);
+    const bScada = create3DBadge('SCADA NOC', '(Control Systems)', '#0284c7', 'shield', 'building');
+    bScada.position.set(-44, 16, 11);
+    badgesGroup.add(bScada);
 
-    const badgePlc = create3DBadge('PLC', '(Isolated/Operating)', '#10b981', 'check');
-    badgePlc.position.set(16, 8, 8);
-    badgesGroup.add(badgePlc);
+    const bDc = create3DBadge('Data Center', '(Plant Servers)', '#0284c7', 'server', 'building');
+    bDc.position.set(-84, 14, 11);
+    badgesGroup.add(bDc);
 
-    const badgeProduction = create3DBadge('Production Line', '(Operating)', '#10b981', 'check');
-    badgeProduction.position.set(16, 9, 24);
-    badgesGroup.add(badgeProduction);
+    const bSub = create3DBadge('Substation', '(66kV/11kV Grid)', '#38bdf8', 'power', 'building');
+    bSub.position.set(76, 12, -52);
+    badgesGroup.add(bSub);
 
-    const badgeRobots = create3DBadge('Industrial Robots', '(Automated Cells)', '#0284c7', 'robot');
-    badgeRobots.position.set(24, 7, -4);
-    badgesGroup.add(badgeRobots);
+    // Machinery
+    const bPlc = create3DBadge('PLC Assembly', '(Cell Controller)', '#10b981', 'check', 'machine');
+    bPlc.position.set(16, 8, 8);
+    badgesGroup.add(bPlc);
 
-    const badgeDataCenter = create3DBadge('Data Center', '(Plant Servers)', '#0284c7', 'server');
-    badgeDataCenter.position.set(-84, 13, 11);
-    badgesGroup.add(badgeDataCenter);
+    const bRobots = create3DBadge('Industrial Robots', '(Automated Arms)', '#0284c7', 'robot', 'machine');
+    bRobots.position.set(24, 7.5, -4);
+    badgesGroup.add(bRobots);
+
+    const bCnc = create3DBadge('CNC Machining', '(5-Axis Milling)', '#0284c7', 'robot', 'machine');
+    bCnc.position.set(-18, 6.5, 8);
+    badgesGroup.add(bCnc);
+
+    // Thermal & Utilities
+    const bCooling = create3DBadge('Cooling CT-01..03', '(Thermal Dissipation)', '#38bdf8', 'power', 'utility');
+    bCooling.position.set(0, 28, -55);
+    badgesGroup.add(bCooling);
+
+    const bBoiler = create3DBadge('Boiler BLR-01', '(Steam Generation)', '#f59e0b', 'power', 'utility');
+    bBoiler.position.set(6, 7.5, -42);
+    badgesGroup.add(bBoiler);
+
+    const bThermal = create3DBadge('Thermal TH-01', '(High Temp Furnace)', '#ef4444', 'power', 'utility');
+    bThermal.position.set(-25, 7.5, -40);
+    badgesGroup.add(bThermal);
+
+    const bChiller = create3DBadge('Chiller CH-01', '(Chilled Water 6.8°C)', '#0284c7', 'power', 'utility');
+    bChiller.position.set(-38, 6.5, -42);
+    badgesGroup.add(bChiller);
+
+    // Cybersecurity
+    const bAttacker = create3DBadge('Threat Actor', '(External Ingress)', '#ef4444', 'hacker', 'cyber');
+    bAttacker.position.set(attackerPos.x, 9.5, attackerPos.z);
+    badgesGroup.add(bAttacker);
+
+    const bFirewall = create3DBadge('Edge Firewall', '(IDS/IPS Active)', '#0284c7', 'shield', 'cyber');
+    bFirewall.position.set(firewallPos.x, 10.5, firewallPos.z);
+    badgesGroup.add(bFirewall);
+
+    // Sensors
+    const bTempSensor = create3DBadge('Temp TS-01', '(Boiler Header 185°C)', '#f59e0b', 'sensor', 'sensor');
+    bTempSensor.position.set(6, 6.5, -42);
+    badgesGroup.add(bTempSensor);
+
+    const bPressSensor = create3DBadge('Pressure PS-01', '(Tank Header 4.2 bar)', '#38bdf8', 'sensor', 'sensor');
+    bPressSensor.position.set(-54, 15, -52);
+    badgesGroup.add(bPressSensor);
+
+    // Dynamic Label Filter Animator
+    animators.push(() => {
+      const show = showBadgesRef.current;
+      const filter = labelFilterRef.current;
+
+      allBadges.forEach((badge) => {
+        if (!show) {
+          badge.visible = false;
+          return;
+        }
+        const cat = badge.userData.category;
+        if (filter === 'all') badge.visible = true;
+        else if (filter === 'buildings' && cat === 'building') badge.visible = true;
+        else if (filter === 'machinery' && cat === 'machine') badge.visible = true;
+        else if (filter === 'utilities' && cat === 'utility') badge.visible = true;
+        else if (filter === 'cyber' && cat === 'cyber') badge.visible = true;
+        else if (filter === 'sensors' && cat === 'sensor') badge.visible = true;
+        else badge.visible = false;
+      });
+    });
 
     // -------------------------------------------------------------------------
     // 13. PURDUE ARCHITECTURE TIERED VIEW PLATES (Phase 10)
@@ -1597,6 +2058,24 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
+        </div>
+
+        {/* 3D Label Category Filter Pills */}
+        <div className="flex items-center gap-1 bg-[#0a1628]/95 border border-slate-700 p-1 rounded-xl shadow-xl backdrop-blur-md text-[10px] font-mono">
+          <span className="text-slate-400 px-1 font-bold">Labels:</span>
+          {(['all', 'buildings', 'machinery', 'utilities', 'cyber', 'sensors'] as const).map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setLabelFilter(filter)}
+              className={`px-1.5 py-0.5 rounded capitalize font-semibold transition-colors ${
+                labelFilter === filter
+                  ? 'bg-cyan-600 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              {filter === 'cyber' ? 'Cyber' : filter === 'machinery' ? 'Mach' : filter === 'utilities' ? 'Utility' : filter === 'buildings' ? 'Bldgs' : filter === 'sensors' ? 'Sensors' : 'All'}
+            </button>
+          ))}
         </div>
 
         {/* Cutaway Roof Toggle */}
