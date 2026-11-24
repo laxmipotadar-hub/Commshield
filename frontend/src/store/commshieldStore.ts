@@ -1,6 +1,33 @@
 // File: src/store/commshieldStore.ts
 
 import { create } from 'zustand'
+import { subscribeWithSelector } from 'zustand/middleware'
+import { produce } from 'immer'
+
+export interface TelemetryWindow {
+  windowId: string
+  timestamp: string
+  sliceId: string
+  deviceId: string
+  metrics: {
+    packetRate: number
+    throughput: number
+    latency: number
+    jitter: number
+    lossRate: number
+  }
+  anomalyScore: number
+  verdict: 'benign' | 'attack' | 'uncertain'
+}
+
+export interface Alert {
+  id: string
+  timestamp: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  message: string
+  source?: string
+  target?: string
+}
 
 export interface DeviceTelemetry {
   packetRate: number
@@ -17,30 +44,66 @@ export interface Device {
   telemetry: DeviceTelemetry
 }
 
-export interface SliceInfo {
+export interface Slice {
   sliceId: string
   name: string
   type: 'embb' | 'urllc' | 'mmtc'
   color: string
-  allocatedBandwidthMbps: number
-  currentThroughputMbps: number
-  latencyMs: number
+  allocatedBandwidthMbps?: number
+  currentThroughputMbps?: number
+  latencyMs?: number
 }
 
-interface CommShieldStoreState {
-  selectedSlice: string | null
-  selectedDeviceId: string | null
+// Backwards compatibility alias
+export type SliceInfo = Slice
+
+export interface CommShieldState {
+  // Connection
+  wsConnection: WebSocket | null
+  isConnected: boolean
+
+  // Data
   devices: Device[]
-  slices: SliceInfo[]
+  slices: Slice[]
+  telemetryHistory: TelemetryWindow[]
+  currentAlerts: Alert[]
+
+  // UI State
+  selectedSlice: string | null
+  selectedDevice: string | null
+  selectedDeviceId: string | null // backwards compatibility alias
+  timeRange: [number, number]
+  isPlaying: boolean
+  playbackSpeed: number
+
+  // Network status
+  networkStatus: {
+    gnodeb: 'active' | 'warning' | 'critical'
+    upf: 'active' | 'warning' | 'critical'
+    amf: 'active' | 'warning' | 'critical'
+    smf: 'active' | 'warning' | 'critical'
+  }
+
+  // Actions
+  connect: () => void
+  disconnect: () => void
   setSelectedSlice: (sliceId: string | null) => void
-  setSelectedDeviceId: (id: string | null) => void
+  setSelectedDevice: (deviceId: string | null) => void
+  setSelectedDeviceId: (id: string | null) => void // backwards compatibility
+  setTimeRange: (range: [number, number]) => void
+  setIsPlaying: (playing: boolean) => void
+  setPlaybackSpeed: (speed: number) => void
+  processTelemetry: (window: TelemetryWindow) => void
   setDevices: (devices: Device[]) => void
   updateDeviceTelemetry: (id: string, telemetry: Partial<DeviceTelemetry>) => void
   setDeviceStatus: (id: string, status: Device['status']) => void
 }
 
+// Backwards compatibility alias
+export type CommShieldStoreState = CommShieldState
+
 // Initial devices distributed realistically across the 3 smart factory zones
-const initialDevices: Device[] = [
+export const initialDevices: Device[] = [
   // --- eMBB Slice: 8 Surveillance Cameras (Zone [-50, 0, 20], size 40x30) ---
   { id: 'ue-cam-01', type: 'camera', position: [-62, 3.5, 12], status: 'normal', sliceId: 'sst-1-sd-010203', telemetry: { packetRate: 1250, latency: 4.2, jitter: 0.8 } },
   { id: 'ue-cam-02', type: 'camera', position: [-50, 3.5, 10], status: 'normal', sliceId: 'sst-1-sd-010203', telemetry: { packetRate: 1180, latency: 4.5, jitter: 0.9 } },
@@ -80,7 +143,7 @@ const initialDevices: Device[] = [
   { id: 'ue-sns-20', type: 'sensor', position: [64, 0.3, 28], status: 'normal', sliceId: 'sst-3-sd-010203', telemetry: { packetRate: 32, latency: 11.4, jitter: 1.5 } },
 ]
 
-const initialSlices: SliceInfo[] = [
+export const initialSlices: Slice[] = [
   {
     sliceId: 'sst-1-sd-010203',
     name: 'Camera Array (eMBB)',
@@ -110,25 +173,173 @@ const initialSlices: SliceInfo[] = [
   },
 ]
 
-export const useCommShieldStore = create<CommShieldStoreState>((set) => ({
-  selectedSlice: null,
-  selectedDeviceId: null,
-  devices: initialDevices,
-  slices: initialSlices,
-  setSelectedSlice: (sliceId) => set({ selectedSlice: sliceId }),
-  setSelectedDeviceId: (id) => set({ selectedDeviceId: id }),
-  setDevices: (devices) => set({ devices }),
-  updateDeviceTelemetry: (id, telemetry) =>
-    set((state) => ({
-      devices: state.devices.map((d) =>
-        d.id === id ? { ...d, telemetry: { ...d.telemetry, ...telemetry } } : d
+export const useCommShieldStore = create<CommShieldState>()(
+  subscribeWithSelector((set, get) => ({
+    // Connection
+    wsConnection: null,
+    isConnected: false,
+
+    // Data
+    devices: initialDevices,
+    slices: initialSlices,
+    telemetryHistory: [],
+    currentAlerts: [],
+
+    // UI State
+    selectedSlice: null,
+    selectedDevice: null,
+    selectedDeviceId: null,
+    timeRange: [Date.now() - 3600000, Date.now()],
+    isPlaying: true,
+    playbackSpeed: 1,
+
+    // Network status
+    networkStatus: {
+      gnodeb: 'active',
+      upf: 'active',
+      amf: 'active',
+      smf: 'active',
+    },
+
+    // Actions
+    connect: () => {
+      const existing = get().wsConnection
+      if (existing && existing.readyState === WebSocket.OPEN) {
+        return
+      }
+
+      const wsProtocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsHost = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost'
+      const wsUrl = (import.meta.env.VITE_WS_URL as string) || `${wsProtocol}//${wsHost}:8000/ws/telemetry`
+
+      try {
+        const ws = new WebSocket(wsUrl)
+
+        ws.onopen = () => {
+          set({ isConnected: true, wsConnection: ws })
+          console.log('Connected to CommShield telemetry')
+        }
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+
+            switch (data.type) {
+              case 'telemetry':
+                get().processTelemetry(data.payload)
+                break
+              case 'alert':
+                set(
+                  produce((state: CommShieldState) => {
+                    state.currentAlerts.unshift(data.payload)
+                    if (state.currentAlerts.length > 50) {
+                      state.currentAlerts.pop()
+                    }
+                  })
+                )
+                break
+              case 'device_update':
+                set(
+                  produce((state: CommShieldState) => {
+                    const idx = state.devices.findIndex((d) => d.id === data.payload.id)
+                    if (idx >= 0) {
+                      state.devices[idx] = { ...state.devices[idx], ...data.payload }
+                    }
+                  })
+                )
+                break
+            }
+          } catch (parseErr) {
+            console.warn('CommShield WebSocket message parse error:', parseErr)
+          }
+        }
+
+        ws.onclose = () => {
+          set({ isConnected: false, wsConnection: null })
+          // Attempt reconnection after 5 seconds
+          setTimeout(() => {
+            if (!get().wsConnection) {
+              get().connect()
+            }
+          }, 5000)
+        }
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error)
+        }
+      } catch (err) {
+        console.warn('CommShield WebSocket connection failed:', err)
+      }
+    },
+
+    disconnect: () => {
+      const ws = get().wsConnection
+      if (ws) {
+        ws.close()
+        set({ isConnected: false, wsConnection: null })
+      }
+    },
+
+    setSelectedSlice: (sliceId) => set({ selectedSlice: sliceId }),
+    setSelectedDevice: (deviceId) => set({ selectedDevice: deviceId, selectedDeviceId: deviceId }),
+    setSelectedDeviceId: (id) => set({ selectedDevice: id, selectedDeviceId: id }),
+    setTimeRange: (range) => set({ timeRange: range }),
+    setIsPlaying: (playing) => set({ isPlaying: playing }),
+    setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+
+    processTelemetry: (window: TelemetryWindow) => {
+      set(
+        produce((state: CommShieldState) => {
+          // Add to history
+          state.telemetryHistory.push(window)
+
+          // Keep only last 1000 windows
+          if (state.telemetryHistory.length > 1000) {
+            state.telemetryHistory.shift()
+          }
+
+          // Update device status based on anomaly score
+          const device = state.devices.find((d) => d.id === window.deviceId)
+          if (device) {
+            if (window.anomalyScore > 0.9) {
+              device.status = 'critical'
+            } else if (window.anomalyScore > 0.7) {
+              device.status = 'warning'
+            } else {
+              device.status = 'normal'
+            }
+
+            device.telemetry = {
+              packetRate: window.metrics.packetRate,
+              latency: window.metrics.latency,
+              jitter: window.metrics.jitter,
+            }
+          }
+        })
+      )
+    },
+
+    setDevices: (devices) => set({ devices }),
+    updateDeviceTelemetry: (id, telemetry) =>
+      set(
+        produce((state: CommShieldState) => {
+          const device = state.devices.find((d) => d.id === id)
+          if (device) {
+            device.telemetry = { ...device.telemetry, ...telemetry }
+          }
+        })
       ),
-    })),
-  setDeviceStatus: (id, status) =>
-    set((state) => ({
-      devices: state.devices.map((d) => (d.id === id ? { ...d, status } : d)),
-    })),
-}))
+    setDeviceStatus: (id, status) =>
+      set(
+        produce((state: CommShieldState) => {
+          const device = state.devices.find((d) => d.id === id)
+          if (device) {
+            device.status = status
+          }
+        })
+      ),
+  }))
+)
 
 export default useCommShieldStore
 // CommShield AI Core

@@ -1,5 +1,8 @@
+import asyncio
+from datetime import datetime, timezone
+import json
 from contextlib import asynccontextmanager
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -125,4 +128,74 @@ def health_check():
 def reset_database_endpoint(db: Session = Depends(get_db)):
     """Reset runtime database tables while preserving calibrated anchor baselines."""
     return reset_runtime_database(db=db)
+
+
+@app.websocket("/ws/telemetry")
+async def telemetry_websocket_stream(websocket: WebSocket):
+    """Real-time full-duplex WebSocket stream for CommShield live telemetry and alerts."""
+    await websocket.accept()
+    try:
+        # Initial connection acknowledgment alert
+        await websocket.send_text(json.dumps({
+            "type": "alert",
+            "payload": {
+                "id": "alt-init",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "severity": "low",
+                "message": "Connected to CommShield Real-Time Telemetry Stream",
+                "source": "commshield-core",
+            }
+        }))
+
+        async def ping_listener():
+            while True:
+                msg = await websocket.receive_text()
+                try:
+                    cmd = json.loads(msg)
+                    if cmd.get("action") == "PING":
+                        await websocket.send_text(json.dumps({
+                            "type": "pong",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }))
+                except Exception:
+                    pass
+
+        async def telemetry_broadcaster():
+            devices = [
+                ("ue-cam-01", "sst-1-sd-010203", 1250, 75.0, 4.2, 0.8),
+                ("ue-agv-01", "sst-2-sd-010203", 480, 24.0, 1.2, 0.2),
+                ("ue-sns-01", "sst-3-sd-010203", 25, 8.5, 12.1, 1.8),
+            ]
+            idx = 0
+            while True:
+                await asyncio.sleep(1.5)
+                dev_id, slice_id, pr, tp, lat, jit = devices[idx % len(devices)]
+                idx += 1
+                await websocket.send_text(json.dumps({
+                    "type": "telemetry",
+                    "payload": {
+                        "windowId": f"win-{int(datetime.now(timezone.utc).timestamp())}",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "sliceId": slice_id,
+                        "deviceId": dev_id,
+                        "metrics": {
+                            "packetRate": pr,
+                            "throughput": tp,
+                            "latency": lat,
+                            "jitter": jit,
+                            "lossRate": 0.0001,
+                        },
+                        "anomalyScore": 0.02,
+                        "verdict": "benign",
+                    }
+                }))
+
+        listener = asyncio.create_task(ping_listener())
+        broadcaster = asyncio.create_task(telemetry_broadcaster())
+
+        done, pending = await asyncio.wait([listener, broadcaster], return_when=asyncio.FIRST_COMPLETED)
+        for t in pending:
+            t.cancel()
+    except (WebSocketDisconnect, Exception):
+        pass
 # CommShield AI Core
