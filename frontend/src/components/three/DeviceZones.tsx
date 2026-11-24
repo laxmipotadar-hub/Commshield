@@ -4,7 +4,7 @@ import { useRef, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, Billboard } from '@react-three/drei'
 import * as THREE from 'three'
-import { useCommShieldStore, Device } from '../../store/commshieldStore'
+import { useCommShieldStore } from '../../store/commshieldStore'
 
 export interface DeviceZoneProps {
   position: [number, number, number]
@@ -16,7 +16,20 @@ export interface DeviceZoneProps {
   devices: Device[]
 }
 
-function DeviceItem({ device, onClick }: { device: Device; onClick: () => void }) {
+export interface Device {
+  id: string
+  type: 'camera' | 'agv' | 'sensor'
+  position: [number, number, number]
+  status: 'normal' | 'warning' | 'critical' | 'quarantined'
+  sliceId?: string
+  telemetry: {
+    packetRate: number
+    latency: number
+    jitter: number
+  }
+}
+
+export function Device({ device, onClick }: { device: Device; onClick: () => void }) {
   const meshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
   
@@ -29,7 +42,7 @@ function DeviceItem({ device, onClick }: { device: Device; onClick: () => void }
   
   useFrame((state) => {
     if (meshRef.current) {
-      // Pulse animation for warnings / critical
+      // Pulse animation for warnings
       if (device.status !== 'normal') {
         const scale = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.1
         meshRef.current.scale.setScalar(scale)
@@ -82,7 +95,7 @@ function DeviceItem({ device, onClick }: { device: Device; onClick: () => void }
       {/* Hover tooltip */}
       {hovered && (
         <Html position={[0, 2, 0]} center distanceFactor={10}>
-          <div className="bg-slate-900/95 backdrop-blur border border-slate-700 rounded-lg p-3 text-xs min-w-[200px] shadow-2xl pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur border border-slate-700 rounded-lg p-3 text-xs min-w-[200px]">
             <div className="flex items-center justify-between mb-2">
               <span className="text-slate-400 font-mono">{device.id}</span>
               <span 
@@ -117,7 +130,7 @@ function DeviceItem({ device, onClick }: { device: Device; onClick: () => void }
 }
 
 export function DeviceZone({ position, size, sliceId, sliceType, label, color, devices }: DeviceZoneProps) {
-  const { selectedSlice, setSelectedSlice, setSelectedDeviceId } = useCommShieldStore()
+  const { selectedSlice, setSelectedSlice } = useCommShieldStore()
   const isSelected = selectedSlice === sliceId
   
   return (
@@ -159,9 +172,9 @@ export function DeviceZone({ position, size, sliceId, sliceType, label, color, d
       <Billboard position={[0, 12, 0]}>
         <Html center distanceFactor={20}>
           <button
-            onClick={() => setSelectedSlice(isSelected ? null : sliceId)}
+            onClick={() => setSelectedSlice(sliceId)}
             className={`
-              px-4 py-2 rounded-lg border font-mono text-sm transition-all shadow-xl
+              px-4 py-2 rounded-lg border font-mono text-sm transition-all
               ${isSelected 
                 ? 'bg-slate-800 border-slate-500 text-white' 
                 : 'bg-slate-900/80 border-slate-700 text-slate-300 hover:border-slate-500'}
@@ -175,17 +188,17 @@ export function DeviceZone({ position, size, sliceId, sliceType, label, color, d
       
       {/* Devices */}
       {devices.map((device) => (
-        <DeviceItem 
+        <Device 
           key={device.id} 
           device={device}
-          onClick={() => setSelectedDeviceId(device.id)}
+          onClick={() => console.log('Inspect device:', device.id)}
         />
       ))}
       
       {/* Slice metrics panel */}
       {isSelected && (
         <Html position={[size[0]/2 + 5, 5, 0]} transform distanceFactor={15}>
-          <div className="bg-slate-900/95 backdrop-blur border border-slate-700 rounded-lg p-4 w-64 shadow-2xl">
+          <div className="bg-slate-900/95 backdrop-blur border border-slate-700 rounded-lg p-4 w-64">
             <h3 className="text-white font-semibold mb-3">{label} Metrics</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-slate-300">
@@ -225,7 +238,8 @@ export function DeviceZone({ position, size, sliceId, sliceType, label, color, d
 
 // Zone configurations
 export function DeviceZones() {
-  const { devices } = useCommShieldStore()
+  const { devices, slices } = useCommShieldStore()
+  void slices;
   
   return (
     <group>
