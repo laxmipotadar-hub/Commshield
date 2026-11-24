@@ -14,6 +14,7 @@ export * from './BuiltVsPlannedModal';
 export * from './ScenarioCharts';
 export * from './ErrorBoundary';
 export * from './three/SceneEnvironment';
+export * from './three/DeviceZones';
 
 
 // CommShield AI Core
