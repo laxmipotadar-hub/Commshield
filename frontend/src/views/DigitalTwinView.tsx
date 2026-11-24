@@ -51,7 +51,7 @@ export const DigitalTwinView: React.FC = () => {
   const [presentationMode, setPresentationMode] = useState<boolean>(false);
 
   // Tab Controls
-  const [activeRightTab, setActiveRightTab] = useState<'inspector' | 'investigation' | 'defence' | 'mitigation'>('inspector');
+  const [activeRightTab, setActiveRightTab] = useState<'inspector' | 'investigation' | 'defence' | 'mitigation'>('mitigation');
   const [activeBottomTab, setActiveBottomTab] = useState<'timeline' | 'traffic' | 'evidence' | 'resilience' | 'report'>('timeline');
   const [activeCameraPreset, setActiveCameraPreset] = useState<string>('full');
 
@@ -613,11 +613,11 @@ export const DigitalTwinView: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-cyan-400" />
-            <div className="flex flex-col">
+            <div className="flex items-center gap-2">
               <span className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
                 CommShield AI <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">5G SOC</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">Cyber Defence Operations Centre</span>
+              <span className="text-xs text-slate-400 font-mono hidden md:inline">| Operations Centre</span>
             </div>
           </div>
 
@@ -1182,28 +1182,21 @@ export const DigitalTwinView: React.FC = () => {
         {/* CENTER — INTERACTIVE 3D DIGITAL TWIN (6 cols in standard; 9 cols in presentation) */}
         <main className={`${presentationMode ? 'lg:col-span-9' : 'lg:col-span-6'} flex flex-col gap-2 relative min-h-0 h-full overflow-hidden`}>
           <div className="flex-1 bg-[#0a1628] rounded-xl border border-[#1b2b46] overflow-hidden relative shadow-2xl flex flex-col min-h-0 h-full">
-            {/* Top Scene Status Strip */}
-            <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
-              <div className="px-3 py-1.5 rounded-lg bg-[#0a1628]/90 border border-slate-700/80 backdrop-blur-md text-xs font-mono text-slate-300 flex items-center gap-2 shadow-lg pointer-events-auto">
-                <span className={`w-2 h-2 rounded-full ${isAttackActive ? 'bg-rose-500 animate-ping' : 'bg-cyan-400 animate-pulse'}`} />
-                <span>5G CAMPUS DIGITAL TWIN</span>
-                <span className="text-slate-600">|</span>
-                <span className="text-cyan-400">{data?.devices?.length || 13} ASSETS ONLINE</span>
-              </div>
-
-              {selectedId && (
+            {/* Selected Focus Reset Indicator */}
+            {selectedId && !hoveredItem && (
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
                 <button
                   onClick={() => {
                     setSelectedId(null);
                     setSelectedType(null);
                     setActiveCameraPreset('full');
                   }}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-cyan-300 text-xs font-mono border border-cyan-800/50 flex items-center gap-1 shadow-md transition-colors pointer-events-auto"
+                  className="px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-cyan-300 text-xs font-mono border border-cyan-800/60 shadow-lg flex items-center gap-1.5 transition-colors pointer-events-auto"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Reset View
+                  <RotateCcw className="w-3.5 h-3.5 text-cyan-400" /> Reset Focus
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Hover tooltip HUD */}
             {hoveredItem && (
@@ -1223,6 +1216,7 @@ export const DigitalTwinView: React.FC = () => {
                 onSelect={(id, type) => {
                   setSelectedId(id);
                   setSelectedType(type);
+                  if (id) setActiveRightTab('inspector');
                 }}
                 onHover={setHoveredItem}
                 attackPath={attackPath}
@@ -1694,7 +1688,11 @@ export const DigitalTwinView: React.FC = () => {
                       <span className="text-slate-400 text-[11px]">{step.result}</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      step.status === 'PASSED' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'
+                      step.status === 'PASSED' || step.status === 'VERIFIED'
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        : step.status === 'GROWTH_DETECTED'
+                        ? 'bg-rose-950 text-rose-400 border border-rose-800'
+                        : 'bg-amber-950 text-amber-400 border border-amber-800'
                     }`}>
                       {step.status}
                     </span>

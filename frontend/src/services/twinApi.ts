@@ -394,105 +394,116 @@ class TwinApiService {
 
   /**
    * Transforms backend DigitalTwinStateSnapshot into strongly typed DigitalTwinState
+   * Merges live backend state while strictly preserving full 4-tower 3D campus topology and slice zones.
    */
   private snapshotToTwinState(snap: any, scenario: string, timeStep: number): DigitalTwinState {
     const defaultCampus = this.getCampusSimulationState(scenario, timeStep);
 
-    const nodes: TwinNode[] = [];
-    const devices: TwinDevice[] = [];
+    // 1. Maintain complete canonical 4-tower 3D campus nodes, updating from snap.components
+    const nodeMap = new Map<string, TwinNode>();
+    for (const node of defaultCampus.topology.nodes) {
+      nodeMap.set(node.id, { ...node });
+    }
 
-    // Parse components
     if (snap.components) {
       for (const comp of Object.values(snap.components) as any[]) {
-        if (comp.component_type === 'UE') {
-          devices.push({
-            id: comp.id,
-            device_id_hash: comp.id,
-            device_class: comp.name?.toLowerCase().includes('cam')
-              ? 'camera'
-              : comp.name?.toLowerCase().includes('veh')
-              ? 'AGV'
-              : 'sensor',
-            slice_id: comp.network_slice || 'sst-1-sd-010203',
-            x: comp.coordinates_3d ? comp.coordinates_3d.x * 8 + 440 : 300,
-            y: comp.coordinates_3d ? comp.coordinates_3d.z * 8 + 250 : 200,
-            rate_pps: comp.traffic_volume_mbps ? Math.round(comp.traffic_volume_mbps * 20) : 150,
-            verdict: comp.security_status === 'ATTACKED' ? 'attack' : comp.security_status === 'QUARANTINED' ? 'quarantined' : 'benign',
-            action: comp.security_status === 'QUARANTINED' ? 'quarantine' : 'none',
-            status_label: comp.operational_status === 'ACTIVE'
-              ? (comp.security_status === 'SECURE' ? 'Nominal' : comp.security_status)
-              : 'Offline',
-            servingGnb: comp.serving_gnb || 'gNodeB-01',
-            is_onboarded: comp.operational_status === 'ACTIVE',
-            is_provisioned: true,
-            visible: true,
-          });
-        } else {
-          nodes.push({
-            id: comp.id,
-            label: comp.name || comp.id,
-            x: comp.coordinates_3d ? comp.coordinates_3d.x * 8 + 440 : 300,
-            y: comp.coordinates_3d ? comp.coordinates_3d.z * 8 + 250 : 200,
-            type: comp.component_type === 'gNodeB'
-              ? 'ran'
-              : comp.component_type === 'EdgeNode'
-              ? 'edge'
-              : comp.component_type === 'SecurityMonitoring'
-              ? 'security'
-              : (comp.id === 'upf-01' || comp.id === 'upf')
-              ? 'core_user'
-              : 'core_control',
-            role: comp.network_role || comp.component_type,
-            operationalStatus: comp.operational_status || 'ACTIVE',
-            healthScore: comp.health_score ?? 100.0,
-            cpu_percent: comp.cpu_utilization_pct || 25.0,
-            memory_percent: comp.memory_utilization_pct || 35.0,
-            latency: comp.latency_ms || 2.1,
-            packetLoss: comp.packet_loss_pct || 0.0,
-            coordinates3d: comp.coordinates_3d
-              ? { x: comp.coordinates_3d.x, y: comp.coordinates_3d.y, z: comp.coordinates_3d.z }
-              : undefined,
-          });
+        if (comp.component_type === 'UE') continue;
+
+        let targetId = comp.id;
+        if (targetId === 'upf' && nodeMap.has('upf-01')) targetId = 'upf-01';
+        if (targetId === 'edge-node-01' && nodeMap.has('edge-01')) targetId = 'edge-01';
+
+        const existing = nodeMap.get(targetId);
+        if (existing) {
+          existing.operationalStatus = comp.operational_status || existing.operationalStatus;
+          existing.healthScore = comp.health_score ?? existing.healthScore;
+          existing.cpu_percent = comp.cpu_utilization_pct || existing.cpu_percent;
+          existing.memory_percent = comp.memory_utilization_pct || existing.memory_percent;
+          existing.latency = comp.latency_ms || existing.latency;
+          existing.packetLoss = comp.packet_loss_pct ?? existing.packetLoss;
+          if (comp.traffic_volume_mbps !== undefined) {
+            existing.incomingTraffic = comp.traffic_volume_mbps;
+            existing.outgoingTraffic = comp.traffic_volume_mbps;
+          }
+          if (comp.security_status === 'ATTACKED') {
+            existing.health = 'critical';
+            existing.anomalyScore = 0.94;
+          } else if (comp.security_status === 'QUARANTINED') {
+            existing.health = 'degraded';
+            existing.anomalyScore = 0.45;
+          } else {
+            existing.health = 'healthy';
+            existing.anomalyScore = 0.02;
+          }
         }
       }
     }
+    const nodes = Array.from(nodeMap.values());
 
-    // Parse connections into links
-    const links: TwinLink[] = [];
+    // 2. Maintain complete 3D conduits and links
+    const linkMap = new Map<string, TwinLink>();
+    for (const l of defaultCampus.topology.links) {
+      const key = l.id || `${l.source}->${l.target}`;
+      linkMap.set(key, { ...l, id: key });
+    }
     if (snap.connections) {
       for (const conn of Object.values(snap.connections) as any[]) {
-        links.push({
-          id: conn.id,
-          source: conn.source,
-          target: conn.destination,
-          label: conn.id,
-          type: (conn.connection_type || 'user_plane').toLowerCase() as any,
-          latency_ms: conn.latency_ms || 1.8,
-          packet_loss_rate: conn.packet_loss_pct || 0.0,
-          trafficRate: conn.capacity_mbps || 1000.0,
-          status: conn.connection_status === 'ACTIVE' ? 'NORMAL' : 'WARNING',
-          active: true,
-        });
+        const existing = linkMap.get(conn.id) || linkMap.get(`${conn.source}->${conn.destination}`);
+        if (existing) {
+          existing.latency_ms = conn.latency_ms || existing.latency_ms;
+          existing.packet_loss_rate = conn.packet_loss_pct ?? existing.packet_loss_rate;
+          existing.status = conn.connection_status === 'ACTIVE' ? 'NORMAL' : 'WARNING';
+        }
       }
     }
+    const links = Array.from(linkMap.values());
 
-    // Parse slices
-    const slices: TwinSlice[] = [];
+    // 3. Maintain complete canonical 3-zone network slices (eMBB blue, URLLC green, mMTC purple)
+    const sliceMap = new Map<string, TwinSlice>();
+    for (const s of defaultCampus.slices) {
+      sliceMap.set(s.slice_id, { ...s });
+    }
     if (snap.slices) {
       for (const s of Object.values(snap.slices) as any[]) {
-        slices.push({
-          slice_id: s.slice_id,
-          name: s.name,
-          device_class: s.sst === 1 ? 'eMBB' : s.sst === 2 ? 'URLLC' : 'mMTC',
-          color: s.sst === 1 ? '#38bdf8' : s.sst === 2 ? '#ec4899' : '#10b981',
-          packet_rate_pps: 1200,
-          throughput_mbps: s.current_throughput_mbps || 75,
-          latency_ms: s.current_latency_ms || 2.5,
-          health_status: s.security_state === 'NOMINAL' ? 'NOMINAL' : 'DEGRADED',
-          zone: { x: 200, y: 150, width: 300, height: 200, label: s.name },
-        });
+        const existing = sliceMap.get(s.slice_id);
+        if (existing) {
+          existing.throughput_mbps = s.current_throughput_mbps ?? existing.throughput_mbps;
+          existing.latency_ms = s.current_latency_ms ?? existing.latency_ms;
+          existing.health_status = s.security_state === 'NOMINAL' ? 'NOMINAL' : 'DEGRADED';
+        }
       }
     }
+    const slices = Array.from(sliceMap.values());
+
+    // 4. Maintain complete canonical IoT devices across all zones
+    const deviceMap = new Map<string, TwinDevice>();
+    for (const d of defaultCampus.devices) {
+      deviceMap.set(d.id, { ...d });
+    }
+    if (snap.components) {
+      for (const comp of Object.values(snap.components) as any[]) {
+        if (comp.component_type === 'UE') {
+          let targetId = comp.id;
+          if (targetId === 'ue-camera-01') targetId = 'ue-cam-01';
+          if (targetId === 'ue-camera-02') targetId = 'ue-cam-02';
+          if (targetId === 'ue-camera-03') targetId = 'ue-cam-03';
+          if (targetId === 'ue-camera-04') targetId = 'ue-cam-04';
+
+          const existing = deviceMap.get(targetId) || deviceMap.get(comp.id);
+          if (existing) {
+            existing.verdict = comp.security_status === 'ATTACKED' ? 'attack' : comp.security_status === 'QUARANTINED' ? 'quarantined' : 'benign';
+            existing.action = comp.security_status === 'QUARANTINED' ? 'quarantine' : 'none';
+            existing.status_label = comp.operational_status === 'ACTIVE'
+              ? (comp.security_status === 'SECURE' ? 'Nominal' : comp.security_status)
+              : 'Offline';
+            if (comp.traffic_volume_mbps) {
+              existing.rate_pps = Math.round(comp.traffic_volume_mbps * 20);
+            }
+          }
+        }
+      }
+    }
+    const devices = Array.from(deviceMap.values());
 
     // Active Threat
     const activeThreat = (snap.active_threats && snap.active_threats.length > 0)
@@ -1091,9 +1102,9 @@ class TwinApiService {
         commshield_twin: { name: 'CommShield Twin', contamination_mean: 0.0, contamination_ci_95: [0.0, 0.0], fpr_mean: 0.001, onboardings_adapted: 2.0 },
       },
       decision_trace: [
-        { step: 1, name: 'S-NSSAI Slice Quota Enforcement', result: isAttacking ? 'SLA Degraded' : 'Within Bounds (PASSED)', status: isAttacking ? 'WARNING' : 'PASSED' },
-        { step: 2, name: 'AI Anomaly Scoring (Isolation Forest)', result: isAttacking ? 'Score = 0.94 (CRITICAL)' : 'Score = 0.04 (PASSED)', status: isAttacking ? 'FAILED' : 'PASSED' },
-        { step: 3, name: 'Zero-Trust Quarantine Boundary', result: isMitigating ? 'Quarantine Active (2 Devices Blocked)' : 'Nominal Transit', status: 'PASSED' },
+        { step: 1, name: 'Volume Scaling Multiplier', result: 'k = 1.48 (Organic traffic expansion)', status: 'GROWTH_DETECTED' },
+        { step: 2, name: 'Composition Divergence Test', result: 'JSD = 0.018 <= 0.045 (Null hypothesis accepted)', status: 'PASSED' },
+        { step: 3, name: 'Provisioning Catalog & Event Match', result: '100% provisioned; matches BATCH-08-20261115-01; volume fits batch count', status: 'VERIFIED' },
       ],
       saved_metrics_reference: {
         summary_file: 'experiments/results/twin/three_arm_twin_summary.json',

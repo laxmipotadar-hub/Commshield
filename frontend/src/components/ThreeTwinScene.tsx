@@ -1085,16 +1085,16 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
       <div ref={mountRef} className="w-full h-full min-h-0 overflow-hidden relative" />
 
       {/* Floating HUD: Camera Preset & Navigation Controls */}
-      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs">
+      <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs">
         <span className="text-slate-400 font-medium mr-1 flex items-center">
           <Camera className="w-3.5 h-3.5 mr-1 text-sky-400" /> View:
         </span>
         {[
-          { id: 'full', label: 'Full Campus', icon: Eye },
+          { id: 'full', label: 'Campus', icon: Eye },
           { id: 'ran', label: 'Towers', icon: Zap },
           { id: 'core', label: 'Core', icon: Cpu },
           { id: 'edge', label: 'MEC', icon: Activity },
-          { id: 'attack', label: 'Attack Focus', icon: ShieldAlert },
+          { id: 'attack', label: 'Attack', icon: ShieldAlert },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -1144,47 +1144,60 @@ export const ThreeTwinScene: React.FC<ThreeTwinSceneProps> = ({
         <button
           onClick={handleFitNetwork}
           title="Fit Entire Network"
-          className="px-2 py-1 rounded text-sky-400 bg-sky-950/60 border border-sky-800/60 hover:bg-sky-900/80 flex items-center space-x-1 font-medium"
+          className="p-1 rounded text-sky-400 hover:bg-slate-800 hover:text-sky-300 transition-colors"
         >
-          <Maximize2 className="w-3 h-3" />
-          <span>Fit Network</span>
+          <Maximize2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Floating HUD: 8-Layer Visibility Controls */}
-      <div className="absolute top-4 right-4 z-10 hidden md:flex flex-wrap items-center gap-1 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs max-w-lg justify-end">
-        <span className="text-slate-400 font-medium mr-1 text-[11px]">3D Layers:</span>
-        {[
-          { key: 'physical', label: 'Physical' },
-          { key: 'connectivity', label: 'Conduits' },
-          { key: 'security', label: 'Security Fabric' },
-          { key: 'legitimateTraffic', label: 'Legitimate (Cyan)' },
-          { key: 'suspiciousTraffic', label: 'Suspicious (Red)' },
-          { key: 'enforcementPoints', label: 'Enforcement Gateways' },
-        ].map(({ key, label }) => (
+      {/* Fullscreen / Presentation Toggle (Top Right) */}
+      <div className="absolute top-3 right-3 z-10">
+        <button
+          onClick={() => {
+            const el = mountRef.current?.parentElement;
+            if (el) {
+              if (!document.fullscreenElement) {
+                el.requestFullscreen?.().catch(() => {});
+              } else {
+                document.exitFullscreen?.().catch(() => {});
+              }
+            }
+          }}
+          title="Toggle Fullscreen"
+          className="p-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 shadow-lg transition-colors flex items-center justify-center"
+        >
+          <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />
+        </button>
+      </div>
+
+      {/* Layer Visibility Pills (Bottom Left) */}
+      <div className="absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-1 bg-slate-900/90 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-800 text-[10px] font-mono shadow-lg">
+        <button
+          onClick={toggleAllLayers}
+          className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold"
+        >
+          LAYERS
+        </button>
+        {(
+          [
+            ['physical', 'TOWERS'],
+            ['connectivity', 'CONDUITS'],
+            ['security', 'AI FABRIC'],
+            ['enforcementPoints', 'GATES'],
+          ] as const
+        ).map(([key, label]) => (
           <button
             key={key}
             onClick={() => toggleLayer(key as keyof typeof layers)}
-            className={`px-2 py-0.5 rounded text-[11px] transition-all ${
+            className={`px-1.5 py-0.5 rounded transition-all font-semibold ${
               layers[key as keyof typeof layers]
-                ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/50 font-medium'
-                : 'bg-slate-800 text-slate-500 border border-slate-700/50'
+                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             {label}
           </button>
         ))}
-        <button
-          onClick={toggleAllLayers}
-          className="px-2 py-0.5 rounded text-[11px] bg-sky-950 text-sky-400 border border-sky-700/60 font-medium hover:bg-sky-900 ml-1"
-        >
-          All Layers
-        </button>
-      </div>
-
-      {/* Floating Navigation Tip */}
-      <div className="absolute bottom-4 left-4 z-10 text-[11px] text-slate-400 bg-slate-950/70 backdrop-blur-sm px-2.5 py-1 rounded border border-slate-800 pointer-events-none">
-        Left Click: Rotate • Right Click: Pan • Scroll: Zoom • Click Object: Inspect & Focus
       </div>
     </div>
   );
