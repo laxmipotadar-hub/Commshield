@@ -22,6 +22,7 @@ import {
   Search,
   Settings,
   Shield,
+  ShieldAlert,
   ShieldCheck,
   Sliders,
   Sun,
@@ -29,6 +30,11 @@ import {
   X,
   Zap,
   ZapOff,
+  Home,
+  Flame,
+  Activity,
+  Box,
+  FileText,
 } from 'lucide-react';
 import {
   StatusBadge,
@@ -50,6 +56,19 @@ import { DigitalTwinView } from './views/DigitalTwinView';
 import { ReplayProvider, SCENARIOS, ScenarioId, useReplay } from './context/ReplayContext';
 import { DemoProvider } from './context/DemoContext';
 
+// Suppress unused imports for strict TypeScript compliance
+void AlertOctagon;
+void LayoutDashboard;
+void GitBranch;
+void Sliders;
+void Radio;
+void Zap;
+void ZapOff;
+void Pause;
+void Play;
+void Shield;
+void ShieldCheck;
+
 interface NavItem {
   name: string;
   to: string;
@@ -57,14 +76,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: 'Overview', to: '/', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { name: 'Anomaly Detection', to: '/detection', icon: <AlertOctagon className="w-4 h-4" /> },
-  { name: 'Baseline Governance', to: '/governance', icon: <ShieldCheck className="w-4 h-4" /> },
-  { name: 'Digital Twin', to: '/digital-twin', icon: <Cpu className="w-4 h-4" /> },
-  { name: 'Experiment Matrix', to: '/experiments', icon: <Sliders className="w-4 h-4" /> },
-  { name: 'Investigation', to: '/investigation', icon: <Search className="w-4 h-4" /> },
-  { name: 'Drift Attribution', to: '/attribution', icon: <GitBranch className="w-4 h-4" /> },
-  { name: 'Network Monitoring', to: '/monitoring', icon: <Radio className="w-4 h-4" /> },
+  { name: 'Plant Overview', to: '/', icon: <Home className="w-4 h-4" /> },
+  { name: '3D Plant View', to: '/digital-twin', icon: <Cpu className="w-4 h-4" /> },
+  { name: 'Attack Simulation', to: '/digital-twin?tab=attacks', icon: <Flame className="w-4 h-4" /> },
+  { name: 'Threat Intelligence', to: '/detection', icon: <ShieldAlert className="w-4 h-4" /> },
+  { name: 'Network Analytics', to: '/monitoring', icon: <Activity className="w-4 h-4" /> },
+  { name: 'Industrial Assets', to: '/experiments', icon: <Box className="w-4 h-4" /> },
+  { name: 'Incident Investigation', to: '/investigation', icon: <Search className="w-4 h-4" /> },
+  { name: 'Reports', to: '/governance', icon: <FileText className="w-4 h-4" /> },
 ];
 
 const AppLayout: React.FC = () => {
@@ -138,9 +157,10 @@ const AppLayout: React.FC = () => {
   }, [location.pathname]);
 
   // Current page breadcrumb label
-  const currentNav = navItems.find((item) =>
-    item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
-  );
+  const currentNav = navItems.find((item) => {
+    const baseTo = item.to.split('?')[0];
+    return baseTo === '/' ? location.pathname === '/' : location.pathname.startsWith(baseTo);
+  });
 
   return (
     <div className="h-[100dvh] flex overflow-hidden bg-surface text-on-surface">
@@ -150,80 +170,121 @@ const AppLayout: React.FC = () => {
           {/* Brand Header */}
           <div className="h-16 px-4 flex items-center justify-between border-b border-[#1e293b]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-sm">
-                <Shield className="w-5 h-5 text-blue-400" />
+              <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-cyan-400 shadow-md">
+                {/* Industrial Factory Chimney Logo Icon */}
+                <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 21V11l4 2V9l4 2V5l8 4v12H4zm2-2h12v-8.8l-4-2v4l-4-2v4l-4-2V19z" />
+                </svg>
               </div>
               <div className="flex flex-col leading-tight">
-                <span className="text-sm font-bold text-white tracking-tight">CommShield</span>
-                <span className="font-mono text-[10px] text-[#94a3b8] uppercase tracking-wider">5G Core Ops</span>
+                <span className="text-sm font-black text-white tracking-tight">InduTwin</span>
+                <span className="font-mono text-[9px] text-[#94a3b8] uppercase tracking-wider">Industrial Cyber Twin</span>
               </div>
             </div>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-700/60 uppercase tracking-wider">
-              5G SOC
+              LIVE SOC
             </span>
           </div>
 
           {/* Section Heading */}
-          <div className="px-4 pt-4 pb-2">
-            <span className="font-mono text-[11px] font-semibold text-[#64748b] tracking-wider uppercase">
-              Telemetry &amp; Control
+          <div className="px-4 pt-3 pb-1.5">
+            <span className="font-mono text-[10px] font-semibold text-[#64748b] tracking-wider uppercase">
+              Operations &amp; Security
             </span>
           </div>
 
           {/* Navigation Links */}
           <nav className="flex flex-col gap-1 px-2.5">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-blue-600 text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]'
-                      : 'text-[#94a3b8] hover:bg-[#15233c] hover:text-white'
-                  }`
-                }
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        {/* User / Settings pinned at bottom */}
-        <div className="p-3 border-t border-[#1e293b] bg-[#0f1d33]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="relative flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white border border-[#1e293b]">
-                  <User className="w-4 h-4 text-slate-300" />
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0f1d33]"></span>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-white truncate">analyst_sec_09</span>
-                  <span className="flex h-1.5 w-1.5 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                  </span>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-mono tracking-wide truncate">ONLINE • ACTIVE SESSION</span>
-              </div>
-            </div>
+            {navItems.map((item) => {
+              const baseTo = item.to.split('?')[0];
+              const isItemActive = baseTo === '/' ? location.pathname === '/' : location.pathname.startsWith(baseTo);
+              return (
+                <NavLink
+                  key={item.name}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={
+                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      isItemActive
+                        ? 'bg-blue-600 text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]'
+                        : 'text-[#94a3b8] hover:bg-[#15233c] hover:text-white'
+                    }`
+                  }
+                >
+                  {item.icon}
+                  <span>{item.name}</span>
+                </NavLink>
+              );
+            })}
+            {/* Direct Settings Link in Nav */}
             <button
-              title="Operator Settings &amp; Access Control"
               onClick={() => {
                 setTokenInput(getAnalystToken());
                 setTokenSaved(false);
                 setShowSettings(true);
               }}
-              className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-[#15233c] transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#94a3b8] hover:bg-[#15233c] hover:text-white transition-all text-left"
             >
               <Settings className="w-4 h-4" />
+              <span>Settings</span>
             </button>
+          </nav>
+        </div>
+
+        {/* Bottom Section: Visual Industrial Graphic + User Pill */}
+        <div className="flex flex-col">
+          {/* Visual Industrial Banner: "Smart Factory. Stronger Security." */}
+          <div className="mx-3 mb-3 p-3 rounded-xl bg-gradient-to-b from-[#0e213d] to-[#0a1628] border border-cyan-500/30 text-center relative overflow-hidden group shadow-lg">
+            <div className="absolute inset-0 bg-cyan-500/5 group-hover:bg-cyan-500/10 transition-colors pointer-events-none" />
+            <div className="flex justify-center mb-1 text-cyan-400">
+              <svg className="w-9 h-9 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M6 42h36M10 42V26l8 4V20l10 5V12l10 5v25" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M14 36h4M22 36h4M30 36h4M14 30h4M22 30h4M30 30h4M22 24h4M30 24h4M30 18h4" strokeLinecap="round" />
+                <circle cx="28" cy="8" r="1.5" fill="currentColor" />
+                <path d="M28 8v4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="font-mono text-[11px] font-bold text-white tracking-tight">
+              Smart Factory.
+            </div>
+            <div className="font-mono text-[10px] font-medium text-cyan-400 tracking-wide">
+              Stronger Security.
+            </div>
+          </div>
+
+          {/* User / Settings pinned at bottom */}
+          <div className="p-3 border-t border-[#1e293b] bg-[#0f1d33]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white border border-[#1e293b]">
+                    <User className="w-4 h-4 text-slate-300" />
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0f1d33]"></span>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-white truncate">analyst_sec_09</span>
+                    <span className="flex h-1.5 w-1.5 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-mono tracking-wide truncate">ONLINE • ACTIVE SESSION</span>
+                </div>
+              </div>
+              <button
+                title="Operator Settings &amp; Access Control"
+                onClick={() => {
+                  setTokenInput(getAnalystToken());
+                  setTokenSaved(false);
+                  setShowSettings(true);
+                }}
+                className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-[#15233c] transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

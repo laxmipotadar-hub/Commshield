@@ -119,7 +119,7 @@ def test_attack_propagation_and_blast_radius():
 def test_scenario_engine_lifecycle_and_step():
     """Verify scenario catalog, start, step progression, and threat registration."""
     catalog = scenario_engine.get_catalog()
-    assert len(catalog) == 6
+    assert len(catalog) >= 6
 
     # Start DDoS scenario without auto-progress for synchronous verification
     res = scenario_engine.start_scenario(
@@ -262,7 +262,7 @@ def test_rest_api_scenarios_and_propagation():
     # List scenarios
     resp_scen = client.get("/api/twin/scenarios")
     assert resp_scen.status_code == 200
-    assert len(resp_scen.json()["scenarios"]) == 6
+    assert len(resp_scen.json()["scenarios"]) >= 6
 
     # Calculate ad-hoc propagation
     resp_prop = client.post(

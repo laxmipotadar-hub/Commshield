@@ -224,7 +224,42 @@ def build_canonical_components() -> Dict[str, NetworkComponent]:
             security_status=SecurityStatus.SECURE,
             provenance=DataClassification.SIMULATED,
             coordinates_3d={"x": -10.0, "y": 0.0, "z": 0.0},
-            metadata={"device_type": utype, "auth_state": "AUTHENTICATED", "imei": f"86123404{uid.split('-')[-1]}"},
+            metadata={"device_type": utype, "auth_state": "AUTHENTICATED", "imei": f"86123404{uid.split('-')[-1]}", "purdue_level": "Level 0 (Physical Process)"},
+        )
+
+    # 6. Industrial OT & Purdue Architecture Assets
+    ot_assets = [
+        ("scada-srv-01", "SCADA-Server-01", "SCADA", "Supervisory Control & Data Acquisition", 24.5, 45.0, 1.2, ["gnb-01", "switch-core-01", "plc-assembly-01", "plc-welding-01"], "Level 2", "Supervisory Control", "192.168.20.10", {"x": -15.0, "y": 3.0, "z": -10.0}),
+        ("hmi-ws-01", "HMI-Operator-Console", "HMI", "Plant Floor Operator Interface", 18.0, 28.0, 1.0, ["scada-srv-01"], "Level 2", "Supervisory Control", "192.168.20.15", {"x": -18.0, "y": 2.0, "z": -8.0}),
+        ("plc-assembly-01", "PLC-Assembly-01", "PLC", "Assembly Line Industrial Controller", 12.0, 22.0, 0.5, ["scada-srv-01", "robot-arm-01", "conveyor-sys-01"], "Level 1", "Basic Control", "192.168.10.21", {"x": 5.0, "y": 1.5, "z": 12.0}),
+        ("plc-welding-01", "PLC-Welding-01", "PLC", "Robotic Welding Controller", 14.0, 24.0, 0.6, ["scada-srv-01", "robot-arm-02"], "Level 1", "Basic Control", "192.168.10.22", {"x": 15.0, "y": 1.5, "z": 12.0}),
+        ("robot-arm-01", "Robot-Arm-KUKA-01", "IndustrialRobot", "6-Axis Assembly Robot", 35.0, 40.0, 0.4, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.101", {"x": 8.0, "y": 1.0, "z": 15.0}),
+        ("robot-arm-02", "Robot-Arm-Fanuc-02", "IndustrialRobot", "6-Axis Welding Robot", 38.0, 42.0, 0.4, ["plc-welding-01"], "Level 0", "Physical Process", "192.168.1.102", {"x": 18.0, "y": 1.0, "z": 15.0}),
+        ("conveyor-sys-01", "Conveyor-Line-Alpha", "Conveyor", "Intelligent Pallet Transport", 20.0, 25.0, 0.5, ["plc-assembly-01"], "Level 0", "Physical Process", "192.168.1.105", {"x": 12.0, "y": 0.6, "z": 18.0}),
+        ("cnc-milling-01", "CNC-5Axis-Milling", "CNC", "High-Precision Milling Center", 42.0, 50.0, 0.8, ["scada-srv-01"], "Level 0", "Physical Process", "192.168.1.110", {"x": -8.0, "y": 1.2, "z": 16.0}),
+        ("datacenter-srv-01", "Plant-DataCenter-01", "Server", "Industrial MES & Historian Servers", 28.0, 48.0, 0.9, ["switch-core-01", "scada-srv-01"], "Level 3", "Manufacturing Operations", "192.168.30.5", {"x": -35.0, "y": 4.0, "z": -15.0}),
+        ("firewall-ot-01", "Firewall-OT-DMZ", "Firewall", "Industrial Next-Gen Firewall / IDS", 22.0, 36.0, 0.3, ["switch-core-01", "router-edge-01"], "Level 3.5", "Industrial DMZ", "192.168.35.1", {"x": -5.0, "y": 2.5, "z": -20.0}),
+    ]
+
+    for oid, oname, otype, orole, cpu, mem, lat, conn, purdue, zone, ip, coords in ot_assets:
+        comps[oid] = NetworkComponent(
+            id=oid,
+            name=oname,
+            component_type=otype,
+            network_role=orole,
+            operational_status=OperationalStatus.ACTIVE,
+            health_score=100.0,
+            cpu_utilization_pct=cpu,
+            memory_utilization_pct=mem,
+            traffic_volume_mbps=25.0,
+            latency_ms=lat,
+            packet_loss_pct=0.0,
+            connected_components=conn,
+            network_slice="sst-2-sd-020304" if "robot" in oid or "plc" in oid else "ALL",
+            security_status=SecurityStatus.SECURE,
+            provenance=DataClassification.SIMULATED,
+            coordinates_3d=coords,
+            metadata={"purdue_level": purdue, "zone": zone, "ip_address": ip},
         )
 
     return comps
@@ -274,6 +309,17 @@ def build_canonical_connections() -> Dict[str, NetworkConnection]:
         ("conn-uu-sns-04", "ue-sensor-04", "gnb-01", ConnectionType.USER_PLANE, "3GPP 5G-NR Uu", 50.0, 1.4, 12.8, 0.02, "sst-3-sd-030405"),
         ("conn-uu-sns-05", "ue-sensor-05", "gnb-01", ConnectionType.USER_PLANE, "3GPP 5G-NR Uu", 50.0, 1.5, 14.5, 0.02, "sst-3-sd-030405"),
         ("conn-uu-sns-06", "ue-sensor-06", "gnb-01", ConnectionType.USER_PLANE, "3GPP 5G-NR Uu", 50.0, 1.4, 13.2, 0.02, "sst-3-sd-030405"),
+
+        # --- Industrial OT Purdue Model Network Connections ---
+        ("conn-ot-scada-switch", "scada-srv-01", "switch-core-01", ConnectionType.CONTROL_PLANE, "OPC-UA / TCP", 1000.0, 24.5, 1.2, 0.0, "ALL"),
+        ("conn-ot-hmi-scada", "hmi-ws-01", "scada-srv-01", ConnectionType.CONTROL_PLANE, "Proprietary HMI Protocol", 100.0, 8.5, 1.0, 0.0, "ALL"),
+        ("conn-ot-scada-plc1", "scada-srv-01", "plc-assembly-01", ConnectionType.CONTROL_PLANE, "Modbus-TCP / Port 502", 100.0, 4.2, 0.5, 0.0, "sst-2-sd-020304"),
+        ("conn-ot-scada-plc2", "scada-srv-01", "plc-welding-01", ConnectionType.CONTROL_PLANE, "Siemens S7comm / TCP", 100.0, 4.8, 0.6, 0.0, "sst-2-sd-020304"),
+        ("conn-ot-plc1-robot", "plc-assembly-01", "robot-arm-01", ConnectionType.USER_PLANE, "Profinet Real-Time (IRT)", 100.0, 12.0, 0.4, 0.0, "sst-2-sd-020304"),
+        ("conn-ot-plc2-robot", "plc-welding-01", "robot-arm-02", ConnectionType.USER_PLANE, "Profinet Real-Time (IRT)", 100.0, 14.0, 0.4, 0.0, "sst-2-sd-020304"),
+        ("conn-ot-plc1-conveyor", "plc-assembly-01", "conveyor-sys-01", ConnectionType.USER_PLANE, "EtherNet/IP CIP", 100.0, 6.5, 0.5, 0.0, "sst-2-sd-020304"),
+        ("conn-ot-firewall-dmz", "switch-core-01", "firewall-ot-01", ConnectionType.CONTROL_PLANE, "TLS Inspection Gateway", 5000.0, 55.0, 0.3, 0.0, "ALL"),
+        ("conn-ot-datacenter", "datacenter-srv-01", "switch-core-01", ConnectionType.USER_PLANE, "Industrial MES Link", 10000.0, 65.0, 0.9, 0.0, "ALL"),
     ]
 
     for lid, src, dst, ctype, proto, cap, util, lat, ploss, slc in link_specs:
